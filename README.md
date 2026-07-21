@@ -5,7 +5,7 @@
 <h2 align="center">Transporte público</h2>
 
 <p align="center">
-  Visor web interactivo con las líneas de colectivo y las paradas de la ciudad.
+  Visor web interactivo de líneas y paradas de colectivo de la ciudad
 </p>
 
 <p align="center">
