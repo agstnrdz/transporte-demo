@@ -11,11 +11,6 @@
 <link rel="preconnect" href="https://mt1.google.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;550;600;650;700;750;800&display=swap" rel="stylesheet">
 <style>
-/* Reset de página: sin margen/franja blanca alrededor del visor, y el
-   fondo del documento sigue al tema (se sincroniza desde aplicarTema()
-   en el script) para que no quede un borde blanco/negro descalzado. */
-html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
-
 /* ═══ Visor de transporte público — tokens de tema (scoped al widget) ═══ */
 #visor-transporte {
   --panel:        #fcfcfb;
@@ -31,12 +26,13 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   --geoloc:       #2a78d6;
   --ok:           #0ca30c;
   --marca:        #134768;
-  width: 100%;
-  height: 100vh;
-  height: 100dvh;
+  max-width: 100%;
   font-family: "Inter", system-ui, -apple-system, sans-serif;
   color: var(--ink-1);
+  border: 1px solid #e2dfe8;
+  border-radius: 12px;
   overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
   background: var(--panel);
   display: flex;
   flex-direction: column;
@@ -53,6 +49,7 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   --sombra:       0 10px 30px rgba(0, 0, 0, 0.55);
   --mapa-fondo:   #141414;
   --geoloc:       #3987e5;
+  border-color: #2c2c2a;
 }
 :where(#visor-transporte) * { box-sizing: border-box; }
 /* :where() anula el aporte de especificidad del ID: este reset scoped ya no
@@ -62,8 +59,9 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
 :where(#visor-transporte) button:focus-visible { outline: 2px solid var(--geoloc); outline-offset: 2px; }
 :where(#visor-transporte) a { color: inherit; }
 
-/* pantalla completa: ya no hace falta anular borde/radio (no existen más);
-   el cuerpo ya ocupa el espacio disponible por sí solo (ver .vt-cuerpo). */
+/* pantalla completa: el cuerpo crece y ocupa todo */
+#visor-transporte:fullscreen { border-radius: 0; border: none; max-width: none; }
+#visor-transporte:fullscreen .vt-cuerpo { height: auto; flex: 1; }
 
 /* ══ Cabecera institucional ══ */
 .vt-header {
@@ -110,9 +108,8 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
 #visor-transporte[data-theme="dark"] .icono-luna { display: none !important; }
 #visor-transporte:not([data-theme="dark"]) .icono-sol { display: none !important; }
 
-/* ══ Cuerpo: mapa a ancho completo, ocupa todo el alto que sobra entre
-   cabecera y pie (integrado a la ventana, sin alto fijo de "tarjeta") ══ */
-.vt-cuerpo { position: relative; flex: 1 1 auto; min-height: 0; background: var(--mapa-fondo); overscroll-behavior: contain; }
+/* ══ Cuerpo: mapa a ancho completo ══ */
+.vt-cuerpo { position: relative; height: 800px; background: var(--mapa-fondo); overscroll-behavior: contain; }
 #mapa { position: absolute; inset: 0; background: var(--mapa-fondo); z-index: 1; }
 
 /* ══ Caja de capas flotante (solapa de líneas y paradas) ══ */
@@ -524,47 +521,23 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   text-overflow: ellipsis;
 }
 
-@keyframes vt-carrusel {
-  from { transform: translateX(0); }
-  to   { transform: translateX(-100%); }
-}
-
 @media (max-width: 640px) {
-  /* Cabecera compacta: el logo es horizontal y achatado (~5.6:1), así que
-     a 50px de alto ocupa ~280px de ancho — en un celular eso aplasta el
-     título/subtítulo a una columna angosta. En vez de cortar el texto con
-     "…", se lo deja deslizar en loop (carrusel) para que se pueda leer
-     completo sin agrandar la cabecera. Truco sin JS: el span interno es
-     inline-block con padding-left:100% (arranca fuera, a la derecha) y
-     se anima con translateX(-100%) hasta salir por la izquierda. */
-  .vt-header { padding: 8px 12px; gap: 8px; }
-  .vt-header .logo { height: 24px; }
-  .vt-header-texto { min-width: 0; }
-  .vt-header-texto h1, .vt-header-texto p { overflow: hidden; white-space: nowrap; }
-  .vt-header-texto h1 { font-size: 14px; }
-  .vt-header-texto p  { font-size: 11px; }
-  .vt-header-texto .marquee-text {
-    display: inline-block;
-    padding-left: 100%;
-    animation: vt-carrusel 16s linear infinite;
-  }
-  .vt-header-texto p .marquee-text { animation-duration: 20s; animation-delay: 1.2s; }
-  /* Botón de pantalla completa: sólo se oculta en mobile (el de tema queda) */
-  #btn-fs { display: none; }
-  .vt-btn-header { width: 32px; height: 32px; }
+  .vt-header .logo { height: 34px; }
+  .vt-btn-header { width: 40px; height: 40px; }
   #caja-capas { width: min(272px, calc(100% - 24px)); font-size: 11px; }
   .btn-ojo, .btn-plegar { width: 30px; height: 30px; }
   .linea-main { padding: 7px 6px; }
   .pill { padding: 5px 11px; }
   #tarjeta-cercanas { bottom: 30px; }
+  /* Alto del mapa ajustado al viewport real del celular (sin la barra de
+     direcciones), restando aprox. lo que ocupan cabecera + pie, para que
+     la app entre en una pantalla sin obligar a scrollear. dvh con fallback
+     a vh para navegadores que todavía no lo soportan. */
+  .vt-cuerpo { height: calc(100vh - 90px); height: calc(100dvh - 90px); min-height: 420px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .linea-flujo, .dot-viajero-halo, .geo-halo { animation: none; }
-  /* Con movimiento reducido, el carrusel se congela y se recorta con "…"
-     en vez de deslizar, para no perder la lectura del contenido. */
-  .vt-header-texto .marquee-text { animation: none; display: inline; padding-left: 0; }
-  .vt-header-texto h1, .vt-header-texto p { text-overflow: ellipsis; }
 }
 </style>
 </head>
@@ -575,8 +548,8 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   <!-- Cabecera del visor: título + descripción + logo + tema + pantalla completa -->
   <div class="vt-header">
     <div class="vt-header-texto">
-      <h1><span class="marquee-text">Transporte público - Líneas y paradas</span></h1>
-      <p><span class="marquee-text">Elegí qué líneas enfocar, ver su recorrido y sentido de circulación</span></p>
+      <h1>Transporte público - Líneas y paradas</h1>
+      <p>Elegí qué líneas enfocar, ver su recorrido y sentido de circulación</p>
     </div>
     <img src="assets/img/logotipo.png"
          alt="Logo" class="logo" onerror="this.style.display='none'">
@@ -832,9 +805,6 @@ function temaActual() {
 function aplicarTema(tema) {
   if (tema === "dark") CONT.setAttribute("data-theme", "dark");
   else CONT.removeAttribute("data-theme");
-  /* el fondo de html/body sigue al tema para que no quede una franja
-     blanca (o negra) descalzada alrededor del visor a pantalla completa */
-  document.body.style.background = tema === "dark" ? "#1a1a19" : "#fcfcfb";
   try { localStorage.setItem(TEMA_KEY, tema); } catch (e) { /* puede estar bloqueado */ }
 }
 (function initTema() {
