@@ -2,7 +2,7 @@
   <img src="assets/img/logotipo.png" alt="Dirección General de Modernización e Investigación Territorial" height="70">
 </p>
 
-<h2 align="center">Transporte público — Comodoro Rivadavia</h2>
+<h2 align="center">Transporte público</h2>
 
 <p align="center">
   Visor web interactivo con las líneas de colectivo y las paradas de la ciudad.
@@ -34,7 +34,7 @@ Este visor permite consultar de forma interactiva las 23 líneas de colectivo ur
 
 ### Fuentes de datos
 
-- **Recorridos de líneas:** Dirección General de Transporte.
+- **Recorridos de líneas:** Dirección General de Transporte (2026).
 - **Paradas:** relevamiento propio (2023).
 - **Cartografía base:** Instituto Geográfico Nacional (Argenmap) y Google Satelital.
 
