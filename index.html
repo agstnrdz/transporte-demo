@@ -1,3 +1,9 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Transporte público — Líneas y paradas | Comodoro Rivadavia</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -526,6 +532,8 @@
   .linea-flujo, .dot-viajero-halo, .geo-halo { animation: none; }
 }
 </style>
+</head>
+<body>
 
 <div class="visor-geo" id="visor-transporte">
 
@@ -535,7 +543,7 @@
       <h1>Transporte público - Líneas y paradas</h1>
       <p>Elegí qué líneas enfocar, ver su recorrido y sentido de circulación</p>
     </div>
-    <img src="https://agstnrdz.github.io/ide/assets/img/logotipo_MCR_DGMIT_blanco.png"
+    <img src="assets/img/logotipo.png"
          alt="Logo" class="logo" onerror="this.style.display='none'">
     <button id="btn-tema" class="vt-btn-header" title="Cambiar tema claro/oscuro" aria-label="Cambiar tema">
       <svg class="icono-luna" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
@@ -633,30 +641,30 @@
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <!-- Datos: los 23 archivos de líneas + paradas, directo del repositorio (sin consolidar) -->
-<script src="https://agstnrdz.github.io/ide/layers_transporte/linea_1_data.js"></script>
-<script src="https://agstnrdz.github.io/ide/layers_transporte/linea_2_data.js"></script>
-<script src="https://agstnrdz.github.io/ide/layers_transporte/linea_3_data.js"></script>
-<script src="https://agstnrdz.github.io/ide/layers_transporte/linea_4_data.js"></script>
-<script src="https://agstnrdz.github.io/ide/layers_transporte/linea_5_data.js"></script>
-<script src="https://agstnrdz.github.io/ide/layers_transporte/linea_5U_data.js"></script>
-<script src="https://agstnrdz.github.io/ide/layers_transporte/linea_6H_data.js"></script>
-<script src="https://agstnrdz.github.io/ide/layers_transporte/linea_6AH_data.js"></script>
-<script src="https://agstnrdz.github.io/ide/layers_transporte/linea_7_data.js"></script>
-<script src="https://agstnrdz.github.io/ide/layers_transporte/linea_8H_data.js"></script>
-<script src="https://agstnrdz.github.io/ide/layers_transporte/linea_8AH_data.js"></script>
-<script src="https://agstnrdz.github.io/ide/layers_transporte/linea_9_data.js"></script>
-<script src="https://agstnrdz.github.io/ide/layers_transporte/linea_12_data.js"></script>
-<script src="https://agstnrdz.github.io/ide/layers_transporte/linea_13_data.js"></script>
-<script src="https://agstnrdz.github.io/ide/layers_transporte/linea_14_data.js"></script>
-<script src="https://agstnrdz.github.io/ide/layers_transporte/linea_15_data.js"></script>
-<script src="https://agstnrdz.github.io/ide/layers_transporte/linea_16_data.js"></script>
-<script src="https://agstnrdz.github.io/ide/layers_transporte/linea_17_data.js"></script>
-<script src="https://agstnrdz.github.io/ide/layers_transporte/linea_18_data.js"></script>
-<script src="https://agstnrdz.github.io/ide/layers_transporte/linea_19_data.js"></script>
-<script src="https://agstnrdz.github.io/ide/layers_transporte/linea_20_data.js"></script>
-<script src="https://agstnrdz.github.io/ide/layers_transporte/linea_21_data.js"></script>
-<script src="https://agstnrdz.github.io/ide/layers_transporte/linea_22_data.js"></script>
-<script src="https://agstnrdz.github.io/ide/layers_transporte/paradas_data.js"></script>
+<script src="layers_transporte/linea_1_data.js"></script>
+<script src="layers_transporte/linea_2_data.js"></script>
+<script src="layers_transporte/linea_3_data.js"></script>
+<script src="layers_transporte/linea_4_data.js"></script>
+<script src="layers_transporte/linea_5_data.js"></script>
+<script src="layers_transporte/linea_5U_data.js"></script>
+<script src="layers_transporte/linea_6H_data.js"></script>
+<script src="layers_transporte/linea_6AH_data.js"></script>
+<script src="layers_transporte/linea_7_data.js"></script>
+<script src="layers_transporte/linea_8H_data.js"></script>
+<script src="layers_transporte/linea_8AH_data.js"></script>
+<script src="layers_transporte/linea_9_data.js"></script>
+<script src="layers_transporte/linea_12_data.js"></script>
+<script src="layers_transporte/linea_13_data.js"></script>
+<script src="layers_transporte/linea_14_data.js"></script>
+<script src="layers_transporte/linea_15_data.js"></script>
+<script src="layers_transporte/linea_16_data.js"></script>
+<script src="layers_transporte/linea_17_data.js"></script>
+<script src="layers_transporte/linea_18_data.js"></script>
+<script src="layers_transporte/linea_19_data.js"></script>
+<script src="layers_transporte/linea_20_data.js"></script>
+<script src="layers_transporte/linea_21_data.js"></script>
+<script src="layers_transporte/linea_22_data.js"></script>
+<script src="layers_transporte/paradas_data.js"></script>
 <script>
 (function () {
 "use strict";
@@ -1406,3 +1414,5 @@ if (faltantes.length) {
 }
 })();
 </script>
+</body>
+</html>
