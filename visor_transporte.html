@@ -1,0 +1,1423 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Transporte - Líneas y paradas</title>
+  <style>html, body { margin:0; padding:0; }</style>
+</head>
+<body>
+
+<!-- ═══════════ COPIAR DESDE AQUÍ HASTA "FIN BLOQUE" EN ELEMENTOR (widget HTML) ═══════════ -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;550;600;650;700;750;800&display=swap" rel="stylesheet">
+<style>
+/* ═══ Visor de transporte público — tokens de tema (scoped al widget) ═══ */
+#visor-transporte {
+  --panel:        #fcfcfb;
+  --ink-1:        #0b0b0b;
+  --ink-2:        #52514e;
+  --muted:        #898781;
+  --hair:         #e1e0d9;
+  --hover-wash:   rgba(11, 11, 11, 0.08);
+  --activo-bg:    #0b0b0b;
+  --activo-fg:    #fcfcfb;
+  --sombra:       0 10px 30px rgba(11, 11, 11, 0.14);
+  --mapa-fondo:   #e8e6e0;
+  --geoloc:       #2a78d6;
+  --ok:           #0ca30c;
+  --marca:        #134768;
+  max-width: 100%;
+  font-family: "Inter", system-ui, -apple-system, sans-serif;
+  color: var(--ink-1);
+  border: 1px solid #e2dfe8;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  background: var(--panel);
+  display: flex;
+  flex-direction: column;
+}
+#visor-transporte[data-theme="dark"] {
+  --panel:        #1a1a19;
+  --ink-1:        #ffffff;
+  --ink-2:        #c3c2b7;
+  --muted:        #898781;
+  --hair:         #2c2c2a;
+  --hover-wash:   rgba(255, 255, 255, 0.11);
+  --activo-bg:    #ffffff;
+  --activo-fg:    #0d0d0d;
+  --sombra:       0 10px 30px rgba(0, 0, 0, 0.55);
+  --mapa-fondo:   #141414;
+  --geoloc:       #3987e5;
+  border-color: #2c2c2a;
+}
+:where(#visor-transporte) * { box-sizing: border-box; }
+/* :where() anula el aporte de especificidad del ID: este reset scoped ya no
+   puede ganarle a reglas de un componente con dos clases (ej. .seg.activo,
+   .pill.activo), que antes perdían silenciosamente contra este selector. */
+:where(#visor-transporte) button { font: inherit; color: inherit; background: none; border: none; cursor: pointer; touch-action: manipulation; }
+:where(#visor-transporte) button:focus-visible { outline: 2px solid var(--geoloc); outline-offset: 2px; }
+:where(#visor-transporte) a { color: inherit; }
+
+/* pantalla completa: el cuerpo crece y ocupa todo */
+#visor-transporte:fullscreen { border-radius: 0; border: none; max-width: none; }
+#visor-transporte:fullscreen .vt-cuerpo { height: auto; flex: 1; }
+
+/* ══ Cabecera institucional ══ */
+.vt-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+  background: var(--marca);
+  color: #fff;
+  flex-shrink: 0;
+}
+.vt-header-texto h1 { margin: 0; font-size: 17px; font-weight: 800; line-height: 1.2; }
+.vt-header-texto p  { margin: 2px 0 0; font-size: 15px; opacity: 0.9; }
+.vt-header .logo { height: 50px; width: auto; flex-shrink: 0; margin-left: auto; }
+.vt-btn-header {
+  position: relative !important;
+  width: 34px; height: 34px;
+  display: grid; place-items: center;
+  border-radius: 9px;
+  border: 1px solid rgba(255,255,255,0.35);
+  color: #fff;
+  flex-shrink: 0;
+  transition: background 0.15s;
+}
+.vt-btn-header:hover { background: rgba(255,255,255,0.12); }
+/* Centrado a prueba del CSS del sitio anfitrión (WordPress/Elementor):
+   se posiciona por coordenadas propias, no por el layout heredado del
+   botón, así un reset externo de line-height/padding/width no lo corre.
+   OJO: acá no se toca "display", porque un display:none (abajo) siempre
+   debe poder ganar; forzarlo a "block" fue lo que la vez pasada hizo que
+   los dos íconos (sol y luna) quedaran superpuestos. */
+.vt-btn-header svg {
+  position: absolute !important;
+  top: 50% !important;
+  left: 50% !important;
+  width: 18px !important;
+  height: 18px !important;
+  max-width: none !important;
+  max-height: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  transform: translate(-50%, -50%) !important;
+}
+#visor-transporte[data-theme="dark"] .icono-luna { display: none !important; }
+#visor-transporte:not([data-theme="dark"]) .icono-sol { display: none !important; }
+
+/* ══ Cuerpo: mapa a ancho completo ══ */
+.vt-cuerpo { position: relative; height: 800px; background: var(--mapa-fondo); }
+#mapa { position: absolute; inset: 0; background: var(--mapa-fondo); z-index: 1; }
+
+/* ══ Caja de capas flotante (solapa de líneas y paradas) ══ */
+#caja-capas {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 272px;
+  max-width: calc(100% - 24px);
+  max-height: calc(100% - 24px);
+  display: flex;
+  flex-direction: column;
+  font-size: 11.5px;
+  background: var(--panel);
+  border: 1px solid var(--hair);
+  border-radius: 12px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.20), 0 1px 4px rgba(0,0,0,0.12);
+  z-index: 1200;
+  overflow: hidden;
+}
+.caja-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 9px 8px 9px 9px;
+  border-bottom: 1px solid var(--hair);
+  cursor: pointer;
+  user-select: none;
+}
+.caja-head h2 {
+  /* Subtítulo "Capas": mismo tamaño, color y fondo más oscuros, sin contorno */
+  margin: 0;
+  font-size: 10px;
+  font-weight: 750;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--ink-1);
+  padding: 3px 9px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--ink-1) 16%, var(--panel));
+}
+.caja-head .stats { font-size: 11.5px; color: var(--ink-2); margin-left: auto; }
+.btn-plegar {
+  width: 26px; height: 26px;
+  display: grid; place-items: center;
+  border-radius: 7px;
+  color: var(--muted);
+  transition: transform 0.2s, background 0.15s;
+}
+.btn-plegar:hover { background: var(--hover-wash); color: var(--ink-1); }
+#caja-capas.plegada .btn-plegar { transform: rotate(-90deg); }
+#caja-capas.plegada .caja-body { display: none; }
+#caja-capas.plegada .caja-head { border-bottom: none; }
+
+.caja-body { overflow-y: auto; scrollbar-width: thin; padding: 4px 8px 10px; }
+
+#seccion-paradas { margin-top: 6px; padding-top: 8px; border-top: 1px solid var(--hair); }
+
+.seccion-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 2px 2px 2px;
+  position: sticky;
+  top: 0;
+  background: var(--panel);
+  z-index: 5;
+}
+.seccion-head h3 {
+  /* Subtítulo "Líneas" / "Paradas": mismo tamaño, color y fondo más oscuros, sin contorno */
+  margin: 0;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--ink-1);
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--ink-1) 16%, var(--panel));
+}
+.ayuda { margin: 2px 2px 6px; font-size: 10.5px; line-height: 1.4; color: var(--muted); }
+
+.mini-acciones { display: flex; gap: 6px; }
+.btn-mini {
+  font-size: 10px;
+  font-weight: 650;
+  letter-spacing: 0.02em;
+  padding: 4px 12px;
+  border-radius: 999px;
+  color: var(--ink-1);
+  background: color-mix(in srgb, var(--ink-1) 8%, var(--panel));
+  transition: background 0.15s, color 0.15s;
+}
+.btn-mini:hover { background: color-mix(in srgb, var(--ink-1) 14%, var(--panel)); color: var(--ink-1); }
+
+/* ── Mapa base (segmentado: Argenmap / Satelital Google) ── */
+.segmentado {
+  display: flex;
+  border: 1px solid var(--hair);
+  border-radius: 9px;
+  overflow: hidden;
+}
+.segmentado.base { margin: 2px 2px 4px; }
+.segmentado.base .seg { flex: 1; text-align: center; }
+.seg {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 10px;
+  color: var(--muted);
+  border-right: 1px solid var(--hair);
+  transition: background 0.15s, color 0.15s;
+}
+.seg:last-child { border-right: none; }
+.seg:hover { background: var(--hover-wash); color: var(--ink-1); }
+/* Encendido = pintado negro/casi negro sólido, en ambos temas (Argenmap/Satelital y filtros de Paradas) */
+.seg.activo { background: #111111; color: #ffffff; }
+
+/* ── Lista de líneas ── */
+#lista-lineas { list-style: none; margin: 0; padding: 0; }
+.linea-row { border-radius: 10px; margin-bottom: 1px; transition: background 0.15s; }
+.linea-row:hover { background: var(--hover-wash); }
+.linea-row.enfocada { background: var(--hover-wash); box-shadow: inset 0 0 0 1.5px var(--ink-1); }
+.linea-row.oculta .chip { filter: grayscale(1); opacity: 0.35; }
+.linea-row.oculta .linea-nombre { color: var(--muted); }
+
+.linea-main {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 6px;
+  cursor: pointer;
+  user-select: none;
+}
+.chip {
+  min-width: 27px; height: 24px;
+  padding: 0 4px;
+  display: grid; place-items: center;
+  border-radius: 7px;
+  background: var(--c);
+  color: var(--chip-fg, #fff);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  flex-shrink: 0;
+  transition: transform 0.15s;
+}
+.linea-row:hover .chip { transform: scale(1.1); }
+.linea-nombre {
+  flex: 1;
+  font-size: 11.5px;
+  font-weight: 550;
+  line-height: 1.2;
+  color: var(--ink-1);
+}
+.btn-ojo {
+  width: 28px; height: 28px;
+  display: grid; place-items: center;
+  border-radius: 7px;
+  color: var(--muted);
+  opacity: 0.55;
+  transition: opacity 0.15s, background 0.15s;
+  flex-shrink: 0;
+}
+.linea-row:hover .btn-ojo, .btn-ojo:focus-visible { opacity: 1; }
+.btn-ojo:hover { background: var(--hover-wash); color: var(--ink-1); }
+
+.linea-detalle {
+  display: none;
+  padding: 0 6px 7px 41px;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+.linea-row.enfocada .linea-detalle { display: flex; }
+.pill {
+  font-size: 10.5px;
+  font-weight: 650;
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1.5px solid var(--muted);
+  color: var(--ink-2);
+  opacity: 0.6;
+  transition: background 0.15s, color 0.15s, border-color 0.15s, opacity 0.15s, transform 0.1s;
+}
+.pill:hover { opacity: 0.85; border-color: var(--ink-1); }
+.pill:active { transform: scale(0.96); }
+.pill.activo {
+  background: var(--activo-bg);
+  color: var(--activo-fg);
+  border-color: var(--activo-bg);
+  opacity: 1;
+}
+
+/* ── Switch ── */
+.switch { position: relative; display: inline-block; }
+.switch input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+.switch-track {
+  display: block;
+  width: 34px; height: 19px;
+  border-radius: 999px;
+  background: var(--hair);
+  transition: background 0.18s;
+  pointer-events: none;
+}
+.switch-track::after {
+  content: "";
+  position: absolute;
+  top: 3px; left: 3px;
+  width: 13px; height: 13px;
+  border-radius: 50%;
+  background: var(--panel);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+  transition: transform 0.18s;
+}
+.switch input:checked + .switch-track { background: var(--activo-bg); }
+.switch input:checked + .switch-track::after { transform: translateX(15px); }
+.switch input:focus-visible + .switch-track { outline: 2px solid var(--geoloc); outline-offset: 2px; }
+
+/* ── Filtros de paradas ── */
+.filtro-fila {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 3px 2px;
+}
+.filtro-nombre { font-size: 11.5px; font-weight: 550; }
+#conteo-paradas {
+  margin-top: 6px;
+  font-size: 10.5px;
+  color: var(--ink-2);
+  padding: 5px 9px;
+  background: var(--hover-wash);
+  border-radius: 8px;
+}
+#conteo-paradas strong { color: var(--ink-1); }
+#seccion-paradas.apagada #filtros-paradas { opacity: 0.35; pointer-events: none; }
+
+/* ══ Animaciones de mapa ══ */
+.linea-flujo { animation: vt-flujo 0.9s linear infinite; }
+@keyframes vt-flujo {
+  from { stroke-dashoffset: 18; }
+  to   { stroke-dashoffset: 0; }
+}
+.dot-viajero-halo { animation: vt-pulso 1.6s ease-out infinite; }
+@keyframes vt-pulso {
+  0%   { stroke-opacity: 0.55; }
+  50%  { stroke-opacity: 0.15; }
+  100% { stroke-opacity: 0.55; }
+}
+.geo-halo { animation: vt-pulso 2s ease-out infinite; }
+
+/* controles Leaflet tematizados */
+#visor-transporte .leaflet-bar a, #visor-transporte .leaflet-bar a:hover {
+  background: var(--panel);
+  color: var(--ink-1);
+  border-bottom-color: var(--hair);
+}
+#visor-transporte .leaflet-bar a:hover { background: var(--hover-wash); }
+#visor-transporte .leaflet-control-attribution {
+  background: color-mix(in srgb, var(--panel) 85%, transparent) !important;
+  color: var(--muted) !important;
+  font-size: 11px !important;
+}
+#visor-transporte .leaflet-control-attribution a { color: var(--ink-2) !important; }
+#visor-transporte .leaflet-control-scale-line {
+  background: color-mix(in srgb, var(--panel) 80%, transparent);
+  color: var(--ink-2);
+  border-color: var(--muted);
+}
+
+/* botones de acción (ubicación / encuadre) */
+.ctrl-acciones {
+  display: flex;
+  flex-direction: column;
+  background: var(--panel);
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.22);
+  overflow: hidden;
+  border: 1px solid var(--hair);
+}
+.ctrl-acciones button {
+  padding: 9px 10px;
+  color: var(--muted);
+  border-bottom: 1px solid var(--hair);
+  display: grid;
+  place-items: center;
+}
+.ctrl-acciones button:last-child { border-bottom: none; }
+.ctrl-acciones button:hover { background: var(--hover-wash); color: var(--ink-1); }
+
+/* tooltips y popups */
+#visor-transporte .leaflet-tooltip.tt-linea, #visor-transporte .leaflet-tooltip.tt-parada {
+  background: var(--panel);
+  color: var(--ink-1);
+  border: 1px solid var(--hair);
+  border-radius: 9px;
+  box-shadow: 0 3px 14px rgba(0,0,0,0.22);
+  font-family: inherit;
+  font-size: 12px;
+  padding: 5px 9px;
+}
+#visor-transporte .leaflet-tooltip.tt-linea::before, #visor-transporte .leaflet-tooltip.tt-parada::before { display: none; }
+.tt-chip {
+  display: inline-grid;
+  place-items: center;
+  min-width: 19px; height: 17px;
+  padding: 0 3px;
+  border-radius: 5px;
+  font-size: 10.5px;
+  font-weight: 800;
+  margin-right: 5px;
+  vertical-align: -3px;
+}
+.tt-sub { color: var(--ink-2); font-size: 11px; }
+
+#visor-transporte .leaflet-popup-content-wrapper {
+  background: var(--panel);
+  color: var(--ink-1);
+  border-radius: 12px;
+  box-shadow: var(--sombra);
+  border: 1px solid var(--hair);
+}
+#visor-transporte .leaflet-popup-tip { background: var(--panel); border: 1px solid var(--hair); }
+#visor-transporte .leaflet-popup-content { font-family: inherit; margin: 12px 14px; line-height: 1.3; }
+.pop-titulo { font-size: 13.5px; font-weight: 750; margin: 0 0 2px; }
+.pop-sub { font-size: 12px; color: var(--ink-2); margin: 0 0 8px; }
+.pop-chips { display: flex; gap: 5px; flex-wrap: wrap; }
+.pop-attr {
+  font-size: 10.5px;
+  font-weight: 650;
+  padding: 3px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--hair);
+  color: var(--muted);
+}
+.pop-attr.si { color: var(--ok); border-color: color-mix(in srgb, var(--ok) 45%, transparent); }
+#visor-transporte .leaflet-container a.leaflet-popup-close-button { color: var(--muted); }
+
+/* ══ Tarjeta de cercanas ══ */
+#tarjeta-cercanas {
+  position: absolute;
+  left: 12px;
+  bottom: 34px;
+  width: 290px;
+  max-width: calc(100% - 24px);
+  background: var(--panel);
+  border: 1px solid var(--hair);
+  border-radius: 14px;
+  box-shadow: var(--sombra);
+  z-index: 1100;
+  overflow: hidden;
+}
+.tarjeta-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 8px 6px 14px;
+}
+.tarjeta-head h3 { margin: 0; font-size: 13px; font-weight: 750; }
+.tarjeta-head button { width: 28px; height: 28px; font-size: 13px; border-radius: 8px; }
+.tarjeta-head button:hover { background: var(--hover-wash); }
+#lista-cercanas { list-style: none; margin: 0; padding: 0 6px 8px; }
+#lista-cercanas li button {
+  width: 100%;
+  text-align: left;
+  padding: 7px 9px;
+  border-radius: 9px;
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: baseline;
+}
+#lista-cercanas li button:hover { background: var(--hover-wash); }
+.cercana-nombre { font-size: 12px; font-weight: 550; }
+.cercana-dist { font-size: 11.5px; color: var(--geoloc); font-weight: 700; white-space: nowrap; }
+
+/* ══ Toast ══ */
+#toast {
+  position: absolute;
+  bottom: 26px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--activo-bg);
+  color: var(--activo-fg);
+  font-size: 12.5px;
+  font-weight: 550;
+  padding: 10px 18px;
+  border-radius: 999px;
+  box-shadow: var(--sombra);
+  z-index: 3000;
+  max-width: min(480px, 88%);
+  text-align: center;
+}
+
+/* ══ Pie de créditos: una sola línea, letra pequeña ══ */
+.vt-footer {
+  padding: 8px 18px 9px;
+  border-top: 1px solid var(--hair);
+  font-size: 10px;
+  line-height: 1.4;
+  color: var(--muted);
+  background: var(--panel);
+  flex-shrink: 0;
+}
+.vt-footer p {
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 640px) {
+  .vt-header .logo { height: 34px; }
+  #caja-capas { width: min(272px, calc(100% - 24px)); font-size: 11px; }
+  .btn-ojo, .btn-plegar { width: 30px; height: 30px; }
+  .linea-main { padding: 7px 6px; }
+  .pill { padding: 5px 11px; }
+  #tarjeta-cercanas { bottom: 30px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .linea-flujo, .dot-viajero-halo, .geo-halo { animation: none; }
+}
+</style>
+
+<div class="visor-geo" id="visor-transporte">
+
+  <!-- Cabecera del visor: título + descripción + logo + tema + pantalla completa -->
+  <div class="vt-header">
+    <div class="vt-header-texto">
+      <h1>Transporte público - Líneas y paradas</h1>
+      <p>Elegí qué líneas enfocar, ver su recorrido y sentido de circulación</p>
+    </div>
+    <img src="https://agstnrdz.github.io/ide/assets/img/logotipo_MCR_DGMIT_blanco.png"
+         alt="Logo" class="logo" onerror="this.style.display='none'">
+    <button id="btn-tema" class="vt-btn-header" title="Cambiar tema claro/oscuro" aria-label="Cambiar tema">
+      <svg class="icono-luna" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+      <svg class="icono-sol" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.9 4.9l1.4 1.4m11.4 11.4 1.4 1.4M2 12h2m16 0h2M4.9 19.1l1.4-1.4m11.4-11.4 1.4-1.4"/></svg>
+    </button>
+    <button id="btn-fs" class="vt-btn-header" title="Pantalla completa" aria-label="Pantalla completa">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+    </button>
+  </div>
+
+  <!-- Cuerpo: mapa + caja de capas flotante -->
+  <div class="vt-cuerpo">
+    <div id="mapa" role="application" aria-label="Mapa de líneas de colectivo"></div>
+
+    <!-- Solapa de capas: mapa base + líneas + paradas -->
+    <div id="caja-capas">
+      <div class="caja-head" id="caja-head" role="button" aria-expanded="true" tabindex="0">
+        <h2>Capas</h2>
+        <span class="stats" id="stats-row"></span>
+        <span class="btn-plegar" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+        </span>
+      </div>
+      <div class="caja-body">
+
+        <div class="segmentado base" role="group" aria-label="Mapa base">
+          <button class="seg activo" id="btn-base-mapa" title="Mapa base Argenmap (IGN)">Argenmap</button>
+          <button class="seg" id="btn-base-sat" title="Imagen satelital de Google">Satelital</button>
+        </div>
+
+        <section id="seccion-lineas">
+          <div class="seccion-head">
+            <h3>Líneas</h3>
+            <div class="mini-acciones">
+              <button id="btn-todas" class="btn-mini">Todas</button>
+              <button id="btn-ninguna" class="btn-mini">Ninguna</button>
+            </div>
+          </div>
+          <ul id="lista-lineas"></ul>
+        </section>
+
+        <section id="seccion-paradas">
+          <div class="seccion-head">
+            <h3>Paradas</h3>
+            <label class="switch" title="Mostrar u ocultar paradas">
+              <input type="checkbox" id="chk-paradas" checked>
+              <span class="switch-track" aria-hidden="true"></span>
+            </label>
+          </div>
+          <div id="filtros-paradas">
+            <div class="filtro-fila" data-campo="refugio">
+              <span class="filtro-nombre">Refugio</span>
+              <div class="segmentado" role="group" aria-label="Filtro refugio">
+                <button class="seg activo" data-val="todas">Todas</button>
+                <button class="seg" data-val="si">Sí</button>
+                <button class="seg" data-val="no">No</button>
+              </div>
+            </div>
+            <div class="filtro-fila" data-campo="cartel">
+              <span class="filtro-nombre">Cartel</span>
+              <div class="segmentado" role="group" aria-label="Filtro cartel">
+                <button class="seg activo" data-val="todas">Todas</button>
+                <button class="seg" data-val="si">Sí</button>
+                <button class="seg" data-val="no">No</button>
+              </div>
+            </div>
+            <div class="filtro-fila" data-campo="poste">
+              <span class="filtro-nombre">Poste</span>
+              <div class="segmentado" role="group" aria-label="Filtro poste">
+                <button class="seg activo" data-val="todas">Todas</button>
+                <button class="seg" data-val="si">Sí</button>
+                <button class="seg" data-val="no">No</button>
+              </div>
+            </div>
+            <div id="conteo-paradas" aria-live="polite"></div>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <!-- tarjeta de paradas cercanas -->
+    <div id="tarjeta-cercanas" hidden>
+      <div class="tarjeta-head">
+        <h3>Paradas más cercanas</h3>
+        <button id="btn-cerrar-cercanas" title="Cerrar" aria-label="Cerrar">✕</button>
+      </div>
+      <ol id="lista-cercanas"></ol>
+    </div>
+
+    <!-- avisos -->
+    <div id="toast" role="status" aria-live="polite" hidden></div>
+  </div>
+
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<!-- Datos: los 23 archivos de líneas + paradas, directo del repositorio (sin consolidar) -->
+<script src="https://agstnrdz.github.io/ide/layers_transporte/linea_1_data.js"></script>
+<script src="https://agstnrdz.github.io/ide/layers_transporte/linea_2_data.js"></script>
+<script src="https://agstnrdz.github.io/ide/layers_transporte/linea_3_data.js"></script>
+<script src="https://agstnrdz.github.io/ide/layers_transporte/linea_4_data.js"></script>
+<script src="https://agstnrdz.github.io/ide/layers_transporte/linea_5_data.js"></script>
+<script src="https://agstnrdz.github.io/ide/layers_transporte/linea_5U_data.js"></script>
+<script src="https://agstnrdz.github.io/ide/layers_transporte/linea_6H_data.js"></script>
+<script src="https://agstnrdz.github.io/ide/layers_transporte/linea_6AH_data.js"></script>
+<script src="https://agstnrdz.github.io/ide/layers_transporte/linea_7_data.js"></script>
+<script src="https://agstnrdz.github.io/ide/layers_transporte/linea_8H_data.js"></script>
+<script src="https://agstnrdz.github.io/ide/layers_transporte/linea_8AH_data.js"></script>
+<script src="https://agstnrdz.github.io/ide/layers_transporte/linea_9_data.js"></script>
+<script src="https://agstnrdz.github.io/ide/layers_transporte/linea_12_data.js"></script>
+<script src="https://agstnrdz.github.io/ide/layers_transporte/linea_13_data.js"></script>
+<script src="https://agstnrdz.github.io/ide/layers_transporte/linea_14_data.js"></script>
+<script src="https://agstnrdz.github.io/ide/layers_transporte/linea_15_data.js"></script>
+<script src="https://agstnrdz.github.io/ide/layers_transporte/linea_16_data.js"></script>
+<script src="https://agstnrdz.github.io/ide/layers_transporte/linea_17_data.js"></script>
+<script src="https://agstnrdz.github.io/ide/layers_transporte/linea_18_data.js"></script>
+<script src="https://agstnrdz.github.io/ide/layers_transporte/linea_19_data.js"></script>
+<script src="https://agstnrdz.github.io/ide/layers_transporte/linea_20_data.js"></script>
+<script src="https://agstnrdz.github.io/ide/layers_transporte/linea_21_data.js"></script>
+<script src="https://agstnrdz.github.io/ide/layers_transporte/linea_22_data.js"></script>
+<script src="https://agstnrdz.github.io/ide/layers_transporte/paradas_data.js"></script>
+<script>
+(function () {
+"use strict";
+
+/* ══════════════════════════════════════════════════════════════════
+   Armado de datos: lee los 23 window.LINEA_*_DATA (GeoJSON crudo)
+   y los convierte al formato interno del visor. Cada archivo es una
+   línea propia; NO se fusionan (6H, 6AH, 8H y 8AH van separadas).
+   ══════════════════════════════════════════════════════════════════ */
+const IDS_LINEAS = ["1","2","3","4","5","5U","6H","6AH","7","8H","8AH","9",
+                    "12","13","14","15","16","17","18","19","20","21","22"];
+
+/* Paleta (color claro / color modo oscuro) por línea */
+const PALETA = {
+  "1":  ["#d62728", "#ff6b6b"], "2":  ["#1f77b4", "#5aa9e6"],
+  "3":  ["#2ca02c", "#5fd068"], "4":  ["#9467bd", "#b78fe0"],
+  "5":  ["#ff7f0e", "#ffa94d"], "5U": ["#8c564b", "#c9938a"],
+  "6H": ["#e377c2", "#f2a6dd"], "6AH": ["#8e44ad", "#c39bd3"],
+  "7":  ["#17becf", "#63dfee"],
+  "8H": ["#bcbd22", "#d9db4f"], "8AH": ["#6b8e23", "#9acd32"],
+  "9":  ["#7f2704", "#d95f02"],
+  "12": ["#0d5b8c", "#4fa3d1"], "13": ["#a61e4d", "#e64980"],
+  "14": ["#2b8a3e", "#69db7c"], "15": ["#5f3dc4", "#9775fa"],
+  "16": ["#e8590c", "#ff922b"], "17": ["#0b7285", "#3bc9db"],
+  "18": ["#862e9c", "#cc5de8"], "19": ["#c92a2a", "#ff8787"],
+  "20": ["#364fc7", "#748ffc"], "21": ["#087f5b", "#38d9a9"],
+  "22": ["#e67700", "#ffc078"],
+};
+
+const SENTIDOS = {
+  ida: ["Ida", "ida"], vuelta: ["Vuelta", "vuelta"],
+  horario: ["Horario", "circular"], antihorario: ["Antihorario", "circular"],
+  "": ["Único", "unico"],
+};
+const ORDEN_SENT = { ida: 0, vuelta: 1, horario: 0, antihorario: 1, "": 0 };
+
+/* Cosido de tramos del MultiLineString: encadena fin→inicio por
+   proximidad SIN invertir tramos (digitalizados en sentido de
+   circulación). Si el hueco supera GAP_MAX m, corta en otro path. */
+const GAP_MAX = 150;
+function distM(a, b) { /* a,b = [lng,lat] */
+  const kx = 111320 * Math.cos(-45.86 * Math.PI / 180);
+  return Math.hypot((a[0] - b[0]) * kx, (a[1] - b[1]) * 111320);
+}
+function coser(parts) {
+  if (parts.length === 1) return [parts[0]];
+  let mejor = null, mejorCosto = Infinity;
+  for (let inicio = 0; inicio < parts.length; inicio++) {
+    const usados = new Set([inicio]);
+    const orden = [inicio];
+    let costo = 0;
+    while (usados.size < parts.length) {
+      const ult = parts[orden[orden.length - 1]];
+      const fin = ult[ult.length - 1];
+      let cand = -1, cd = Infinity;
+      for (let i = 0; i < parts.length; i++) {
+        if (usados.has(i)) continue;
+        const d = distM(fin, parts[i][0]);
+        if (d < cd) { cd = d; cand = i; }
+      }
+      costo += cd;
+      usados.add(cand);
+      orden.push(cand);
+    }
+    if (costo < mejorCosto) { mejorCosto = costo; mejor = orden; }
+  }
+  const paths = [];
+  let actual = parts[mejor[0]].slice();
+  for (let k = 1; k < mejor.length; k++) {
+    const seg = parts[mejor[k]];
+    if (distM(actual[actual.length - 1], seg[0]) > GAP_MAX) {
+      paths.push(actual);
+      actual = seg.slice();
+    } else {
+      actual = actual.concat(seg);
+    }
+  }
+  paths.push(actual);
+  return paths;
+}
+
+const LINEAS_DATA = [];
+const faltantes = [];
+for (const id of IDS_LINEAS) {
+  const gj = window["LINEA_" + id + "_DATA"];
+  if (!gj || !gj.features || !gj.features.length) { faltantes.push(id); continue; }
+  const rutas = [];
+  let nombre = "";
+  for (const ft of gj.features) {
+    const p = ft.properties || {};
+    const g = ft.geometry;
+    if (!g) continue;
+    const sent = String(p.sentido || "").trim().toLowerCase();
+    const def = SENTIDOS[sent] || [sent.charAt(0).toUpperCase() + sent.slice(1) || "Único", "ida"];
+    const parts = (g.type === "MultiLineString" ? g.coordinates : [g.coordinates])
+      .filter((t) => t && t.length >= 2);
+    if (!parts.length) continue;
+    /* GeoJSON [lng,lat(,z)] → Leaflet [lat,lng] */
+    const paths = coser(parts).map((path) => path.map((pt) => [pt[1], pt[0]]));
+    rutas.push({
+      id: id + "-" + (sent || "unico"),
+      sentido: def[0], tipo: def[1],
+      _orden: ORDEN_SENT[sent] != null ? ORDEN_SENT[sent] : 9,
+      paths,
+    });
+    const nom = String(p.nombre || "").trim();
+    if (nom && (!nombre || sent === "ida" || sent === "horario" || sent === "")) nombre = nom;
+  }
+  if (!rutas.length) { faltantes.push(id); continue; }
+  rutas.sort((a, b) => a._orden - b._orden);
+  const pal = PALETA[id] || ["#555555", "#aaaaaa"];
+  LINEAS_DATA.push({ id, nombre, color: pal[0], colorDark: pal[1], rutas });
+}
+const PARADAS_DATA = Array.isArray(window.PARADAS_DATA) ? window.PARADAS_DATA : [];
+
+if (!LINEAS_DATA.length) {
+  document.getElementById("mapa").innerHTML =
+    '<p style="padding:24px">No se pudieron cargar los datos remotos de líneas ' +
+    '(linea_*_data.js). Verificá la conexión o las URLs del repositorio.</p>';
+  return;
+}
+
+const CONT = document.getElementById("visor-transporte");
+
+/* ── Tema (claro por defecto) ─────────────────────────────────── */
+const TEMA_KEY = "transporte-tema";
+function temaActual() {
+  return CONT.getAttribute("data-theme") === "dark" ? "dark" : "light";
+}
+function aplicarTema(tema) {
+  if (tema === "dark") CONT.setAttribute("data-theme", "dark");
+  else CONT.removeAttribute("data-theme");
+  try { localStorage.setItem(TEMA_KEY, tema); } catch (e) { /* puede estar bloqueado */ }
+}
+(function initTema() {
+  let guardado = null;
+  try { guardado = localStorage.getItem(TEMA_KEY); } catch (e) { /* noop */ }
+  aplicarTema(guardado === "dark" ? "dark" : "light");
+})();
+
+/* ── Utilidades ───────────────────────────────────────────────── */
+function colorChipTexto(hex) {
+  const n = parseInt(hex.slice(1), 16);
+  const lin = (c) => { c /= 255; return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4); };
+  const L = 0.2126 * lin(n >> 16) + 0.7152 * lin((n >> 8) & 255) + 0.0722 * lin(n & 255);
+  return L > 0.36 ? "#0b0b0b" : "#ffffff";
+}
+function colorLinea(linea) { return temaActual() === "dark" ? linea.colorDark : linea.color; }
+/* Versión atenuada (mezclada con blanco) sólo para el ícono/chip del número
+   de línea — el color real de la línea en el mapa no cambia. */
+function atenuar(hex, t = 0.28) {
+  const n = parseInt(hex.slice(1), 16);
+  const mezcla = (c) => Math.round(c * (1 - t) + 255 * t);
+  const r = mezcla(n >> 16), g = mezcla((n >> 8) & 255), b = mezcla(n & 255);
+  return "#" + [r, g, b].map((v) => v.toString(16).padStart(2, "0")).join("");
+}
+function colorChip(linea) { return atenuar(colorLinea(linea)); }
+function fmtDist(m) { return m < 1000 ? `${Math.round(m)} m` : `${(m / 1000).toFixed(1)} km`; }
+function esc(s) { return String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
+
+let toastTimer = null;
+function toast(msg, ms = 4000) {
+  const el = document.getElementById("toast");
+  el.textContent = msg;
+  el.hidden = false;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { el.hidden = true; }, ms);
+}
+
+/* ── Mapa base ────────────────────────────────────────────────── */
+const ATTR = "Instituto Geográfico Nacional + OpenStreetMap. Google Satelital. Fuente: Dirección General de Transporte (recorridos). Relevamiento de paradas 2023. Procesamiento: Modernización e Investigación Territorial";
+const mapa = L.map("mapa", { zoomControl: false, attributionControl: true });
+mapa.attributionControl.setPrefix(false);
+L.control.zoom({ position: "bottomright" }).addTo(mapa);
+L.control.scale({ imperial: false, position: "bottomleft" }).addTo(mapa);
+
+const capaArgenmapClaro = L.tileLayer(
+  "https://wms.ign.gob.ar/geoserver/gwc/service/tms/1.0.0/capabaseargenmap@EPSG:3857@png/{z}/{x}/{-y}.png",
+  { maxZoom: 19, maxNativeZoom: 18, attribution: ATTR });
+const capaArgenmapOscuro = L.tileLayer(
+  "https://wms.ign.gob.ar/geoserver/gwc/service/tms/1.0.0/argenmap_oscuro@EPSG:3857@png/{z}/{x}/{-y}.png",
+  { maxZoom: 19, maxNativeZoom: 18, attribution: ATTR});
+const capaSatelite = L.tileLayer(
+  "https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}",
+  { maxZoom: 20, attribution: "Imágenes © Google | " + ATTR });
+
+let baseActiva = "mapa"; // 'mapa' (Argenmap) | 'satelite' (Google)
+function capaBase() {
+  if (baseActiva === "satelite") return capaSatelite;
+  return temaActual() === "dark" ? capaArgenmapOscuro : capaArgenmapClaro;
+}
+let capaBaseActual = capaBase().addTo(mapa);
+function actualizarBase() {
+  const nueva = capaBase();
+  if (nueva !== capaBaseActual) {
+    mapa.removeLayer(capaBaseActual);
+    capaBaseActual = nueva.addTo(mapa);
+  }
+}
+
+/* panes: casing < lineas < paradas < foco */
+mapa.createPane("casing").style.zIndex = 391;
+mapa.createPane("lineas").style.zIndex = 393;
+mapa.createPane("paradas").style.zIndex = 395;
+mapa.createPane("foco").style.zIndex = 397;
+const rendererParadas = L.canvas({ pane: "paradas", padding: 0.4 });
+
+/* ── Estado ───────────────────────────────────────────────────── */
+const estado = {
+  visibles: new Set(LINEAS_DATA.map((l) => l.id)),
+  enfocada: null,
+  rutasApagadas: new Set(),
+  paradasOn: true,
+  filtros: { refugio: "todas", cartel: "todas", poste: "todas" },
+};
+
+/* ── Capas de líneas ──────────────────────────────────────────── */
+const CASING = { light: "#ffffff", dark: "#0a0a0a" };
+const rutasPorLinea = new Map();
+const lineaPorId = new Map(LINEAS_DATA.map((l) => [l.id, l]));
+
+function tooltipLinea(linea, ruta) {
+  const cChip = colorChip(linea);
+  const fg = colorChipTexto(cChip);
+  return `<span class="tt-chip" style="background:${cChip};color:${fg}">${esc(linea.id)}</span>` +
+         `<strong>${esc(linea.nombre || "Línea " + linea.id)}</strong><br><span class="tt-sub">${esc(ruta.sentido)} · tocá para enfocar</span>`;
+}
+
+for (const linea of LINEAS_DATA) {
+  const items = [];
+  for (const ruta of linea.rutas) {
+    const latlngs = ruta.paths.length === 1 ? ruta.paths[0] : ruta.paths;
+    const casing = L.polyline(latlngs, {
+      pane: "casing", color: CASING[temaActual()], weight: 8, opacity: 0.85,
+      lineCap: "round", lineJoin: "round", interactive: false,
+    }).addTo(mapa);
+    const poly = L.polyline(latlngs, {
+      pane: "lineas", color: colorLinea(linea), weight: 3.4, opacity: 1,
+      lineCap: "round", lineJoin: "round",
+    }).addTo(mapa);
+    poly.bindTooltip(() => tooltipLinea(linea, ruta), { sticky: true, className: "tt-linea", opacity: 1 });
+    poly.on("mouseover", () => {
+      if (!estado.enfocada || estado.enfocada === linea.id) poly.setStyle({ weight: 6 });
+    });
+    poly.on("mouseout", () => reestilarLinea(linea.id));
+    poly.on("click", (e) => { L.DomEvent.stop(e); alternarFoco(linea.id); });
+    items.push({ ruta, casing, poly });
+  }
+  rutasPorLinea.set(linea.id, items);
+}
+
+function reestilarLinea(id) {
+  const linea = lineaPorId.get(id);
+  const items = rutasPorLinea.get(id);
+  const hayFoco = estado.enfocada !== null;
+  const esFoco = estado.enfocada === id;
+  for (const it of items) {
+    const rutaOn = estado.visibles.has(id) && !(esFoco && estado.rutasApagadas.has(it.ruta.id));
+    if (!rutaOn) {
+      mapa.removeLayer(it.poly);
+      mapa.removeLayer(it.casing);
+      continue;
+    }
+    if (!mapa.hasLayer(it.poly)) { it.casing.addTo(mapa); it.poly.addTo(mapa); }
+    it.casing.setStyle({ color: CASING[temaActual()] });
+    if (!hayFoco) {
+      it.poly.setStyle({ color: colorLinea(linea), weight: 3.4, opacity: 1 });
+      it.casing.setStyle({ opacity: 0.85, weight: 8 });
+    } else if (esFoco) {
+      it.poly.setStyle({ color: colorLinea(linea), weight: 5, opacity: 1 });
+      it.casing.setStyle({ opacity: 0.95, weight: 10 });
+      it.poly.bringToFront();
+    } else {
+      it.poly.setStyle({ color: colorLinea(linea), weight: 2.4, opacity: 0.14 });
+      it.casing.setStyle({ opacity: 0, weight: 6 });
+    }
+  }
+}
+function reestilarTodo() {
+  for (const l of LINEAS_DATA) reestilarLinea(l.id);
+}
+
+/* ── Animación de sentido (foco) ──────────────────────────────── */
+const anim = { overlays: [], dots: [], raf: null, t0: 0 };
+
+function limpiarAnimacion() {
+  if (anim.raf) cancelAnimationFrame(anim.raf);
+  anim.raf = null;
+  for (const o of anim.overlays) mapa.removeLayer(o);
+  for (const d of anim.dots) { mapa.removeLayer(d.dot); mapa.removeLayer(d.halo); }
+  anim.overlays = [];
+  anim.dots = [];
+}
+
+function armarAnimacion(id) {
+  limpiarAnimacion();
+  const linea = lineaPorId.get(id);
+  const items = rutasPorLinea.get(id).filter((it) => mapa.hasLayer(it.poly));
+  for (const it of items) {
+    const overlay = L.polyline(it.poly.getLatLngs(), {
+      pane: "foco", color: "#ffffff", weight: 2.4, opacity: 0.95,
+      dashArray: "3 15", className: "linea-flujo", interactive: false,
+      lineCap: "round",
+    }).addTo(mapa);
+    anim.overlays.push(overlay);
+
+    /* un punto viajero por cada path (evita saltos en rutas partidas) */
+    for (const path of it.ruta.paths) {
+      const pts = path.map(([la, ln]) => L.latLng(la, ln));
+      const acum = [0];
+      for (let i = 1; i < pts.length; i++) acum.push(acum[i - 1] + pts[i - 1].distanceTo(pts[i]));
+      const total = acum[acum.length - 1];
+      if (total < 50) continue;
+      const halo = L.circleMarker(pts[0], {
+        pane: "foco", radius: 11, color: colorLinea(linea), weight: 2.5,
+        fill: false, className: "dot-viajero-halo", interactive: false,
+      }).addTo(mapa);
+      const dot = L.circleMarker(pts[0], {
+        pane: "foco", radius: 5.5, color: "#ffffff", weight: 2,
+        fillColor: colorLinea(linea), fillOpacity: 1, interactive: false,
+      }).addTo(mapa);
+      const dur = Math.min(38000, Math.max(14000, total / 0.45));
+      anim.dots.push({ pts, acum, total, dur, dot, halo, idx: 1, offset: Math.random() * 0.35 });
+    }
+  }
+  if (anim.dots.length) {
+    anim.t0 = performance.now();
+    anim.raf = requestAnimationFrame(pasoAnimacion);
+  }
+}
+
+function pasoAnimacion(now) {
+  for (const d of anim.dots) {
+    const p = ((now - anim.t0) / d.dur + d.offset) % 1;
+    const objetivo = p * d.total;
+    if (d.acum[d.idx - 1] > objetivo) d.idx = 1;
+    while (d.idx < d.acum.length - 1 && d.acum[d.idx] < objetivo) d.idx++;
+    const a = d.acum[d.idx - 1], b = d.acum[d.idx];
+    const f = b > a ? (objetivo - a) / (b - a) : 0;
+    const p1 = d.pts[d.idx - 1], p2 = d.pts[d.idx];
+    const pos = L.latLng(p1.lat + (p2.lat - p1.lat) * f, p1.lng + (p2.lng - p1.lng) * f);
+    d.dot.setLatLng(pos);
+    d.halo.setLatLng(pos);
+  }
+  anim.raf = requestAnimationFrame(pasoAnimacion);
+}
+
+/* ── Foco de línea ────────────────────────────────────────────── */
+function alternarFoco(id) {
+  if (estado.enfocada === id) desenfocar();
+  else enfocar(id);
+}
+
+function enfocar(id) {
+  estado.enfocada = id;
+  estado.rutasApagadas.clear();
+  if (!estado.visibles.has(id)) estado.visibles.add(id);
+  reestilarTodo();
+  armarAnimacion(id);
+  actualizarPanelFoco();
+  const bounds = boundsDeLinea(id);
+  if (bounds) mapa.flyToBounds(bounds, { padding: [46, 46], duration: 0.7 });
+  if (window.matchMedia("(max-width: 640px)").matches) plegarCaja(true);
+}
+
+function desenfocar() {
+  estado.enfocada = null;
+  estado.rutasApagadas.clear();
+  limpiarAnimacion();
+  reestilarTodo();
+  actualizarPanelFoco();
+}
+
+function boundsDeLinea(id) {
+  let b = null;
+  for (const it of rutasPorLinea.get(id)) {
+    if (!mapa.hasLayer(it.poly)) continue;
+    b = b ? b.extend(it.poly.getBounds()) : L.latLngBounds(it.poly.getBounds().getSouthWest(), it.poly.getBounds().getNorthEast());
+  }
+  return b;
+}
+
+/* ── Solapa: lista de líneas ──────────────────────────────────── */
+const listaLineas = document.getElementById("lista-lineas");
+const filasPorId = new Map();
+
+const ICONO_OJO = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>';
+const FLECHAS = { ida: "→", vuelta: "←", circular: "↻", unico: "→" };
+
+for (const linea of LINEAS_DATA) {
+  const li = document.createElement("li");
+  li.className = "linea-row";
+  li.dataset.id = linea.id;
+  const cChip = atenuar(linea.color);
+  const fg = colorChipTexto(cChip);
+  const pills = linea.rutas.map((r) =>
+    `<button class="pill sentido activo" data-ruta="${esc(r.id)}" aria-pressed="true" title="${esc(linea.nombre || "Línea " + linea.id)}">` +
+    `${FLECHAS[r.tipo] || "→"} ${esc(r.sentido)}</button>`
+  ).join("");
+  li.innerHTML =
+    `<div class="linea-main">` +
+      `<span class="chip" style="--c:${cChip};--chip-fg:${fg}">${esc(linea.id)}</span>` +
+      `<span class="linea-nombre">${esc(linea.nombre)}</span>` +
+      `<button class="btn-ojo" title="Mostrar u ocultar línea ${esc(linea.id)}" aria-label="Mostrar u ocultar línea ${esc(linea.id)}">${ICONO_OJO}</button>` +
+    `</div>` +
+    `<div class="linea-detalle">${pills}</div>`;
+  listaLineas.appendChild(li);
+  filasPorId.set(linea.id, li);
+
+  li.querySelector(".linea-main").addEventListener("click", (e) => {
+    if (e.target.closest(".btn-ojo")) return;
+    alternarFoco(linea.id);
+  });
+  li.querySelector(".btn-ojo").addEventListener("click", () => {
+    const visible = estado.visibles.has(linea.id);
+    if (visible) {
+      estado.visibles.delete(linea.id);
+      if (estado.enfocada === linea.id) desenfocar();
+    } else {
+      estado.visibles.add(linea.id);
+    }
+    reestilarLinea(linea.id);
+    actualizarPanelFoco();
+  });
+  li.querySelectorAll(".pill.sentido").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const rid = btn.dataset.ruta;
+      if (estado.rutasApagadas.has(rid)) estado.rutasApagadas.delete(rid);
+      else {
+        const encendidas = linea.rutas.filter((r) => !estado.rutasApagadas.has(r.id));
+        if (encendidas.length <= 1) return;
+        estado.rutasApagadas.add(rid);
+      }
+      const activo = !estado.rutasApagadas.has(rid);
+      btn.classList.toggle("activo", activo);
+      btn.setAttribute("aria-pressed", String(activo));
+      reestilarLinea(linea.id);
+      if (estado.enfocada === linea.id) armarAnimacion(linea.id);
+    });
+  });
+}
+
+function actualizarPanelFoco() {
+  for (const [id, li] of filasPorId) {
+    li.classList.toggle("enfocada", estado.enfocada === id);
+    li.classList.toggle("oculta", !estado.visibles.has(id));
+    if (estado.enfocada !== id) {
+      li.querySelectorAll(".pill.sentido").forEach((b) => { b.classList.add("activo"); b.setAttribute("aria-pressed", "true"); });
+    }
+  }
+  /* la fila enfocada visible dentro del scroll de la caja */
+  if (estado.enfocada) {
+    const li = filasPorId.get(estado.enfocada);
+    if (li) li.scrollIntoView({ block: "nearest" });
+  }
+}
+
+document.getElementById("btn-todas").addEventListener("click", () => {
+  LINEAS_DATA.forEach((l) => estado.visibles.add(l.id));
+  reestilarTodo();
+  actualizarPanelFoco();
+});
+document.getElementById("btn-ninguna").addEventListener("click", () => {
+  estado.visibles.clear();
+  if (estado.enfocada) desenfocar();
+  reestilarTodo();
+  actualizarPanelFoco();
+});
+
+/* ── Caja: plegado ────────────────────────────────────────────── */
+const caja = document.getElementById("caja-capas");
+const cajaHead = document.getElementById("caja-head");
+function plegarCaja(plegar) {
+  caja.classList.toggle("plegada", plegar);
+  cajaHead.setAttribute("aria-expanded", String(!plegar));
+}
+cajaHead.addEventListener("click", () => plegarCaja(!caja.classList.contains("plegada")));
+cajaHead.addEventListener("keydown", (e) => {
+  if (e.key === "Enter" || e.key === " ") { e.preventDefault(); cajaHead.click(); }
+});
+/* en pantallas chicas arranca plegada */
+if (window.matchMedia("(max-width: 640px)").matches) plegarCaja(true);
+L.DomEvent.disableClickPropagation(caja);
+L.DomEvent.disableScrollPropagation(caja);
+
+/* ── Paradas ──────────────────────────────────────────────────── */
+const grupoParadas = L.layerGroup().addTo(mapa);
+const marcadoresParadas = new Map();
+const COLOR_PARADA = { light: "#3a3935", dark: "#e9e7df" };
+
+function radioParadas() {
+  const z = mapa.getZoom();
+  return z >= 16 ? 6.5 : z >= 14.5 ? 4.8 : z >= 13 ? 3.6 : 2.6;
+}
+
+function popupParada(p) {
+  const attr = (nombre, val) =>
+    `<span class="pop-attr ${val ? "si" : ""}">${val ? "✓" : "✗"} ${nombre}</span>`;
+  const esquina = p.esquina ? ` <span style="color:var(--muted)">esq.</span> ${esc(p.esquina)}` : "";
+  return `<p class="pop-titulo">Parada ${esc(p.id)}</p>` +
+         `<p class="pop-sub">${esc(p.calle || "Calle sin nombre")}${esquina}</p>` +
+         `<div class="pop-chips">${attr("Refugio", p.refugio)}${attr("Cartel", p.cartel)}${attr("Poste", p.poste)}</div>`;
+}
+
+for (const p of PARADAS_DATA) {
+  const m = L.circleMarker([p.lat, p.lng], {
+    renderer: rendererParadas, pane: "paradas",
+    radius: 3, weight: 1.1,
+    color: CASING[temaActual() === "dark" ? "dark" : "light"],
+    fillColor: COLOR_PARADA[temaActual()], fillOpacity: 0.92, opacity: 0.9,
+  });
+  m.bindPopup(() => popupParada(p), { closeButton: true });
+  m.bindTooltip(
+    () => `<strong>Parada ${esc(p.id)}</strong><br><span class="tt-sub">${esc(p.calle || "s/n")}${p.esquina ? " esq. " + esc(p.esquina) : ""}</span>`,
+    { className: "tt-parada", direction: "top", offset: [0, -4], opacity: 1 });
+  marcadoresParadas.set(p.id, m);
+}
+
+function pasaFiltros(p) {
+  for (const campo of ["refugio", "cartel", "poste"]) {
+    const f = estado.filtros[campo];
+    if (f === "si" && !p[campo]) return false;
+    if (f === "no" && p[campo]) return false;
+  }
+  return true;
+}
+
+function aplicarFiltrosParadas() {
+  grupoParadas.clearLayers();
+  let n = 0;
+  if (estado.paradasOn) {
+    const r = radioParadas();
+    for (const p of PARADAS_DATA) {
+      if (!pasaFiltros(p)) continue;
+      const m = marcadoresParadas.get(p.id);
+      m.setRadius(r);
+      grupoParadas.addLayer(m);
+      n++;
+    }
+  }
+  const cont = document.getElementById("conteo-paradas");
+  cont.innerHTML = estado.paradasOn
+    ? `Mostrando <strong>${n}</strong> de ${PARADAS_DATA.length} paradas`
+    : "Capa de paradas apagada";
+  document.getElementById("seccion-paradas").classList.toggle("apagada", !estado.paradasOn);
+}
+
+function reestilarParadas() {
+  const fill = COLOR_PARADA[temaActual()];
+  const ring = CASING[temaActual() === "dark" ? "dark" : "light"];
+  for (const m of marcadoresParadas.values()) m.setStyle({ fillColor: fill, color: ring });
+}
+
+mapa.on("zoomend", () => {
+  const r = radioParadas();
+  grupoParadas.eachLayer((m) => m.setRadius(r));
+});
+
+document.getElementById("chk-paradas").addEventListener("change", (e) => {
+  estado.paradasOn = e.target.checked;
+  aplicarFiltrosParadas();
+});
+
+CONT.querySelectorAll(".filtro-fila").forEach((fila) => {
+  const campo = fila.dataset.campo;
+  fila.querySelectorAll(".seg").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      estado.filtros[campo] = btn.dataset.val;
+      fila.querySelectorAll(".seg").forEach((b) => b.classList.toggle("activo", b === btn));
+      aplicarFiltrosParadas();
+    });
+  });
+});
+
+/* ── Mapa base: botón Argenmap / Satelital ────────────────────── */
+document.getElementById("btn-base-mapa").addEventListener("click", () => {
+  baseActiva = "mapa";
+  document.getElementById("btn-base-mapa").classList.add("activo");
+  document.getElementById("btn-base-sat").classList.remove("activo");
+  actualizarBase();
+});
+document.getElementById("btn-base-sat").addEventListener("click", () => {
+  baseActiva = "satelite";
+  document.getElementById("btn-base-sat").classList.add("activo");
+  document.getElementById("btn-base-mapa").classList.remove("activo");
+  actualizarBase();
+});
+
+/* ── Pantalla completa ────────────────────────────────────────── */
+document.getElementById("btn-fs").addEventListener("click", () => {
+  if (document.fullscreenElement) {
+    document.exitFullscreen();
+  } else if (CONT.requestFullscreen) {
+    CONT.requestFullscreen().catch(() =>
+      toast("El navegador bloqueó la pantalla completa. Si el visor está incrustado, el iframe necesita el atributo allowfullscreen."));
+  } else {
+    toast("Este navegador no soporta pantalla completa.");
+  }
+});
+document.addEventListener("fullscreenchange", () => {
+  setTimeout(() => mapa.invalidateSize(), 120);
+});
+
+/* ── Geolocalización ──────────────────────────────────────────── */
+function geoColor() { return temaActual() === "dark" ? "#3987e5" : "#2a78d6"; }
+let geoMarcadores = [];
+function limpiarGeo() {
+  geoMarcadores.forEach((m) => mapa.removeLayer(m));
+  geoMarcadores = [];
+  document.getElementById("tarjeta-cercanas").hidden = true;
+}
+
+function ubicarme() {
+  if (!("geolocation" in navigator)) {
+    toast("Este navegador no soporta geolocalización.");
+    return;
+  }
+  toast("Buscando tu ubicación…", 8000);
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      limpiarGeo();
+      document.getElementById("toast").hidden = true;
+      const { latitude: lat, longitude: lng, accuracy } = pos.coords;
+      const aqui = L.latLng(lat, lng);
+      const precision = L.circle(aqui, {
+        radius: Math.min(accuracy, 400), color: geoColor(),
+        weight: 1, opacity: 0.5, fillColor: geoColor(), fillOpacity: 0.12, interactive: false,
+      }).addTo(mapa);
+      const halo = L.circleMarker(aqui, {
+        radius: 13, color: geoColor(), weight: 2.5, fill: false,
+        className: "geo-halo", interactive: false,
+      }).addTo(mapa);
+      const punto = L.circleMarker(aqui, {
+        radius: 6.5, color: "#ffffff", weight: 2.5,
+        fillColor: geoColor(), fillOpacity: 1,
+      }).bindTooltip("Estás acá", { direction: "top", className: "tt-parada", offset: [0, -6] }).addTo(mapa);
+      geoMarcadores.push(precision, halo, punto);
+
+      const cercanas = PARADAS_DATA
+        .map((p) => ({ p, d: aqui.distanceTo([p.lat, p.lng]) }))
+        .sort((a, b) => a.d - b.d)
+        .slice(0, 5);
+      const ol = document.getElementById("lista-cercanas");
+      ol.innerHTML = "";
+      for (const { p, d } of cercanas) {
+        const anillo = L.circleMarker([p.lat, p.lng], {
+          radius: 9, color: geoColor(), weight: 2.5, fill: false, interactive: false,
+        }).addTo(mapa);
+        geoMarcadores.push(anillo);
+        const li = document.createElement("li");
+        const btn = document.createElement("button");
+        btn.innerHTML =
+          `<span class="cercana-nombre">Parada ${esc(p.id)} · ${esc(p.calle || "s/n")}${p.esquina ? " esq. " + esc(p.esquina) : ""}</span>` +
+          `<span class="cercana-dist">${fmtDist(d)}</span>`;
+        btn.addEventListener("click", () => {
+          mapa.flyTo([p.lat, p.lng], Math.max(mapa.getZoom(), 16), { duration: 0.6 });
+          const m = marcadoresParadas.get(p.id);
+          if (m && grupoParadas.hasLayer(m)) m.openPopup();
+          else L.popup({ closeButton: true }).setLatLng([p.lat, p.lng]).setContent(popupParada(p)).openOn(mapa);
+        });
+        li.appendChild(btn);
+        ol.appendChild(li);
+      }
+      document.getElementById("tarjeta-cercanas").hidden = !cercanas.length;
+      mapa.flyTo(aqui, Math.max(mapa.getZoom(), 15), { duration: 0.8 });
+    },
+    (err) => {
+      if (err.code === err.PERMISSION_DENIED) {
+        toast(location.protocol === "file:"
+          ? "El navegador bloquea la geolocalización al abrir el archivo directamente. Probá servirlo por http(s)."
+          : "Permiso de ubicación denegado.");
+      } else {
+        toast("No se pudo obtener tu ubicación.");
+      }
+    },
+    { enableHighAccuracy: true, timeout: 12000, maximumAge: 30000 }
+  );
+}
+document.getElementById("btn-cerrar-cercanas").addEventListener("click", limpiarGeo);
+
+/* ── Botones de acción sobre el mapa (ubicación / encuadre) ───── */
+const CtrlAcciones = L.Control.extend({
+  options: { position: "topleft" },
+  onAdd() {
+    const div = L.DomUtil.create("div", "ctrl-acciones");
+    div.innerHTML =
+      `<button id="btn-ubicarme" title="Mi ubicación y paradas cercanas" aria-label="Mi ubicación">` +
+        `<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3.2"/><circle cx="12" cy="12" r="8"/><path d="M12 1.5V4m0 16v2.5M1.5 12H4m16 0h2.5"/></svg>` +
+      `</button>` +
+      `<button id="btn-encuadre" title="Ver toda la red" aria-label="Ver toda la red">` +
+        `<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l2-7 4 14 2-7h6"/></svg>` +
+      `</button>`;
+    L.DomEvent.disableClickPropagation(div);
+    return div;
+  },
+});
+mapa.addControl(new CtrlAcciones());
+
+document.getElementById("btn-ubicarme").addEventListener("click", ubicarme);
+
+let boundsRed = null;
+for (const items of rutasPorLinea.values()) {
+  for (const it of items) {
+    const b = it.poly.getBounds();
+    boundsRed = boundsRed ? boundsRed.extend(b) : L.latLngBounds(b.getSouthWest(), b.getNorthEast());
+  }
+}
+document.getElementById("btn-encuadre").addEventListener("click", () => {
+  if (estado.enfocada) desenfocar();
+  mapa.flyToBounds(boundsRed, { padding: [30, 30], duration: 0.8 });
+});
+
+/* click en el mapa vacío: quitar foco */
+mapa.on("click", () => { if (estado.enfocada) desenfocar(); });
+
+/* ── Tema: botón ──────────────────────────────────────────────── */
+function reestilarChips() {
+  for (const [id, li] of filasPorId) {
+    const c = colorChip(lineaPorId.get(id));
+    const chip = li.querySelector(".chip");
+    chip.style.setProperty("--c", c);
+    chip.style.setProperty("--chip-fg", colorChipTexto(c));
+  }
+}
+document.getElementById("btn-tema").addEventListener("click", () => {
+  aplicarTema(temaActual() === "dark" ? "light" : "dark");
+  actualizarBase();
+  reestilarTodo();
+  reestilarParadas();
+  reestilarChips();
+  if (estado.enfocada) armarAnimacion(estado.enfocada);
+});
+reestilarChips();
+
+/* ── Stats + arranque ─────────────────────────────────────────── */
+(function initStats() {
+  const nRutas = LINEAS_DATA.reduce((acc, l) => acc + l.rutas.length, 0);
+  document.getElementById("stats-row").textContent =
+    `${LINEAS_DATA.length} líneas · ${PARADAS_DATA.length} paradas`;
+})();
+
+mapa.fitBounds(boundsRed, { padding: [24, 24] });
+aplicarFiltrosParadas();
+actualizarPanelFoco();
+if (faltantes.length) {
+  toast(`Atención: no se pudieron cargar ${faltantes.length} líneas (${faltantes.join(", ")}).`, 8000);
+}
+})();
+</script>
+<!-- ═══════════ FIN BLOQUE ═══════════ -->
+
+</body>
+</html>
