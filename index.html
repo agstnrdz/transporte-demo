@@ -525,8 +525,27 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
 }
 
 @media (max-width: 640px) {
-  .vt-header .logo { height: 34px; }
-  .vt-btn-header { width: 40px; height: 40px; }
+  /* Cabecera compacta: el logo es horizontal y achatado (~5.6:1), así que
+     a 50px de alto ocupa ~280px de ancho — en un celular eso aplasta el
+     título/subtítulo a una columna angosta y los hace wrappear en varias
+     líneas, inflando la cabecera a media pantalla. Se achica el logo, se
+     reduce el padding/gap, y el texto pasa a una sola línea con "…" en
+     vez de wrappear (min-width:0 es lo que permite que el texto se achique
+     dentro del flex en vez de forzar el ancho del renglón).
+     El botón "Ninguna" y demás con touch-action:manipulation ya definido
+     en la base siguen funcionando igual; esto es puramente visual. */
+  .vt-header { padding: 8px 12px; gap: 8px; }
+  .vt-header-texto { min-width: 0; }
+  .vt-header-texto h1 {
+    font-size: 14px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .vt-header-texto p {
+    font-size: 11px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .vt-header .logo { height: 24px; }
+  .vt-btn-header { width: 32px; height: 32px; }
   #caja-capas { width: min(272px, calc(100% - 24px)); font-size: 11px; }
   .btn-ojo, .btn-plegar { width: 30px; height: 30px; }
   .linea-main { padding: 7px 6px; }
