@@ -7,7 +7,9 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;550;600;650;700;750;800&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://wms.ign.gob.ar">
+<link rel="preconnect" href="https://mt1.google.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;550;600;650;700;750;800&display=swap" rel="stylesheet">
 <style>
 /* ═══ Visor de transporte público — tokens de tema (scoped al widget) ═══ */
 #visor-transporte {
@@ -107,7 +109,7 @@
 #visor-transporte:not([data-theme="dark"]) .icono-sol { display: none !important; }
 
 /* ══ Cuerpo: mapa a ancho completo ══ */
-.vt-cuerpo { position: relative; height: 800px; background: var(--mapa-fondo); }
+.vt-cuerpo { position: relative; height: 800px; background: var(--mapa-fondo); overscroll-behavior: contain; }
 #mapa { position: absolute; inset: 0; background: var(--mapa-fondo); z-index: 1; }
 
 /* ══ Caja de capas flotante (solapa de líneas y paradas) ══ */
@@ -521,11 +523,17 @@
 
 @media (max-width: 640px) {
   .vt-header .logo { height: 34px; }
+  .vt-btn-header { width: 40px; height: 40px; }
   #caja-capas { width: min(272px, calc(100% - 24px)); font-size: 11px; }
   .btn-ojo, .btn-plegar { width: 30px; height: 30px; }
   .linea-main { padding: 7px 6px; }
   .pill { padding: 5px 11px; }
   #tarjeta-cercanas { bottom: 30px; }
+  /* Alto del mapa ajustado al viewport real del celular (sin la barra de
+     direcciones), restando aprox. lo que ocupan cabecera + pie, para que
+     la app entre en una pantalla sin obligar a scrollear. dvh con fallback
+     a vh para navegadores que todavía no lo soportan. */
+  .vt-cuerpo { height: calc(100vh - 90px); height: calc(100dvh - 90px); min-height: 420px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
