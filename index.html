@@ -712,6 +712,12 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
 (function () {
 "use strict";
 
+/* Interruptor temporal (requerimiento externo): oculta y desactiva por
+   completo la capa de paradas (panel de capas + "paradas cercanas" del
+   botón de ubicación), sin borrar nada del código. Para reactivarlas
+   en otra instancia, alcanza con volver esto a "true". */
+const PARADAS_HABILITADAS = false;
+
 /* ══════════════════════════════════════════════════════════════════
    Armado de datos: lee los 23 window.LINEA_*_DATA (GeoJSON crudo)
    y los convierte al formato interno del visor. Cada archivo es una
@@ -942,7 +948,7 @@ const estado = {
   visibles: new Set(LINEAS_DATA.map((l) => l.id)),
   enfocada: null,
   rutasApagadas: new Set(),
-  paradasOn: true,
+  paradasOn: PARADAS_HABILITADAS,
   filtros: { refugio: "todas", cartel: "todas", poste: "todas" },
 };
 
@@ -1216,6 +1222,11 @@ L.DomEvent.disableClickPropagation(caja);
 L.DomEvent.disableScrollPropagation(caja);
 
 /* ── Paradas ──────────────────────────────────────────────────── */
+/* Apartado "Paradas" oculto del panel de capas mientras PARADAS_HABILITADAS
+   sea false (ver interruptor al inicio del script). */
+document.getElementById("seccion-paradas").style.display = PARADAS_HABILITADAS ? "" : "none";
+document.getElementById("chk-paradas").checked = PARADAS_HABILITADAS;
+
 const grupoParadas = L.layerGroup().addTo(mapa);
 const marcadoresParadas = new Map();
 const COLOR_PARADA = { light: "#3a3935", dark: "#e9e7df" };
@@ -1368,10 +1379,12 @@ function ubicarme() {
       }).bindTooltip("Estás acá", { direction: "top", className: "tt-parada", offset: [0, -6] }).addTo(mapa);
       geoMarcadores.push(precision, halo, punto);
 
-      const cercanas = PARADAS_DATA
-        .map((p) => ({ p, d: aqui.distanceTo([p.lat, p.lng]) }))
-        .sort((a, b) => a.d - b.d)
-        .slice(0, 5);
+      const cercanas = PARADAS_HABILITADAS
+        ? PARADAS_DATA
+            .map((p) => ({ p, d: aqui.distanceTo([p.lat, p.lng]) }))
+            .sort((a, b) => a.d - b.d)
+            .slice(0, 5)
+        : [];
       const ol = document.getElementById("lista-cercanas");
       ol.innerHTML = "";
       for (const { p, d } of cercanas) {
@@ -1416,7 +1429,7 @@ const CtrlAcciones = L.Control.extend({
   onAdd() {
     const div = L.DomUtil.create("div", "ctrl-acciones");
     div.innerHTML =
-      `<button id="btn-ubicarme" title="Mi ubicación y paradas cercanas" aria-label="Mi ubicación">` +
+      `<button id="btn-ubicarme" title="${PARADAS_HABILITADAS ? "Mi ubicación y paradas cercanas" : "Mi ubicación"}" aria-label="Mi ubicación">` +
         `<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3.2"/><circle cx="12" cy="12" r="8"/><path d="M12 1.5V4m0 16v2.5M1.5 12H4m16 0h2.5"/></svg>` +
       `</button>` +
       `<button id="btn-encuadre" title="Ver toda la red" aria-label="Ver toda la red">` +
