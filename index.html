@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Transporte público — Líneas y paradas | Comodoro Rivadavia</title>
+<title>Transporte público | Comodoro Rivadavia</title>
 <!-- Ícono de pestaña: escudo institucional recortado del logo, sobre el
      mismo azul de la cabecera (#134768) para que se vea nítido tanto en
      pestañas claras como oscuras del navegador. -->
@@ -244,8 +244,8 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
 .linea-row { border-radius: 10px; margin-bottom: 1px; transition: background 0.15s; }
 .linea-row:hover { background: var(--hover-wash); }
 .linea-row.enfocada { background: var(--hover-wash); box-shadow: inset 0 0 0 1.5px var(--ink-1); }
-.linea-row.oculta .chip { filter: grayscale(1); opacity: 0.35; }
-.linea-row.oculta .linea-nombre { color: var(--muted); }
+/* Ni el chip de color ni el nombre se atenúan cuando la línea está
+   apagada (arrancan y se mantienen "encendidos" visualmente). */
 
 .linea-main {
   display: flex;
@@ -282,11 +282,14 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   border-radius: 7px;
   color: var(--muted);
   opacity: 0.55;
-  transition: opacity 0.15s, background 0.15s;
+  transition: opacity 0.15s, background 0.15s, color 0.15s;
   flex-shrink: 0;
 }
 .linea-row:hover .btn-ojo, .btn-ojo:focus-visible { opacity: 1; }
 .btn-ojo:hover { background: var(--hover-wash); color: var(--ink-1); }
+/* Ojo "encendido": la línea está visible en el mapa (estado.visibles) */
+.linea-row:not(.oculta) .btn-ojo { opacity: 1; color: var(--activo-fg); background: var(--activo-bg); }
+.linea-row:not(.oculta) .btn-ojo:hover { background: var(--activo-bg); color: var(--activo-fg); opacity: 0.85; }
 
 .linea-detalle {
   display: none;
@@ -583,7 +586,7 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   <!-- Cabecera del visor: título + descripción + logo + tema + pantalla completa -->
   <div class="vt-header">
     <div class="vt-header-texto">
-      <h1><span class="marquee-text">Transporte público - Líneas y paradas</span></h1>
+      <h1><span class="marquee-text">Mapa interactivo de transporte</span></h1>
       <p><span class="marquee-text">Elegí qué líneas enfocar, ver sus recorridos y sentidos de circulación</span></p>
     </div>
     <img src="assets/img/logotipo.png"
@@ -604,7 +607,7 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
     <!-- Solapa de capas: mapa base + líneas + paradas -->
     <div id="caja-capas">
       <div class="caja-head" id="caja-head" role="button" aria-expanded="true" tabindex="0">
-        <h2>Capas</h2>
+        <h2>Recorridos</h2>
         <span class="stats" id="stats-row"></span>
         <span class="btn-plegar" aria-hidden="true">
           <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
@@ -746,16 +749,20 @@ const PALETA = {
 const SENTIDOS = {
   ida: ["Ida", "ida"], vuelta: ["Vuelta", "vuelta"],
   horario: ["Horario", "circular"], antihorario: ["Antihorario", "circular"],
+  sur: ["Sur", "circular"], norte: ["Norte", "circular"],
   "": ["Único", "unico"],
 };
-const ORDEN_SENT = { ida: 0, vuelta: 1, horario: 0, antihorario: 1, "": 0 };
+const ORDEN_SENT = { ida: 0, vuelta: 1, horario: 0, antihorario: 1, sur: 0, norte: 1, "": 0 };
 
 /* Correcciones manuales de sentido: la geometría de estos recorridos
    quedó digitalizada en contra del sentido real de circulación.
    Clave = id de línea; valor = sentido tal cual viene en el dato
    original (antes de cualquier corrección). */
 const CORRECCIONES_SENTIDO = {
-  "1": { ida: "vuelta", vuelta: "ida" }, // se intercambian las etiquetas ida/vuelta
+  "1":  { ida: "vuelta", vuelta: "ida" }, // se intercambian las etiquetas ida/vuelta
+  "4":  { ida: "vuelta", vuelta: "ida" },
+  "13": { ida: "vuelta", vuelta: "ida" },
+  "21": { ida: "vuelta", vuelta: "ida" },
 };
 const CORRECCIONES_INVERTIR = {
   "1": { ida: true },   // el tramo "ida" original (pasa a llamarse "vuelta") corre al revés
@@ -945,7 +952,7 @@ const rendererParadas = L.canvas({ pane: "paradas", padding: 0.4 });
 
 /* ── Estado ───────────────────────────────────────────────────── */
 const estado = {
-  visibles: new Set(LINEAS_DATA.map((l) => l.id)),
+  visibles: new Set(), // arranca con todas las líneas apagadas; el usuario elige cuáles prender
   enfocada: null,
   rutasApagadas: new Set(),
   paradasOn: PARADAS_HABILITADAS,
@@ -1480,11 +1487,13 @@ reestilarChips();
 /* ── Stats + arranque ─────────────────────────────────────────── */
 (function initStats() {
   const nRutas = LINEAS_DATA.reduce((acc, l) => acc + l.rutas.length, 0);
-  document.getElementById("stats-row").textContent =
-    `${LINEAS_DATA.length} líneas · ${PARADAS_DATA.length} paradas`;
+  document.getElementById("stats-row").textContent = PARADAS_HABILITADAS
+    ? `${LINEAS_DATA.length} líneas · ${PARADAS_DATA.length} paradas`
+    : `${LINEAS_DATA.length} líneas`;
 })();
 
 mapa.fitBounds(boundsRed, { padding: [24, 24] });
+reestilarTodo();
 aplicarFiltrosParadas();
 actualizarPanelFoco();
 if (faltantes.length) {
