@@ -744,6 +744,20 @@ const SENTIDOS = {
 };
 const ORDEN_SENT = { ida: 0, vuelta: 1, horario: 0, antihorario: 1, "": 0 };
 
+/* Correcciones manuales de sentido: la geometría de estos recorridos
+   quedó digitalizada en contra del sentido real de circulación.
+   Clave = id de línea; valor = sentido tal cual viene en el dato
+   original (antes de cualquier corrección). */
+const CORRECCIONES_SENTIDO = {
+  "1": { ida: "vuelta", vuelta: "ida" }, // se intercambian las etiquetas ida/vuelta
+};
+const CORRECCIONES_INVERTIR = {
+  "1": { ida: true },   // el tramo "ida" original (pasa a llamarse "vuelta") corre al revés
+  "5U": { "": true },   // sentido único, recorrido completo invertido
+  "7": { ida: true },
+  "17": { ida: true },
+};
+
 /* Cosido de tramos del MultiLineString: encadena fin→inicio por
    proximidad SIN invertir tramos (digitalizados en sentido de
    circulación). Si el hueco supera GAP_MAX m, corta en otro path. */
@@ -800,13 +814,18 @@ for (const id of IDS_LINEAS) {
     const p = ft.properties || {};
     const g = ft.geometry;
     if (!g) continue;
-    const sent = String(p.sentido || "").trim().toLowerCase();
+    const sentOriginal = String(p.sentido || "").trim().toLowerCase();
+    const relabel = (CORRECCIONES_SENTIDO[id] || {})[sentOriginal];
+    const sent = relabel != null ? relabel : sentOriginal;
     const def = SENTIDOS[sent] || [sent.charAt(0).toUpperCase() + sent.slice(1) || "Único", "ida"];
     const parts = (g.type === "MultiLineString" ? g.coordinates : [g.coordinates])
       .filter((t) => t && t.length >= 2);
     if (!parts.length) continue;
     /* GeoJSON [lng,lat(,z)] → Leaflet [lat,lng] */
-    const paths = coser(parts).map((path) => path.map((pt) => [pt[1], pt[0]]));
+    let paths = coser(parts).map((path) => path.map((pt) => [pt[1], pt[0]]));
+    if ((CORRECCIONES_INVERTIR[id] || {})[sentOriginal]) {
+      paths = paths.map((path) => path.slice().reverse());
+    }
     rutas.push({
       id: id + "-" + (sent || "unico"),
       sentido: def[0], tipo: def[1],
