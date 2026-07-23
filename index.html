@@ -85,7 +85,7 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
 }
 .vt-header-texto h1 { margin: 0; font-size: 17px; font-weight: 800; line-height: 1.2; }
 .vt-header-texto p  { margin: 2px 0 0; font-size: 15px; opacity: 0.9; }
-.vt-header .logo { height: 50px; width: auto; flex-shrink: 0; margin-left: auto; }
+.vt-header .logo { height: 55px; width: auto; flex-shrink: 0; margin-left: auto; margin-right: 10px }
 .vt-header .logo-link { margin-left: auto; flex-shrink: 0; display: inline-flex; }
 .vt-header .logo-link .logo { margin-left: 0; }
 .vt-btn-header {
@@ -933,7 +933,7 @@ function toast(msg, ms = 4000) {
 }
 
 /* ── Mapa base ────────────────────────────────────────────────── */
-const ATTR = "Instituto Geográfico Nacional + OpenStreetMap. Google Satelital. Fuente: Dirección General de Transporte (recorridos 2026). Relevamiento de paradas 2023. Procesamiento: Modernización e Investigación Territorial";
+const ATTR = "Instituto Geográfico Nacional + OpenStreetMap. Google Satelital. Fuente: Dirección General de Transporte (recorridos 2026). Procesamiento: Modernización e Investigación Territorial";
 const mapa = L.map("mapa", { zoomControl: false, attributionControl: true });
 mapa.attributionControl.setPrefix(false);
 L.control.zoom({ position: "bottomright" }).addTo(mapa);
