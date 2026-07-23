@@ -954,6 +954,7 @@ const rendererParadas = L.canvas({ pane: "paradas", padding: 0.4 });
 const estado = {
   visibles: new Set(), // arranca con todas las líneas apagadas; el usuario elige cuáles prender
   enfocada: null,
+  autoEncendida: null, // id de la línea que se prendió sola al enfocarla (no por el ojo); se apaga al desenfocar
   rutasApagadas: new Set(),
   paradasOn: PARADAS_HABILITADAS,
   filtros: { refugio: "todas", cartel: "todas", poste: "todas" },
@@ -1097,9 +1098,20 @@ function alternarFoco(id) {
 }
 
 function enfocar(id) {
+  /* si la línea enfocada anterior se había prendido sola (no por el ojo),
+     se apaga al cambiar el foco: sólo queda encendida una capa "de paso" a la vez */
+  if (estado.autoEncendida && estado.autoEncendida !== id) {
+    estado.visibles.delete(estado.autoEncendida);
+    estado.autoEncendida = null;
+  }
   estado.enfocada = id;
   estado.rutasApagadas.clear();
-  if (!estado.visibles.has(id)) estado.visibles.add(id);
+  if (!estado.visibles.has(id)) {
+    estado.visibles.add(id);
+    estado.autoEncendida = id;
+  } else {
+    estado.autoEncendida = null;
+  }
   reestilarTodo();
   armarAnimacion(id);
   actualizarPanelFoco();
@@ -1109,6 +1121,10 @@ function enfocar(id) {
 }
 
 function desenfocar() {
+  if (estado.autoEncendida) {
+    estado.visibles.delete(estado.autoEncendida);
+    estado.autoEncendida = null;
+  }
   estado.enfocada = null;
   estado.rutasApagadas.clear();
   limpiarAnimacion();
@@ -1167,18 +1183,26 @@ for (const linea of LINEAS_DATA) {
     reestilarLinea(linea.id);
     actualizarPanelFoco();
   });
-  li.querySelectorAll(".pill.sentido").forEach((btn) => {
+  const pillsSentido = li.querySelectorAll(".pill.sentido");
+  pillsSentido.forEach((btn) => {
     btn.addEventListener("click", () => {
       const rid = btn.dataset.ruta;
-      if (estado.rutasApagadas.has(rid)) estado.rutasApagadas.delete(rid);
-      else {
-        const encendidas = linea.rutas.filter((r) => !estado.rutasApagadas.has(r.id));
-        if (encendidas.length <= 1) return;
-        estado.rutasApagadas.add(rid);
+      const otras = linea.rutas.filter((r) => r.id !== rid);
+      const yaEnSolitario = otras.length > 0 && !estado.rutasApagadas.has(rid) &&
+        otras.every((r) => estado.rutasApagadas.has(r.id));
+      if (yaEnSolitario) {
+        /* ya estaba aislado este sentido: tocar de nuevo restaura todos */
+        otras.forEach((r) => estado.rutasApagadas.delete(r.id));
+      } else {
+        /* aislar este sentido: se apagan los demás y queda sólo el tocado */
+        estado.rutasApagadas.delete(rid);
+        otras.forEach((r) => estado.rutasApagadas.add(r.id));
       }
-      const activo = !estado.rutasApagadas.has(rid);
-      btn.classList.toggle("activo", activo);
-      btn.setAttribute("aria-pressed", String(activo));
+      pillsSentido.forEach((b) => {
+        const activo = !estado.rutasApagadas.has(b.dataset.ruta);
+        b.classList.toggle("activo", activo);
+        b.setAttribute("aria-pressed", String(activo));
+      });
       reestilarLinea(linea.id);
       if (estado.enfocada === linea.id) armarAnimacion(linea.id);
     });
@@ -1202,6 +1226,7 @@ function actualizarPanelFoco() {
 
 document.getElementById("btn-todas").addEventListener("click", () => {
   LINEAS_DATA.forEach((l) => estado.visibles.add(l.id));
+  estado.autoEncendida = null; // ya no son "de paso": quedan encendidas aunque cambie el foco
   reestilarTodo();
   actualizarPanelFoco();
 });
