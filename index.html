@@ -277,6 +277,7 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   color: var(--ink-1);
 }
 .btn-ojo {
+  position: relative !important;
   width: 28px; height: 28px;
   display: grid; place-items: center;
   border-radius: 7px;
@@ -284,6 +285,21 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   opacity: 0.55;
   transition: opacity 0.15s, background 0.15s, color 0.15s;
   flex-shrink: 0;
+}
+/* Centrado a prueba del CSS del sitio anfitrión (mismo motivo que el botón
+   de tema): el svg se posiciona por coordenadas propias en vez de confiar
+   en el centrado por grid, que un reset externo (WordPress/Elementor) rompe. */
+.btn-ojo svg {
+  position: absolute !important;
+  top: 50% !important;
+  left: 50% !important;
+  width: 15px !important;
+  height: 15px !important;
+  max-width: none !important;
+  max-height: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  transform: translate(-50%, -50%) !important;
 }
 .linea-row:hover .btn-ojo, .btn-ojo:focus-visible { opacity: 1; }
 .btn-ojo:hover { background: var(--hover-wash); color: var(--ink-1); }
