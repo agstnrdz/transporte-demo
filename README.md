@@ -36,7 +36,7 @@ Este visor permite consultar de forma interactiva las 23 líneas de colectivo ur
 
 - **Recorridos de líneas:** Dirección General de Transporte (2026).
 - **Paradas:** relevamiento propio (2023).
-- **Cartografía base:** Instituto Geográfico Nacional (Argenmap) y Google Satelital.
+- **Cartografía base:** Instituto Geográfico Nacional (Argenmap) y Google Satelital. El uso de Argenmap como mapa base no es solo una elección de diseño: la [Decisión Administrativa 797/2022](https://www.ign.gob.ar/content/se-estableci%C3%B3-argenmap-de-uso-obligatorio-en-los-sitios-web-del-sector-p%C3%BAblico-nacional) de la Jefatura de Gabinete de Ministros estableció su uso obligatorio en los sitios web institucionales de jurisdicciones, entidades y organismos del Sector Público Nacional que publiquen mapas de la República Argentina, en el marco de la Ley 22.963 (Ley de la Carta), que exige que toda representación cartográfica del territorio se ajuste a la cartografía oficial fijada por el IGN.
 
 ### Tecnología
 
@@ -44,7 +44,7 @@ Sitio estático construido con HTML, CSS y JavaScript, sin dependencias de build
 
 ### Licencia
 
-Distribuido bajo licencia MIT — ver [LICENSE](LICENSE).
+Distribuido bajo licencia MIT - ver [LICENSE](LICENSE).
 
 ---
 
