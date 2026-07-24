@@ -4,9 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Transporte público | Comodoro Rivadavia</title>
-<!-- Ícono de pestaña: escudo institucional recortado del logo, sobre el
-     mismo azul de la cabecera (#134768) para que se vea nítido tanto en
-     pestañas claras como oscuras del navegador. -->
+<!-- Ícono de pestaña: escudo institucional -->
 <link rel="icon" type="image/x-icon" href="assets/img/favicon.ico">
 <link rel="icon" type="image/png" sizes="16x16" href="assets/img/favicon-16.png">
 <link rel="icon" type="image/png" sizes="32x32" href="assets/img/favicon-32.png">
@@ -19,9 +17,9 @@
 <link rel="preconnect" href="https://mt1.google.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;550;600;650;700;750;800&display=swap" rel="stylesheet">
 <style>
-/* Reset de página: sin margen/franja blanca alrededor del visor, y el
-   fondo del documento sigue al tema (se sincroniza desde aplicarTema()
-   en el script) para que no quede un borde blanco/negro descalzado. */
+/* Reset de página sin franja blanca alrededor del visor, y el
+   fondo sigue al tema (se sincroniza desde aplicarTema()
+   en el script). */
 html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
 
 /* ═══ Visor de transporte público — tokens de tema (scoped al widget) ═══ */
@@ -63,15 +61,12 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   --geoloc:       #3987e5;
 }
 :where(#visor-transporte) * { box-sizing: border-box; }
-/* :where() anula el aporte de especificidad del ID: este reset scoped ya no
+/* :where() anula el aporte de especificidad del ID: este reset scoped no
    puede ganarle a reglas de un componente con dos clases (ej. .seg.activo,
-   .pill.activo), que antes perdían silenciosamente contra este selector. */
+   .pill.activo), que antes perdían contra este selector. */
 :where(#visor-transporte) button { font: inherit; color: inherit; background: none; border: none; cursor: pointer; touch-action: manipulation; }
 :where(#visor-transporte) button:focus-visible { outline: 2px solid var(--geoloc); outline-offset: 2px; }
 :where(#visor-transporte) a { color: inherit; }
-
-/* pantalla completa: ya no hace falta anular borde/radio (no existen más);
-   el cuerpo ya ocupa el espacio disponible por sí solo (ver .vt-cuerpo). */
 
 /* ══ Cabecera institucional ══ */
 .vt-header {
@@ -735,10 +730,9 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
 (function () {
 "use strict";
 
-/* Interruptor temporal (requerimiento externo): oculta y desactiva por
+/* Interruptor temporal: oculta y desactiva por
    completo la capa de paradas (panel de capas + "paradas cercanas" del
-   botón de ubicación), sin borrar nada del código. Para reactivarlas
-   en otra instancia, alcanza con volver esto a "true". */
+   botón de ubicación), sin borrar código. */
 const PARADAS_HABILITADAS = false;
 
 /* ══════════════════════════════════════════════════════════════════
@@ -790,6 +784,13 @@ const CORRECCIONES_INVERTIR = {
   "7": { ida: true },
   "17": { ida: true },
 };
+
+/* Líneas sin punto viajero: la geometría de origen tiene varios tramos
+   sueltos (loops cerrados dispersos) que el cosido no puede unir en un
+   solo trazo, y eso generaba un punto animado por cada tramo suelto.
+   Se apaga el punto acá hasta que se corrija el dato de origen; el trazo
+   de la línea y el efecto de flujo punteado siguen mostrándose igual. */
+const SIN_PUNTO_VIAJERO = new Set(["5U"]);
 
 /* Cosido de tramos del MultiLineString: encadena fin→inicio por
    proximidad SIN invertir tramos (digitalizados en sentido de
@@ -1062,6 +1063,7 @@ function armarAnimacion(id) {
   limpiarAnimacion();
   const linea = lineaPorId.get(id);
   const items = rutasPorLinea.get(id).filter((it) => mapa.hasLayer(it.poly));
+  const conPunto = !SIN_PUNTO_VIAJERO.has(id);
   for (const it of items) {
     const overlay = L.polyline(it.poly.getLatLngs(), {
       pane: "foco", color: "#ffffff", weight: 2.4, opacity: 0.95,
@@ -1069,6 +1071,8 @@ function armarAnimacion(id) {
       lineCap: "round",
     }).addTo(mapa);
     anim.overlays.push(overlay);
+
+    if (!conPunto) continue;
 
     /* un punto viajero por cada path (evita saltos en rutas partidas) */
     for (const path of it.ruta.paths) {
@@ -1085,7 +1089,7 @@ function armarAnimacion(id) {
         pane: "foco", radius: 5.5, color: "#ffffff", weight: 2,
         fillColor: colorLinea(linea), fillOpacity: 1, interactive: false,
       }).addTo(mapa);
-      const dur = Math.min(38000, Math.max(14000, total / 0.45));
+      const dur = Math.min(38000, Math.max(14000, total / 0.1));
       anim.dots.push({ pts, acum, total, dur, dot, halo, idx: 1, offset: Math.random() * 0.35 });
     }
   }
