@@ -39,6 +39,8 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   --geoloc:       #2a78d6;
   --ok:           #0ca30c;
   --marca:        #134768;
+  --aviso:        #c27018;
+  --tour-acento:  #d1293d;
   width: 100%;
   height: 100vh;
   height: 100dvh;
@@ -251,6 +253,8 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   transition: background 0.15s, color 0.15s;
 }
 .btn-mini:hover { background: color-mix(in srgb, var(--ink-1) 14%, var(--panel)); color: var(--ink-1); }
+.btn-limpiar.resaltado { background: color-mix(in srgb, var(--aviso) 24%, var(--panel)); color: var(--ink-1); }
+.btn-limpiar.resaltado:hover { background: color-mix(in srgb, var(--aviso) 36%, var(--panel)); }
 
 /* ── Buscador de línea sugerida (prototipo: origen/destino → línea) ── */
 .campo-viaje { margin-bottom: 8px; }
@@ -268,7 +272,7 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
 .autocompletar input { /* ── Texto de ejemplo en el input ── */
   width: 100%;
   font: inherit;
-  font-size: 13px;
+  font-size: 12px;
   padding: 9px 10px;
   border-radius: 9px;
   border: 1px solid var(--hair);
@@ -557,6 +561,28 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
 .ctrl-acciones button:last-child { border-bottom: none; }
 .ctrl-acciones button:hover { background: var(--hover-wash); color: var(--ink-1); }
 
+/* botón de ayuda / tutorial: aparte de ctrl-acciones (no dentro de la misma
+   caja) y en rojo, a propósito, para que se note que es otra cosa: la
+   entrada manual al tutorial guiado, disponible siempre. */
+.ctrl-ayuda { margin-top: 8px !important; }
+.ctrl-ayuda button {
+  width: 36px; height: 36px;
+  display: grid; place-items: center;
+  border-radius: 999px;
+  background: var(--tour-acento);
+  color: #fff;
+  font-size: 17px;
+  font-weight: 800;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.28);
+  transition: transform 0.15s;
+}
+.ctrl-ayuda button:hover { transform: scale(1.06); }
+.ctrl-ayuda button.vt-tour-pulso { animation: vt-tour-pulso 0.7s ease-in-out 3; }
+@keyframes vt-tour-pulso {
+  0%, 100% { box-shadow: 0 2px 10px rgba(0,0,0,0.28); }
+  50% { box-shadow: 0 2px 10px rgba(0,0,0,0.28), 0 0 0 8px color-mix(in srgb, var(--tour-acento) 35%, transparent); }
+}
+
 /* tooltips y popups */
 #visor-transporte .leaflet-tooltip.tt-linea, #visor-transporte .leaflet-tooltip.tt-parada {
   background: var(--panel);
@@ -719,6 +745,88 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
      en vez de deslizar, para no perder la lectura del contenido. */
   .vt-header-texto .marquee-text { animation: none; display: inline; padding-left: 0; }
   .vt-header-texto h1, .vt-header-texto p { text-overflow: ellipsis; }
+  .vt-tour-anillo { transition: none; }
+}
+
+/* ══ Tutorial guiado (primera visita) ══
+   No se intenta "levantar" el botón real por encima del velo con z-index:
+   varios de los controles reales viven dentro de contextos de apilamiento
+   propios (el mapa, los controles de Leaflet) y no pueden asomar por
+   encima de un hermano fuera de ese contexto. En cambio, el velo oscurece
+   todo por igual y un anillo decorativo (elemento aparte, no el botón
+   real) se dibuja encima marcando la posición — visualmente igual de claro
+   y sin pelearse con los z-index internos.
+   Los elementos (velo, anillo, modal, burbuja) se insertan como hijos de
+   #visor-transporte (variable CONT en el script), no de <body>: así heredan
+   la tipografía Inter y las variables de tema (--panel, --ink-1, etc.) del
+   visor. Esto no reintroduce el problema de apilamiento de arriba porque
+   #visor-transporte no tiene position/transform propios: sigue sin crear
+   su propio contexto de apilamiento, y position:fixed en sus hijos se
+   posiciona igual respecto de la ventana. */
+.vt-tour-block {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 10, 10, 0.5);
+  z-index: 9000;
+}
+.vt-tour-anillo {
+  position: fixed;
+  z-index: 9001;
+  border: 3px solid var(--tour-acento);
+  border-radius: 12px;
+  box-shadow: 0 0 0 3px rgba(255,255,255,0.85), 0 0 16px rgba(0,0,0,0.45);
+  pointer-events: none;
+  transition: top 0.2s ease, left 0.2s ease, width 0.2s ease, height 0.2s ease;
+}
+.vt-tour-modal, .vt-tour-burbuja {
+  position: fixed;
+  z-index: 9002;
+  background: var(--panel);
+  color: var(--ink-1);
+  border-radius: 16px;
+  box-shadow: var(--sombra);
+  padding: 20px;
+}
+.vt-tour-modal {
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(380px, calc(100vw - 32px));
+  text-align: center;
+}
+.vt-tour-modal h3 { margin: 0 0 12px; font-size: 22px; font-weight: 800; }
+.vt-tour-modal p { margin: 0 0 20px; font-size: 17.5px; line-height: 1.5; color: var(--ink-2); }
+.vt-tour-acciones { display: flex; flex-direction: column; gap: 10px; }
+.vt-tour-btn-si {
+  background: var(--tour-acento);
+  color: #fff;
+  padding: 14px;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 17px;
+}
+.vt-tour-btn-si:hover { opacity: 0.92; }
+.vt-tour-btn-luego { padding: 11px; font-size: 15.5px; color: var(--muted); font-weight: 600; }
+.vt-tour-btn-luego:hover { color: var(--ink-1); }
+
+.vt-tour-burbuja { width: min(340px, calc(100vw - 32px)); }
+.vt-tour-paso {
+  font-size: 13px;
+  font-weight: 750;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--tour-acento);
+  margin: 0 0 10px;
+}
+.vt-tour-burbuja p.vt-tour-texto { margin: 0 0 18px; font-size: 18px; line-height: 1.55; }
+.vt-tour-pie { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.vt-tour-saltear { font-size: 15px; color: var(--muted); font-weight: 600; padding: 9px 2px; }
+.vt-tour-saltear:hover { color: var(--ink-1); }
+.vt-tour-ok { background: var(--tour-acento); color: #fff; padding: 12px 22px; border-radius: 9px; font-weight: 700; font-size: 16px; }
+.vt-tour-ok:hover { opacity: 0.92; }
+
+@media (max-width: 640px) {
+  .vt-tour-modal, .vt-tour-burbuja { padding: 16px; }
 }
 </style>
 </head>
@@ -1873,6 +1981,17 @@ const sugerenciasOrigen = document.getElementById("sugerencias-origen");
 const sugerenciasDestino = document.getElementById("sugerencias-destino");
 const btnBuscarLinea = document.getElementById("btn-buscar-linea");
 const resultadoBuscador = document.getElementById("resultado-buscador");
+const btnLimpiarBuscador = document.getElementById("btn-limpiar-buscador");
+/* resalta "Limpiar" en naranja tenue mientras haya un resultado visible,
+   para que quede claro que ese botón sirve para reiniciar la búsqueda */
+function mostrarCajaResultado() {
+  resultadoBuscador.hidden = false;
+  btnLimpiarBuscador.classList.add("resaltado");
+}
+function ocultarCajaResultado() {
+  resultadoBuscador.hidden = true;
+  btnLimpiarBuscador.classList.remove("resaltado");
+}
 
 function actualizarBotonBuscar() {
   btnBuscarLinea.disabled = !(buscador.origen && buscador.destino);
@@ -1908,12 +2027,12 @@ function armarAutocompletarBuscador(campo, input, lista) {
     vigente = false;
     lista.hidden = true;
     marcarPuntoBuscador(campo, it.lat, it.lng, it.etiqueta);
-    resultadoBuscador.hidden = true;
+    ocultarCajaResultado();
     actualizarBotonBuscar();
   }
   input.addEventListener("input", () => {
     buscador[campo] = null;
-    resultadoBuscador.hidden = true;
+    ocultarCajaResultado();
     actualizarBotonBuscar();
     clearTimeout(georefTimer);
     georefToken++;
@@ -1979,7 +2098,7 @@ mapa.on("click", (e) => {
   buscador[campo] = { lat, lng, etiqueta };
   (campo === "origen" ? inputOrigen : inputDestino).value = etiqueta;
   marcarPuntoBuscador(campo, lat, lng, etiqueta);
-  resultadoBuscador.hidden = true;
+  ocultarCajaResultado();
   actualizarBotonBuscar();
 });
 
@@ -2008,7 +2127,7 @@ function mostrarResultadoBuscador(candidatas) {
         `<span class="resultado-caminata">${fmtDist(c.caminataOrigen)} + ${fmtDist(c.caminataDestino)}</span>` +
       `</button>`;
     }).join("");
-  resultadoBuscador.hidden = false;
+  mostrarCajaResultado();
 
   resultadoBuscador.querySelectorAll(".resultado-opcion").forEach((btn) => {
     btn.addEventListener("click", () => aplicarResultado(candidatasActuales[Number(btn.dataset.i)]));
@@ -2038,7 +2157,7 @@ function aplicarResultado(c) {
 
   const bOrigen = L.latLng(buscador.origen.lat, buscador.origen.lng);
   const bDestino = L.latLng(buscador.destino.lat, buscador.destino.lng);
-  mapa.flyToBounds(L.latLngBounds(bOrigen, bDestino), { padding: [70, 70], maxZoom: 16, duration: 0.8 });
+  mapa.flyToBounds(L.latLngBounds(bOrigen, bDestino), { padding: [70, 70], maxZoom: 14, duration: 0.8 });
 }
 
 btnBuscarLinea.addEventListener("click", () => {
@@ -2059,7 +2178,7 @@ document.getElementById("btn-limpiar-buscador").addEventListener("click", () => 
   document.getElementById("mapa").classList.remove("cursor-elegir");
   if (marcadorOrigenBuscador) { mapa.removeLayer(marcadorOrigenBuscador); marcadorOrigenBuscador = null; }
   if (marcadorDestinoBuscador) { mapa.removeLayer(marcadorDestinoBuscador); marcadorDestinoBuscador = null; }
-  resultadoBuscador.hidden = true;
+  ocultarCajaResultado();
   actualizarBotonBuscar();
 });
 
@@ -2097,6 +2216,24 @@ const CtrlAcciones = L.Control.extend({
   },
 });
 mapa.addControl(new CtrlAcciones());
+
+/* ── Botón de ayuda / tutorial: rojo, apilado debajo de ubicación y
+     encuadre (mismo mecanismo de L.Control, así Leaflet lo apila solo). ── */
+const CtrlAyuda = L.Control.extend({
+  options: { position: "topleft" },
+  onAdd() {
+    const div = L.DomUtil.create("div", "ctrl-ayuda");
+    div.innerHTML =
+      `<button id="btn-tutorial" title="Ver tutorial de uso" aria-label="Ver tutorial de uso">?</button>`;
+    L.DomEvent.disableClickPropagation(div);
+    return div;
+  },
+});
+mapa.addControl(new CtrlAyuda());
+document.getElementById("btn-tutorial").addEventListener("click", () => {
+  cerrarTour();
+  iniciarTour();
+});
 
 document.getElementById("btn-ubicarme").addEventListener("click", ubicarme);
 
@@ -2149,6 +2286,194 @@ actualizarPanelFoco();
 if (faltantes.length) {
   toast(`Atención: no se pudieron cargar ${faltantes.length} líneas (${faltantes.join(", ")}).`, 8000);
 }
+
+/* ══ Tutorial guiado ══════════════════════════════════════════════
+   Burbujas de ayuda para quien recién llega al visor (pensado para
+   público no necesariamente familiarizado con mapas web). Opt-in
+   explícito al entrar, avance manual paso a paso, siempre se puede
+   saltear o volver a verlo después desde el botón "?" rojo. Como el
+   sitio es estático (sin backend), el estado vive en localStorage. */
+const TOUR_COMPLETADO_KEY = "vt_tour_completado";
+const TOUR_OFRECIDAS_KEY = "vt_tour_ofrecidas";
+const TOUR_MAX_OFRECIDAS = 2; // se ofrece solo en las primeras 2 visitas; después, solo vía el botón "?"
+
+const pasosTour = [
+  {
+    target: () => document.getElementById("caja-head"),
+    antes: () => plegarCaja(false),
+    texto: "Tocá acá para ver el listado de las líneas de colectivo, con sus recorridos de ida y vuelta.",
+  },
+  {
+    target: () => document.querySelector("#lista-lineas .linea-main"),
+    texto: "Tocá una línea para ver su recorrido en el mapa. Volvé a tocarla para ocultarlo.",
+  },
+  {
+    target: () => document.querySelector("#lista-lineas .btn-ojo"),
+    texto: "Tocá los ojos para activar varias líneas en simultáneo.",
+  },
+  {
+    target: () => document.getElementById("buscador-head"),
+    antes: () => plegarBuscador(false),
+    texto: "¿No sabés qué línea tomar? Elegí desde dónde salís y hasta dónde vas, y te sugerimos la línea más conveniente.",
+  },
+  {
+    target: () => document.getElementById("btn-ubicarme"),
+    texto: "Tocá acá para ver dónde estás y las paradas de colectivo más cercanas.",
+  },
+  {
+    target: () => document.getElementById("btn-encuadre"),
+    texto: "Este botón centra el mapa para ver toda la red. Arriba a la derecha también podés cambiar a modo oscuro o a vista satelital.",
+    ultimo: true,
+  },
+];
+
+let pasoActual = -1;
+let elBlock = null, elAnillo = null, elBurbuja = null, elModalInicial = null, onResizeTour = null;
+
+function asegurarVelo() {
+  if (elBlock) return;
+  elBlock = document.createElement("div");
+  elBlock.className = "vt-tour-block";
+  CONT.appendChild(elBlock);
+}
+
+function actualizarAnillo(target) {
+  if (!elAnillo) {
+    elAnillo = document.createElement("div");
+    elAnillo.className = "vt-tour-anillo";
+    CONT.appendChild(elAnillo);
+  }
+  const r = target.getBoundingClientRect();
+  const pad = 6;
+  elAnillo.style.top = `${r.top - pad}px`;
+  elAnillo.style.left = `${r.left - pad}px`;
+  elAnillo.style.width = `${r.width + pad * 2}px`;
+  elAnillo.style.height = `${r.height + pad * 2}px`;
+}
+
+function posicionarBurbuja(rect) {
+  const margen = 14;
+  const vw = window.innerWidth, vh = window.innerHeight;
+  const bw = elBurbuja.offsetWidth, bh = elBurbuja.offsetHeight;
+  const espacioAbajo = vh - rect.bottom, espacioArriba = rect.top;
+  const top = (espacioAbajo >= bh + margen || espacioAbajo >= espacioArriba)
+    ? Math.min(rect.bottom + margen, vh - bh - margen)
+    : Math.max(margen, rect.top - bh - margen);
+  const left = Math.max(margen, Math.min(rect.left + rect.width / 2 - bw / 2, vw - bw - margen));
+  elBurbuja.style.top = `${Math.max(margen, top)}px`;
+  elBurbuja.style.left = `${left}px`;
+}
+
+function limpiarPaso() {
+  if (elBurbuja) { elBurbuja.remove(); elBurbuja = null; }
+}
+
+function cerrarTour() {
+  limpiarPaso();
+  if (elModalInicial) { elModalInicial.remove(); elModalInicial = null; }
+  if (elAnillo) { elAnillo.remove(); elAnillo = null; }
+  if (elBlock) { elBlock.remove(); elBlock = null; }
+  if (onResizeTour) { window.removeEventListener("resize", onResizeTour); onResizeTour = null; }
+  /* al salir del tutorial (completo o no) los paneles quedan cerrados,
+     igual que como los encuentra alguien que recién llega al sitio */
+  plegarCaja(true);
+  plegarBuscador(true);
+  pasoActual = -1;
+}
+
+function pulsarAyuda() {
+  const btn = document.getElementById("btn-tutorial");
+  if (!btn) return;
+  btn.classList.add("vt-tour-pulso");
+  setTimeout(() => btn.classList.remove("vt-tour-pulso"), 2200);
+}
+
+function finalizarTour() {
+  cerrarTour();
+  try { localStorage.setItem(TOUR_COMPLETADO_KEY, "1"); } catch (e) { /* puede estar bloqueado */ }
+  pulsarAyuda();
+}
+
+function mostrarPaso(i) {
+  limpiarPaso();
+  const paso = pasosTour[i];
+  if (paso.antes) paso.antes();
+  const target = paso.target();
+  if (!target) { pasoActual += 1; if (pasoActual < pasosTour.length) mostrarPaso(pasoActual); else finalizarTour(); return; }
+  if (typeof target.scrollIntoView === "function") target.scrollIntoView({ block: "nearest" });
+  requestAnimationFrame(() => {
+    actualizarAnillo(target);
+
+    elBurbuja = document.createElement("div");
+    elBurbuja.className = "vt-tour-burbuja";
+    elBurbuja.setAttribute("role", "dialog");
+    elBurbuja.setAttribute("aria-live", "polite");
+    elBurbuja.innerHTML =
+      `<p class="vt-tour-paso">Paso ${i + 1} de ${pasosTour.length}</p>` +
+      `<p class="vt-tour-texto">${paso.texto}</p>` +
+      `<div class="vt-tour-pie">` +
+        `<button class="vt-tour-saltear">Saltear tutorial</button>` +
+        `<button class="vt-tour-ok">${paso.ultimo ? "Entendido" : "Ok"}</button>` +
+      `</div>`;
+    CONT.appendChild(elBurbuja);
+    posicionarBurbuja(target.getBoundingClientRect());
+
+    elBurbuja.querySelector(".vt-tour-saltear").addEventListener("click", cerrarTour);
+    elBurbuja.querySelector(".vt-tour-ok").addEventListener("click", () => {
+      if (paso.ultimo) { finalizarTour(); return; }
+      pasoActual += 1;
+      mostrarPaso(pasoActual);
+    });
+  });
+}
+
+function iniciarTour() {
+  if (elModalInicial) { elModalInicial.remove(); elModalInicial = null; }
+  asegurarVelo();
+  onResizeTour = () => {
+    if (elAnillo && elBurbuja) {
+      const t = pasosTour[pasoActual] && pasosTour[pasoActual].target();
+      if (t) { actualizarAnillo(t); posicionarBurbuja(t.getBoundingClientRect()); }
+    }
+  };
+  window.addEventListener("resize", onResizeTour);
+  pasoActual = 0;
+  mostrarPaso(0);
+}
+
+function mostrarModalInicial() {
+  asegurarVelo();
+  elModalInicial = document.createElement("div");
+  elModalInicial.className = "vt-tour-modal";
+  elModalInicial.setAttribute("role", "dialog");
+  elModalInicial.setAttribute("aria-label", "Tutorial de uso del mapa");
+  elModalInicial.innerHTML =
+    `<h3>¿Querés aprender a <br>usar el mapa?</h3>` +
+    `<p>Te mostramos en unos pasos cómo ver los recorridos, buscar tu línea <br>y ubicarte en el mapa.</p>` +
+    `<div class="vt-tour-acciones">` +
+      `<button class="vt-tour-btn-si">Sí, mostrame</button>` +
+      `<button class="vt-tour-btn-luego">Más tarde</button>` +
+    `</div>`;
+  CONT.appendChild(elModalInicial);
+  elModalInicial.querySelector(".vt-tour-btn-si").addEventListener("click", iniciarTour);
+  elModalInicial.querySelector(".vt-tour-btn-luego").addEventListener("click", cerrarTour);
+}
+
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && elBlock) cerrarTour();
+});
+
+/* Oferta automática en las primeras visitas, si no se completó antes */
+(function ofrecerTourSiCorresponde() {
+  let completado = false, ofrecidas = 0;
+  try {
+    completado = localStorage.getItem(TOUR_COMPLETADO_KEY) === "1";
+    ofrecidas = parseInt(localStorage.getItem(TOUR_OFRECIDAS_KEY) || "0", 10);
+  } catch (e) { /* localStorage puede estar bloqueado */ }
+  if (completado || ofrecidas >= TOUR_MAX_OFRECIDAS) return;
+  try { localStorage.setItem(TOUR_OFRECIDAS_KEY, String(ofrecidas + 1)); } catch (e) { /* noop */ }
+  setTimeout(mostrarModalInicial, 500);
+})();
 })();
 </script>
 </body>
