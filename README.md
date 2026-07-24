@@ -28,6 +28,7 @@ Este visor permite consultar de forma interactiva las 23 líneas de colectivo ur
 - Recorridos de las 23 líneas, diferenciando ida y vuelta.
 - Paradas geolocalizadas, con filtros por refugio, cartel y poste.
 - Ubicación del usuario y listado de paradas más cercanas.
+- Buscador de línea sugerida por origen y destino (esquina relevada o punto marcado en el mapa), con hasta 3 opciones ordenadas por distancia a pie.
 - Mapa base Argenmap (IGN) o imagen satelital.
 - Modo claro / oscuro.
 - Diseño responsivo, optimizado para uso en dispositivos móviles.
@@ -36,7 +37,8 @@ Este visor permite consultar de forma interactiva las 23 líneas de colectivo ur
 
 - **Recorridos de líneas:** Dirección General de Transporte (2026).
 - **Paradas:** relevamiento propio (2023).
-- **Cartografía base:** Instituto Geográfico Nacional (Argenmap) y Google Satelital. 
+- **Cartografía base:** Instituto Geográfico Nacional (Argenmap) y Google Satelital.
+- **Nomenclador de calles (respaldo del buscador de línea):** API Georef, Jefatura de Gabinete de Ministros de la Nación ([datos.gob.ar](https://datos.gob.ar)).
 
 ### Uso de Argenmap
 
@@ -44,7 +46,7 @@ El uso de [Argenmap](https://ign-argentina.github.io/argenmap-web/) como mapa ba
 
 ### Tecnología
 
-Sitio estático construido con HTML, CSS y JavaScript, sin dependencias de build ni backend. El mapa se implementa con [Leaflet](https://leafletjs.com/). Publicado mediante GitHub Pages.
+Sitio estático construido con HTML, CSS y JavaScript, sin dependencias de build ni backend. El mapa se implementa con [Leaflet](https://leafletjs.com/). El buscador de línea complementa el listado propio de esquinas relevadas con consultas opcionales a la [API Georef](https://datosgobar.github.io/georef-ar-api/) para intersecciones no incluidas en el relevamiento; si el servicio no responde, el buscador sigue funcionando sólo con los datos propios.
 
 ### Licencia
 

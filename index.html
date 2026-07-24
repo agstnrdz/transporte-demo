@@ -125,12 +125,32 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
 .vt-cuerpo { position: relative; flex: 1 1 auto; min-height: 0; background: var(--mapa-fondo); overscroll-behavior: contain; }
 #mapa { position: absolute; inset: 0; background: var(--mapa-fondo); z-index: 1; }
 
-/* ══ Caja de capas flotante (solapa de líneas y paradas) ══ */
-#caja-capas {
+/* ══ Pila flotante arriba a la derecha: caja de capas + buscador de línea ══ */
+#pila-flotante {
   position: absolute;
   top: 12px;
-  right: 12px;
-  width: 272px;
+  right: 0px;
+  max-width: calc(100% - 48px);
+  /* "height" fija (no sólo max-height): el max-height en % de las cajas de
+     abajo necesita que ESTE contenedor tenga una altura definida para poder
+     resolverse — con sólo max-height acá, el % de las hijas no aplicaba y
+     la lista de líneas crecía sin límite ni scroll propio. */
+  height: calc(100% - 24px);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 1200;
+  pointer-events: none; /* el espacio vacío bajo las cajas no debe tapar el mapa */
+  overflow-y: auto; /* si las cajas abiertas superan el alto disponible, se
+     scrollea la pila entera para poder llegar a las de más abajo */
+  overflow-x: hidden;
+  scrollbar-width: thin;
+}
+#pila-flotante > .caja-flotante { pointer-events: auto; }
+/* Caja flotante genérica: mismo aspecto para la de capas y la del buscador,
+   cada una se pliega de forma independiente. */
+.caja-flotante {
+  width: 305px;
   max-width: calc(100% - 24px);
   max-height: calc(100% - 24px);
   display: flex;
@@ -140,8 +160,8 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   border: 1px solid var(--hair);
   border-radius: 12px;
   box-shadow: 0 6px 20px rgba(0,0,0,0.20), 0 1px 4px rgba(0,0,0,0.12);
-  z-index: 1200;
   overflow: hidden;
+  flex-shrink: 0;
 }
 .caja-head {
   display: flex;
@@ -174,13 +194,25 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   transition: transform 0.2s, background 0.15s;
 }
 .btn-plegar:hover { background: var(--hover-wash); color: var(--ink-1); }
-#caja-capas.plegada .btn-plegar { transform: rotate(-90deg); }
-#caja-capas.plegada .caja-body { display: none; }
-#caja-capas.plegada .caja-head { border-bottom: none; }
+.caja-flotante.plegada .btn-plegar { transform: rotate(-90deg); }
+.caja-flotante.plegada .caja-body { display: none; }
+.caja-flotante.plegada .caja-head { border-bottom: none; }
 
 .caja-body { overflow-y: auto; scrollbar-width: thin; padding: 4px 8px 10px; }
+/* El cuerpo del buscador es corto (dos campos + resultado): no necesita
+   scroll propio, y así el desplegable de sugerencias no queda recortado. */
+.caja-body-buscador { overflow: visible; }
+/* La caja del buscador en sí también recorta (overflow:hidden, heredado de
+   .caja-flotante, para los bordes redondeados) — eso cortaba el desplegable
+   de sugerencias contra el borde del panel. Acá se permite que sobresalga;
+   como todo el contenido interno comparte el mismo fondo que la caja, los
+   bordes redondeados no se notan afectados. */
+#caja-buscador { overflow: visible; }
 
-#seccion-paradas { margin-top: 6px; padding-top: 8px; border-top: 1px solid var(--hair); }
+/* La caja de Paradas no tiene botón de plegar propio: el switch de su
+   cabecera ES el control (prende/apaga la capa y expande/pliega la caja),
+   así que el resto de la cabecera no debería insinuar que es clickeable. */
+#caja-paradas .caja-head { cursor: default; }
 
 .seccion-head {
   display: flex;
@@ -193,7 +225,7 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   z-index: 5;
 }
 .seccion-head h3 {
-  /* Subtítulo "Líneas" / "Paradas": mismo tamaño, color y fondo más oscuros, sin contorno */
+  /* Subtítulo "Líneas" / "Paradas": mismo tamaño, color y fondo más oscuros */
   margin: 0;
   font-size: 10px;
   font-weight: 700;
@@ -204,11 +236,12 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   border-radius: 6px;
   background: color-mix(in srgb, var(--ink-1) 16%, var(--panel));
 }
-.ayuda { margin: 2px 2px 6px; font-size: 10.5px; line-height: 1.4; color: var(--muted); }
+/* ── Texto de ayuda en el buscador de líneas ── */
+.ayuda { margin: 2px 2px 6px; font-size: 13px; line-height: 1.4; color: var(--muted); }
 
 .mini-acciones { display: flex; gap: 6px; }
-.btn-mini {
-  font-size: 10px;
+.btn-mini { /* ── Botón de 'Limpiar' ── */
+  font-size: 12px;
   font-weight: 650;
   letter-spacing: 0.02em;
   padding: 4px 12px;
@@ -218,6 +251,99 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   transition: background 0.15s, color 0.15s;
 }
 .btn-mini:hover { background: color-mix(in srgb, var(--ink-1) 14%, var(--panel)); color: var(--ink-1); }
+
+/* ── Buscador de línea sugerida (prototipo: origen/destino → línea) ── */
+.campo-viaje { margin-bottom: 8px; }
+.campo-viaje-label { /* ── Botón 'DESDE' y 'HASTA' ── */
+  display: block;
+  font-size: 11px;
+  font-weight: 650;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0 2px 3px;
+}
+.campo-viaje-fila { display: flex; gap: 6px; align-items: stretch; }
+.autocompletar { position: relative; flex: 1; min-width: 0; }
+.autocompletar input { /* ── Texto de ejemplo en el input ── */
+  width: 100%;
+  font: inherit;
+  font-size: 13px;
+  padding: 9px 10px;
+  border-radius: 9px;
+  border: 1px solid var(--hair);
+  background: var(--panel);
+  color: var(--ink-1);
+}
+.autocompletar input:focus-visible { outline: 2px solid var(--geoloc); outline-offset: 1px; }
+.sugerencias {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  list-style: none;
+  margin: 0;
+  padding: 5px;
+  background: var(--panel);
+  border: 1px solid var(--hair);
+  border-radius: 10px;
+  box-shadow: var(--sombra);
+  max-height: 260px;
+  overflow-y: auto;
+  z-index: 20;
+}
+.sugerencias li { padding: 9px 11px; border-radius: 7px; font-size: 13px; cursor: pointer; }
+.sugerencias li:hover, .sugerencias li.resaltado { background: var(--hover-wash); }
+.sugerencia-fuente { display: block; font-size: 10.5px; color: var(--muted); font-weight: 500; margin-top: 2px; }
+.btn-elegir-mapa {
+  width: 34px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 9px;
+  border: 1px solid var(--hair);
+  color: var(--muted);
+}
+.btn-elegir-mapa:hover { background: var(--hover-wash); color: var(--ink-1); }
+.btn-elegir-mapa.activo { background: var(--activo-bg); color: var(--activo-fg); border-color: var(--activo-bg); }
+.btn-buscar-primario { /* ── botón de 'Buscar línea' ── */
+  display: block;
+  width: 100%;
+  margin-top: 4px;
+  padding: 8px 12px;
+  font-size: 12.5px;
+  font-weight: 650;
+  border-radius: 9px;
+  text-align: center;
+  background: var(--activo-bg);
+  color: var(--activo-fg);
+}
+.btn-buscar-primario:hover { opacity: 0.9; }
+.btn-buscar-primario:disabled { opacity: 0.35; pointer-events: none; }
+.btn-limpiar { display: block; margin: 6px auto 0; }
+#resultado-buscador { margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--hair); }
+.resultado-ayuda { margin: 0 2px 6px; font-size: 11px; color: var(--muted); }
+.resultado-opcion {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 7px 8px;
+  margin-bottom: 4px;
+  border-radius: 9px;
+  border: 1.5px solid var(--hair);
+  text-align: left;
+  transition: border-color 0.15s, background 0.15s;
+}
+.resultado-opcion:last-child { margin-bottom: 0; }
+.resultado-opcion:hover { background: var(--hover-wash); }
+.resultado-opcion.activa { border-color: var(--activo-bg); background: var(--hover-wash); }
+.resultado-texto { display: flex; flex-direction: column; line-height: 1.25; flex: 1; min-width: 0; }
+.resultado-texto strong { font-size: 12.5px; }
+.resultado-sentido { font-size: 10.5px; color: var(--ink-2); }
+.resultado-caminata { font-size: 10.5px; color: var(--ink-2); font-weight: 650; white-space: nowrap; }
+.resultado-vacio { margin: 4px 2px 0; font-size: 11.5px; color: var(--muted); line-height: 1.4; }
+#mapa.cursor-elegir { cursor: crosshair; }
 
 /* ── Mapa base (segmentado: Argenmap / Satelital Google) ── */
 .segmentado {
@@ -377,7 +503,6 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   border-radius: 8px;
 }
 #conteo-paradas strong { color: var(--ink-1); }
-#seccion-paradas.apagada #filtros-paradas { opacity: 0.35; pointer-events: none; }
 
 /* ══ Animaciones de mapa ══ */
 .linea-flujo { animation: vt-flujo 0.9s linear infinite; }
@@ -581,7 +706,7 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   /* Botón de pantalla completa: sólo se oculta en mobile (el de tema queda) */
   #btn-fs { display: none; }
   .vt-btn-header { width: 32px; height: 32px; }
-  #caja-capas { width: min(272px, calc(100% - 24px)); font-size: 11px; }
+  .caja-flotante { width: min(272px, calc(100% - 24px)); font-size: 11px; }
   .btn-ojo, .btn-plegar { width: 30px; height: 30px; }
   .linea-main { padding: 7px 6px; }
   .pill { padding: 5px 11px; }
@@ -624,70 +749,121 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   <div class="vt-cuerpo">
     <div id="mapa" role="application" aria-label="Mapa de líneas de colectivo"></div>
 
-    <!-- Solapa de capas: mapa base + líneas + paradas -->
-    <div id="caja-capas">
-      <div class="caja-head" id="caja-head" role="button" aria-expanded="true" tabindex="0">
-        <h2>Recorridos</h2>
-        <span class="stats" id="stats-row"></span>
-        <span class="btn-plegar" aria-hidden="true">
-          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
-        </span>
-      </div>
-      <div class="caja-body">
+    <!-- Pila flotante: caja de capas + buscador de línea, apiladas -->
+    <div id="pila-flotante">
 
-        <div class="segmentado base" role="group" aria-label="Mapa base">
-          <button class="seg activo" id="btn-base-mapa" title="Mapa base Argenmap (IGN)">Argenmap</button>
-          <button class="seg" id="btn-base-sat" title="Imagen satelital de Google">Satelital</button>
+      <!-- Solapa de capas: mapa base + líneas + paradas -->
+      <div id="caja-capas" class="caja-flotante plegada">
+        <div class="caja-head" id="caja-head" role="button" aria-expanded="false" tabindex="0">
+          <h2>Recorridos</h2>
+          <span class="stats" id="stats-row"></span>
+          <span class="btn-plegar" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+          </span>
         </div>
+        <div class="caja-body">
 
-        <section id="seccion-lineas">
-          <div class="seccion-head">
-            <h3>Líneas</h3>
-            <div class="mini-acciones">
-              <button id="btn-todas" class="btn-mini">Todas</button>
-              <button id="btn-ninguna" class="btn-mini">Ninguna</button>
-            </div>
+          <div class="segmentado base" role="group" aria-label="Mapa base">
+            <button class="seg activo" id="btn-base-mapa" title="Mapa base Argenmap (IGN)">Argenmap</button>
+            <button class="seg" id="btn-base-sat" title="Imagen satelital de Google">Satelital</button>
           </div>
-          <ul id="lista-lineas"></ul>
-        </section>
 
-        <section id="seccion-paradas">
-          <div class="seccion-head">
-            <h3>Paradas</h3>
-            <label class="switch" title="Mostrar u ocultar paradas">
-              <input type="checkbox" id="chk-paradas" checked>
-              <span class="switch-track" aria-hidden="true"></span>
-            </label>
-          </div>
-          <div id="filtros-paradas">
-            <div class="filtro-fila" data-campo="refugio">
-              <span class="filtro-nombre">Refugio</span>
-              <div class="segmentado" role="group" aria-label="Filtro refugio">
-                <button class="seg activo" data-val="todas">Todas</button>
-                <button class="seg" data-val="si">Sí</button>
-                <button class="seg" data-val="no">No</button>
+          <section id="seccion-lineas">
+            <div class="seccion-head">
+              <h3>Líneas</h3>
+              <div class="mini-acciones">
+                <button id="btn-todas" class="btn-mini">Todas</button>
+                <button id="btn-ninguna" class="btn-mini">Ninguna</button>
               </div>
             </div>
-            <div class="filtro-fila" data-campo="cartel">
-              <span class="filtro-nombre">Cartel</span>
-              <div class="segmentado" role="group" aria-label="Filtro cartel">
-                <button class="seg activo" data-val="todas">Todas</button>
-                <button class="seg" data-val="si">Sí</button>
-                <button class="seg" data-val="no">No</button>
-              </div>
-            </div>
-            <div class="filtro-fila" data-campo="poste">
-              <span class="filtro-nombre">Poste</span>
-              <div class="segmentado" role="group" aria-label="Filtro poste">
-                <button class="seg activo" data-val="todas">Todas</button>
-                <button class="seg" data-val="si">Sí</button>
-                <button class="seg" data-val="no">No</button>
-              </div>
-            </div>
-            <div id="conteo-paradas" aria-live="polite"></div>
-          </div>
-        </section>
+            <ul id="lista-lineas"></ul>
+          </section>
+        </div>
       </div>
+
+      <!-- Paradas: filtros por refugio/cartel/poste. El switch prende/apaga
+           la capa en el mapa y a la vez expande/pliega esta caja. -->
+      <div id="caja-paradas" class="caja-flotante plegada">
+        <div class="caja-head">
+          <h2>Paradas</h2>
+          <label class="switch" title="Mostrar u ocultar paradas">
+            <input type="checkbox" id="chk-paradas">
+            <span class="switch-track" aria-hidden="true"></span>
+          </label>
+        </div>
+        <div class="caja-body">
+          <div class="filtro-fila" data-campo="refugio">
+            <span class="filtro-nombre">Refugio</span>
+            <div class="segmentado" role="group" aria-label="Filtro refugio">
+              <button class="seg activo" data-val="todas">Todas</button>
+              <button class="seg" data-val="si">Sí</button>
+              <button class="seg" data-val="no">No</button>
+            </div>
+          </div>
+          <div class="filtro-fila" data-campo="cartel">
+            <span class="filtro-nombre">Cartel</span>
+            <div class="segmentado" role="group" aria-label="Filtro cartel">
+              <button class="seg activo" data-val="todas">Todas</button>
+              <button class="seg" data-val="si">Sí</button>
+              <button class="seg" data-val="no">No</button>
+            </div>
+          </div>
+          <div class="filtro-fila" data-campo="poste">
+            <span class="filtro-nombre">Poste</span>
+            <div class="segmentado" role="group" aria-label="Filtro poste">
+              <button class="seg activo" data-val="todas">Todas</button>
+              <button class="seg" data-val="si">Sí</button>
+              <button class="seg" data-val="no">No</button>
+            </div>
+          </div>
+          <div id="conteo-paradas" aria-live="polite"></div>
+        </div>
+      </div>
+
+      <!-- Buscador de línea sugerida (prototipo): origen/destino → mejor línea -->
+      <div id="caja-buscador" class="caja-flotante plegada">
+        <div class="caja-head" id="buscador-head" role="button" aria-expanded="false" tabindex="0">
+          <h2>Buscar línea</h2>
+          <span class="btn-plegar" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+          </span>
+        </div>
+        <div class="caja-body caja-body-buscador">
+          <p class="ayuda">Elegí una intersección o marcá el punto en el mapa para el origen y el destino del viaje.</p>
+
+          <div class="campo-viaje">
+            <label class="campo-viaje-label" for="input-origen">Desde</label>
+            <div class="campo-viaje-fila">
+              <div class="autocompletar">
+                <input type="text" id="input-origen" placeholder="Ej: Jornada y Crónica" autocomplete="off">
+                <ul class="sugerencias" id="sugerencias-origen" hidden></ul>
+              </div>
+              <button class="btn-elegir-mapa" data-campo="origen" title="Marcar origen en el mapa" aria-label="Marcar origen en el mapa">
+                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.4"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="campo-viaje">
+            <label class="campo-viaje-label" for="input-destino">Hasta</label>
+            <div class="campo-viaje-fila">
+              <div class="autocompletar">
+                <input type="text" id="input-destino" placeholder="Ej: San Martín y Belgrano" autocomplete="off">
+                <ul class="sugerencias" id="sugerencias-destino" hidden></ul>
+              </div>
+              <button class="btn-elegir-mapa" data-campo="destino" title="Marcar destino en el mapa" aria-label="Marcar destino en el mapa">
+                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.4"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <button id="btn-buscar-linea" class="btn-buscar-primario" disabled>Buscar línea</button>
+          <button id="btn-limpiar-buscador" class="btn-mini btn-limpiar">Limpiar</button>
+
+          <div id="resultado-buscador" hidden></div>
+        </div>
+      </div>
+
     </div>
 
     <!-- tarjeta de paradas cercanas -->
@@ -739,7 +915,12 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
    completo la capa de paradas (panel de capas + "paradas cercanas" del
    botón de ubicación), sin borrar nada del código. Para reactivarlas
    en otra instancia, alcanza con volver esto a "true". */
-const PARADAS_HABILITADAS = false;
+const PARADAS_HABILITADAS = true;
+
+/* Interruptor del panel "Buscar línea" (origen/destino → línea sugerida):
+   oculta por completo la caja flotante, sin borrar nada del código. Volver
+   a "true" para reactivarla. */
+const BUSCADOR_LINEA_HABILITADO = true;
 
 /* ══════════════════════════════════════════════════════════════════
    Armado de datos: lee los 23 window.LINEA_*_DATA (GeoJSON crudo)
@@ -875,6 +1056,44 @@ for (const id of IDS_LINEAS) {
 }
 const PARADAS_DATA = Array.isArray(window.PARADAS_DATA) ? window.PARADAS_DATA : [];
 
+/* ── Índice de esquinas (para el autocompletar del buscador de línea) ───
+   Se arma a partir de las paradas relevadas, agrupando por "calle + esquina"
+   (varias paradas pueden compartir la misma esquina, una por mano). No
+   depende de que la capa de Paradas esté habilitada ni visible: el dato
+   se usa igual puertas adentro, aunque PARADAS_HABILITADAS sea false. */
+function normalizarTxt(s) {
+  return String(s || "").trim().toLowerCase()
+    .normalize("NFD").replace(/[̀-ͯ]/g, ""); // sin acentos, para filtrar sin importar tildes
+}
+/* placeholders del relevamiento para "no identificada" (no son nombres reales) */
+function esPlaceholder(s) {
+  const n = normalizarTxt(s);
+  return !n || n === "-" || n === "calle sin nombre";
+}
+const ESQUINAS_DATA = (() => {
+  const grupos = new Map();
+  for (const p of PARADAS_DATA) {
+    const calle = String(p.calle || "").trim();
+    const esquina = String(p.esquina || "").trim();
+    const calleValida = calle && !esPlaceholder(calle);
+    const esquinaValida = esquina && !esPlaceholder(esquina);
+    if (!calleValida && !esquinaValida) continue; // no hay nada útil relevado en esta parada
+    const etiqueta = calleValida ? (esquinaValida ? `${calle} y ${esquina}` : calle) : esquina;
+    const clave = normalizarTxt(etiqueta);
+    if (!grupos.has(clave)) {
+      grupos.set(clave, { etiqueta, lat: p.lat, lng: p.lng, n: 1 });
+    } else {
+      /* promedio de coordenadas de las paradas que comparten esquina, para
+         centrar el punto sugerido entre ambas manos */
+      const g = grupos.get(clave);
+      g.lat = (g.lat * g.n + p.lat) / (g.n + 1);
+      g.lng = (g.lng * g.n + p.lng) / (g.n + 1);
+      g.n++;
+    }
+  }
+  return [...grupos.values()].sort((a, b) => a.etiqueta.localeCompare(b.etiqueta, "es"));
+})();
+
 if (!LINEAS_DATA.length) {
   document.getElementById("mapa").innerHTML =
     '<p style="padding:24px">No se pudieron cargar los datos remotos de líneas ' +
@@ -976,7 +1195,7 @@ const estado = {
   enfocada: null,
   autoEncendida: null, // id de la línea que se prendió sola al enfocarla (no por el ojo); se apaga al desenfocar
   rutasApagadas: new Set(),
-  paradasOn: PARADAS_HABILITADAS,
+  paradasOn: false, // arranca apagado; PARADAS_HABILITADAS sólo controla si la caja existe
   filtros: { refugio: "todas", cartel: "todas", poste: "todas" },
 };
 
@@ -1070,23 +1289,35 @@ function armarAnimacion(id) {
     }).addTo(mapa);
     anim.overlays.push(overlay);
 
-    /* un punto viajero por cada path (evita saltos en rutas partidas) */
+    /* Un solo punto viajero por ruta, sobre su tramo continuo más largo.
+       Algunos recorridos vienen digitalizados en varios fragmentos separados
+       por huecos grandes (ver coser() / GAP_MAX) — la línea 5U es el caso
+       más extremo, con 8 fragmentos sueltos. Animar un punto por fragmento
+       hacía que esas líneas mostraran varios puntos a la vez, en vez de los
+       2 (ida/vuelta) esperados. El trazado punteado de fondo (arriba) sigue
+       dibujándose sobre todos los tramos; sólo el punto que se mueve queda
+       acotado al tramo más largo, que es el más representativo del recorrido. */
+    let mejorPts = null, mejorAcum = null, mejorTotal = -1;
     for (const path of it.ruta.paths) {
       const pts = path.map(([la, ln]) => L.latLng(la, ln));
       const acum = [0];
       for (let i = 1; i < pts.length; i++) acum.push(acum[i - 1] + pts[i - 1].distanceTo(pts[i]));
       const total = acum[acum.length - 1];
-      if (total < 50) continue;
-      const halo = L.circleMarker(pts[0], {
+      if (total > mejorTotal) { mejorTotal = total; mejorPts = pts; mejorAcum = acum; }
+    }
+    if (mejorPts && mejorTotal >= 50) {
+      const halo = L.circleMarker(mejorPts[0], {
         pane: "foco", radius: 11, color: colorLinea(linea), weight: 2.5,
         fill: false, className: "dot-viajero-halo", interactive: false,
       }).addTo(mapa);
-      const dot = L.circleMarker(pts[0], {
+      const dot = L.circleMarker(mejorPts[0], {
         pane: "foco", radius: 5.5, color: "#ffffff", weight: 2,
         fillColor: colorLinea(linea), fillOpacity: 1, interactive: false,
       }).addTo(mapa);
-      const dur = Math.min(38000, Math.max(14000, total / 0.45));
-      anim.dots.push({ pts, acum, total, dur, dot, halo, idx: 1, offset: Math.random() * 0.35 });
+      /* velocidad del recorrido animado: duración proporcional al largo del
+         tramo, entre 26 y 70 segundos (más lenta todavía que el ajuste anterior). */
+      const dur = Math.min(70000, Math.max(26000, mejorTotal / 0.24));
+      anim.dots.push({ pts: mejorPts, acum: mejorAcum, total: mejorTotal, dur, dot, halo, idx: 1, offset: Math.random() * 0.35 });
     }
   }
   if (anim.dots.length) {
@@ -1272,16 +1503,21 @@ cajaHead.addEventListener("click", () => plegarCaja(!caja.classList.contains("pl
 cajaHead.addEventListener("keydown", (e) => {
   if (e.key === "Enter" || e.key === " ") { e.preventDefault(); cajaHead.click(); }
 });
-/* en pantallas chicas arranca plegada */
-if (window.matchMedia("(max-width: 640px)").matches) plegarCaja(true);
 L.DomEvent.disableClickPropagation(caja);
 L.DomEvent.disableScrollPropagation(caja);
 
 /* ── Paradas ──────────────────────────────────────────────────── */
-/* Apartado "Paradas" oculto del panel de capas mientras PARADAS_HABILITADAS
-   sea false (ver interruptor al inicio del script). */
-document.getElementById("seccion-paradas").style.display = PARADAS_HABILITADAS ? "" : "none";
-document.getElementById("chk-paradas").checked = PARADAS_HABILITADAS;
+/* Caja "Paradas" oculta por completo mientras PARADAS_HABILITADAS sea false
+   (ver interruptor al inicio del script) — mismo criterio que "Buscar línea". */
+const cajaParadas = document.getElementById("caja-paradas");
+const chkParadas = document.getElementById("chk-paradas");
+cajaParadas.style.display = PARADAS_HABILITADAS ? "" : "none";
+/* el interruptor arranca apagado y la caja plegada aunque el panel esté
+   habilitado — el usuario lo prende manualmente si quiere ver paradas */
+chkParadas.checked = false;
+cajaParadas.classList.toggle("plegada", true);
+L.DomEvent.disableClickPropagation(cajaParadas);
+L.DomEvent.disableScrollPropagation(cajaParadas);
 
 const grupoParadas = L.layerGroup().addTo(mapa);
 const marcadoresParadas = new Map();
@@ -1341,7 +1577,6 @@ function aplicarFiltrosParadas() {
   cont.innerHTML = estado.paradasOn
     ? `Mostrando <strong>${n}</strong> de ${PARADAS_DATA.length} paradas`
     : "Capa de paradas apagada";
-  document.getElementById("seccion-paradas").classList.toggle("apagada", !estado.paradasOn);
 }
 
 function reestilarParadas() {
@@ -1355,8 +1590,9 @@ mapa.on("zoomend", () => {
   grupoParadas.eachLayer((m) => m.setRadius(r));
 });
 
-document.getElementById("chk-paradas").addEventListener("change", (e) => {
+chkParadas.addEventListener("change", (e) => {
   estado.paradasOn = e.target.checked;
+  cajaParadas.classList.toggle("plegada", !e.target.checked);
   aplicarFiltrosParadas();
 });
 
@@ -1478,6 +1714,371 @@ function ubicarme() {
   );
 }
 document.getElementById("btn-cerrar-cercanas").addEventListener("click", limpiarGeo);
+
+/* ── Buscador de línea sugerida (prototipo) ───────────────────────────
+   Origen + destino (por esquina relevada o tocando el mapa) → mejor línea.
+   Como las paradas no tienen un campo que las vincule a una línea, la
+   sugerencia se calcula geométricamente: para cada línea/sentido, se busca
+   el punto más cercano del trazado a cada extremo, y se exige que el
+   destino quede "más adelante" que el origen sobre esa ruta (mismo tramo
+   continuo, en el sentido de circulación). Es un cálculo aproximado —no
+   contempla combinaciones de líneas ni horarios— pensado como prototipo. */
+const CAMINATA_MAX = 900;   // metros — más allá de esto no sugerimos caminar (antes 550: en zonas con menos cobertura de líneas no encontraba ninguna)
+const RECORRIDO_MIN = 250;  // metros — evita sugerencias donde origen y destino casi se superponen sobre la ruta
+
+/* Punto más cercano de una ruta a un punto dado, junto con su posición
+   acumulada (arc-length) dentro del mismo "path" continuo de esa ruta —
+   necesaria para comparar si el destino queda más adelante que el origen. */
+function puntoMasCercanoEnRuta(punto, ruta) {
+  let mejor = null;
+  ruta.paths.forEach((path, pathIdx) => {
+    if (path.length < 2) return;
+    const pts = path.map(([la, ln]) => L.latLng(la, ln));
+    let acum = 0;
+    for (let i = 1; i < pts.length; i++) {
+      const a = pts[i - 1], b = pts[i];
+      const segLen = a.distanceTo(b);
+      const dx = b.lng - a.lng, dy = b.lat - a.lat;
+      const len2 = dx * dx + dy * dy;
+      let t = len2 > 0 ? ((punto.lng - a.lng) * dx + (punto.lat - a.lat) * dy) / len2 : 0;
+      t = Math.max(0, Math.min(1, t));
+      const proy = L.latLng(a.lat + t * (b.lat - a.lat), a.lng + t * (b.lng - a.lng));
+      const d = punto.distanceTo(proy);
+      if (!mejor || d < mejor.dist) mejor = { pathIdx, pos: acum + segLen * t, dist: d };
+      acum += segLen;
+    }
+  });
+  return mejor;
+}
+
+function buscarLineaSugerida(origen, destino) {
+  const pOrigen = L.latLng(origen.lat, origen.lng);
+  const pDestino = L.latLng(destino.lat, destino.lng);
+  const candidatas = [];
+  for (const linea of LINEAS_DATA) {
+    for (const ruta of linea.rutas) {
+      const cOrigen = puntoMasCercanoEnRuta(pOrigen, ruta);
+      const cDestino = puntoMasCercanoEnRuta(pDestino, ruta);
+      if (!cOrigen || !cDestino) continue;
+      if (cOrigen.pathIdx !== cDestino.pathIdx) continue; // no se puede establecer el orden con confianza
+      if (cOrigen.dist > CAMINATA_MAX || cDestino.dist > CAMINATA_MAX) continue;
+      if (cDestino.pos - cOrigen.pos < RECORRIDO_MIN) continue; // no avanza en el sentido correcto (o el tramo es insignificante)
+      candidatas.push({
+        linea, ruta,
+        caminataOrigen: cOrigen.dist, caminataDestino: cDestino.dist,
+        caminataTotal: cOrigen.dist + cDestino.dist,
+      });
+    }
+  }
+  candidatas.sort((a, b) => a.caminataTotal - b.caminataTotal);
+  return candidatas.slice(0, 3); // hasta 3 opciones, ordenadas de menor a mayor caminata total
+}
+
+/* Etiqueta amigable de un punto tocado directamente en el mapa: si cae
+   cerca de una esquina relevada, usa ese nombre; si no, muestra coordenadas. */
+function etiquetaAproximada(lat, lng) {
+  const p = L.latLng(lat, lng);
+  let mejor = null;
+  for (const e of ESQUINAS_DATA) {
+    const d = p.distanceTo([e.lat, e.lng]);
+    if (!mejor || d < mejor.d) mejor = { e, d };
+  }
+  if (mejor && mejor.d <= 120) return mejor.e.etiqueta;
+  return `Punto en el mapa (${lat.toFixed(5)}, ${lng.toFixed(5)})`;
+}
+
+function colorOrigenBuscador() { return geoColor(); } // mismo celeste que "Mi ubicación"
+function colorDestinoBuscador() { return temaActual() === "dark" ? "#f2a640" : "#c96c06"; }
+
+const buscador = { origen: null, destino: null, eligiendoEnMapa: null };
+let marcadorOrigenBuscador = null, marcadorDestinoBuscador = null;
+
+function marcarPuntoBuscador(campo, lat, lng, etiqueta) {
+  const prev = campo === "origen" ? marcadorOrigenBuscador : marcadorDestinoBuscador;
+  if (prev) mapa.removeLayer(prev);
+  const color = campo === "origen" ? colorOrigenBuscador() : colorDestinoBuscador();
+  const m = L.circleMarker([lat, lng], {
+    radius: 7, color: "#ffffff", weight: 2.5, fillColor: color, fillOpacity: 1,
+  }).bindTooltip(`${campo === "origen" ? "Desde" : "Hasta"}: ${esc(etiqueta)}`,
+    { direction: "top", offset: [0, -6], className: "tt-parada" }).addTo(mapa);
+  if (campo === "origen") marcadorOrigenBuscador = m; else marcadorDestinoBuscador = m;
+}
+
+/* ── Respaldo: nomenclador nacional (API Georef, apis.datos.gob.ar) ──────
+   El listado de esquinas relevadas (ESQUINAS_DATA) es instantáneo y anda
+   sin conexión, pero sólo cubre lo que releva la propia Municipalidad.
+   Como RESPALDO —no como dependencia dura— cuando ese listado no alcanza
+   se consulta el nomenclador nacional (gratuito, sin API key, CC-BY 4.0)
+   para intersecciones que no estén en nuestro relevamiento. Si la consulta
+   falla por lo que sea (sin red, CORS bloqueado, timeout, servicio caído)
+   se descarta en silencio: el buscador sigue funcionando sólo con el
+   listado local, nunca se rompe por esto.
+   Interruptor rápido para desactivar si el servicio da problemas. */
+const GEOREF_HABILITADO = true;
+const GEOREF_URL = "https://apis.datos.gob.ar/georef/api/direcciones";
+const GEOREF_TIMEOUT_MS = 5000;
+const georefCache = new Map();
+
+const MINUSCULAS_CONECTORES = new Set(["y", "de", "del", "la", "las", "los", "el"]);
+function tituloCase(s) {
+  return String(s || "").toLowerCase().split(" ").map((palabra, i) => {
+    if (i > 0 && MINUSCULAS_CONECTORES.has(palabra)) return palabra;
+    return palabra.replace(/^[a-záéíóúñ]/, (c) => c.toUpperCase());
+  }).join(" ");
+}
+function etiquetaDesdeGeoref(d) {
+  const c1 = d.calle && d.calle.nombre;
+  const c2 = d.calle_cruce_1 && d.calle_cruce_1.nombre;
+  const base = c1 && c2 ? `${c1} y ${c2}` : (c1 || d.nomenclatura || "");
+  return tituloCase(base);
+}
+
+/* OJO con el departamento: la ciudad de Comodoro Rivadavia administrativamente
+   pertenece al departamento "Escalante" (no existe un departamento llamado
+   "Comodoro Rivadavia" en el nomenclador). Se filtra además por localidad
+   censal para no mezclar resultados con Rada Tilly, que comparte departamento. */
+async function consultarGeoref(texto) {
+  const clave = normalizarTxt(texto);
+  if (georefCache.has(clave)) return georefCache.get(clave);
+  const params = new URLSearchParams({
+    direccion: texto,
+    provincia: "chubut",
+    departamento: "escalante",
+    localidad_censal: "comodoro rivadavia",
+    max: "5",
+  });
+  let resultado = [];
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), GEOREF_TIMEOUT_MS);
+  try {
+    const resp = await fetch(`${GEOREF_URL}?${params.toString()}`, { signal: controller.signal });
+    if (resp.ok) {
+      const data = await resp.json();
+      resultado = (data.direcciones || [])
+        .filter((d) => d.ubicacion && d.ubicacion.lat != null && d.ubicacion.lon != null)
+        .map((d) => ({ etiqueta: etiquetaDesdeGeoref(d), lat: d.ubicacion.lat, lng: d.ubicacion.lon, fuente: "georef" }));
+    }
+  } catch (e) {
+    resultado = []; // sin red, CORS bloqueado, timeout, etc. — es un respaldo opcional, se ignora
+  } finally {
+    clearTimeout(timer);
+  }
+  georefCache.set(clave, resultado);
+  return resultado;
+}
+
+const inputOrigen = document.getElementById("input-origen");
+const inputDestino = document.getElementById("input-destino");
+const sugerenciasOrigen = document.getElementById("sugerencias-origen");
+const sugerenciasDestino = document.getElementById("sugerencias-destino");
+const btnBuscarLinea = document.getElementById("btn-buscar-linea");
+const resultadoBuscador = document.getElementById("resultado-buscador");
+
+function actualizarBotonBuscar() {
+  btnBuscarLinea.disabled = !(buscador.origen && buscador.destino);
+}
+
+function armarAutocompletarBuscador(campo, input, lista) {
+  let filtradas = [];
+  let activo = -1;
+  let georefToken = 0;
+  let georefTimer = null;
+  let vigente = true; // false tras elegir/cerrar la lista: evita que una respuesta tardía de Georef la reabra sola
+
+  function render() {
+    lista.innerHTML = filtradas
+      .map((it, i) => {
+        const fuente = it.fuente === "georef" ? `<span class="sugerencia-fuente">Nomenclador nacional</span>` : "";
+        return `<li data-i="${i}" class="${i === activo ? "resaltado" : ""}">${esc(it.etiqueta)}${fuente}</li>`;
+      })
+      .join("");
+    lista.hidden = !filtradas.length;
+  }
+  function agregarDeGeoref(nuevas) {
+    if (!nuevas.length) return;
+    const yaHay = new Set(filtradas.map((f) => normalizarTxt(f.etiqueta)));
+    const sinRepetir = nuevas.filter((e) => !yaHay.has(normalizarTxt(e.etiqueta)));
+    if (!sinRepetir.length) return;
+    filtradas = filtradas.concat(sinRepetir).slice(0, 10);
+    render();
+  }
+  function elegir(it) {
+    input.value = it.etiqueta;
+    buscador[campo] = { lat: it.lat, lng: it.lng, etiqueta: it.etiqueta };
+    vigente = false;
+    lista.hidden = true;
+    marcarPuntoBuscador(campo, it.lat, it.lng, it.etiqueta);
+    resultadoBuscador.hidden = true;
+    actualizarBotonBuscar();
+  }
+  input.addEventListener("input", () => {
+    buscador[campo] = null;
+    resultadoBuscador.hidden = true;
+    actualizarBotonBuscar();
+    clearTimeout(georefTimer);
+    georefToken++;
+    vigente = true;
+    const valor = input.value;
+    const q = normalizarTxt(valor);
+    if (!q) { filtradas = []; lista.hidden = true; return; }
+    filtradas = ESQUINAS_DATA.filter((e) => normalizarTxt(e.etiqueta).includes(q)).slice(0, 8);
+    activo = -1;
+    render();
+    /* Respaldo Georef: sólo si el relevamiento propio no alcanza y el texto
+       ya parece una intersección de dos calles (al menos dos palabras), y
+       con debounce para no disparar una consulta por cada tecla. */
+    const esPosibleInterseccion = valor.trim().split(/\s+/).length >= 2;
+    if (GEOREF_HABILITADO && filtradas.length < 4 && esPosibleInterseccion) {
+      const miToken = georefToken;
+      georefTimer = setTimeout(async () => {
+        const extra = await consultarGeoref(valor);
+        if (miToken !== georefToken || !vigente) return; // el usuario ya siguió escribiendo o cerró la lista
+        agregarDeGeoref(extra);
+      }, 450);
+    }
+  });
+  input.addEventListener("keydown", (e) => {
+    if (lista.hidden || !filtradas.length) return;
+    if (e.key === "ArrowDown") { e.preventDefault(); activo = Math.min(activo + 1, filtradas.length - 1); render(); }
+    else if (e.key === "ArrowUp") { e.preventDefault(); activo = Math.max(activo - 1, 0); render(); }
+    else if (e.key === "Enter") { if (activo >= 0) { e.preventDefault(); elegir(filtradas[activo]); } }
+    else if (e.key === "Escape") { lista.hidden = true; vigente = false; }
+  });
+  input.addEventListener("blur", () => { setTimeout(() => { lista.hidden = true; vigente = false; }, 150); });
+  lista.addEventListener("mousedown", (e) => {
+    const li = e.target.closest("li");
+    if (!li) return;
+    e.preventDefault(); // evita que el input pierda foco antes de registrar el click
+    elegir(filtradas[Number(li.dataset.i)]);
+  });
+}
+armarAutocompletarBuscador("origen", inputOrigen, sugerenciasOrigen);
+armarAutocompletarBuscador("destino", inputDestino, sugerenciasDestino);
+
+document.querySelectorAll(".btn-elegir-mapa").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    const campo = btn.dataset.campo;
+    const yaActivo = buscador.eligiendoEnMapa === campo;
+    document.querySelectorAll(".btn-elegir-mapa").forEach((b) => b.classList.remove("activo"));
+    document.getElementById("mapa").classList.remove("cursor-elegir");
+    if (yaActivo) { buscador.eligiendoEnMapa = null; return; }
+    buscador.eligiendoEnMapa = campo;
+    btn.classList.add("activo");
+    document.getElementById("mapa").classList.add("cursor-elegir");
+    toast(`Tocá el mapa para marcar ${campo === "origen" ? "el origen" : "el destino"}.`, 6000);
+  });
+});
+mapa.on("click", (e) => {
+  if (!buscador.eligiendoEnMapa) return;
+  const campo = buscador.eligiendoEnMapa;
+  buscador.eligiendoEnMapa = null;
+  document.querySelectorAll(".btn-elegir-mapa").forEach((b) => b.classList.remove("activo"));
+  document.getElementById("mapa").classList.remove("cursor-elegir");
+  const { lat, lng } = e.latlng;
+  const etiqueta = etiquetaAproximada(lat, lng);
+  buscador[campo] = { lat, lng, etiqueta };
+  (campo === "origen" ? inputOrigen : inputDestino).value = etiqueta;
+  marcarPuntoBuscador(campo, lat, lng, etiqueta);
+  resultadoBuscador.hidden = true;
+  actualizarBotonBuscar();
+});
+
+let candidatasActuales = [];
+
+function mostrarResultadoBuscador(candidatas) {
+  candidatasActuales = candidatas;
+  if (!candidatas.length) {
+    resultadoBuscador.innerHTML =
+      `<p class="resultado-vacio">No encontramos una línea directa entre esos dos puntos. ` +
+      `Puede que haga falta combinar dos líneas (todavía no lo calculamos).</p>`;
+    resultadoBuscador.hidden = false;
+    return;
+  }
+  resultadoBuscador.innerHTML =
+    (candidatas.length > 1 ? `<p class="resultado-ayuda">Elegí la que más te convenga:</p>` : "") +
+    candidatas.map((c, i) => {
+      const cChip = atenuar(c.linea.color);
+      const fg = colorChipTexto(cChip);
+      return `<button class="resultado-opcion" data-i="${i}" type="button">` +
+        `<span class="chip" style="--c:${cChip};--chip-fg:${fg}">${esc(CHIP_LABEL[c.linea.id] || c.linea.id)}</span>` +
+        `<span class="resultado-texto">` +
+          `<strong>${esc(c.linea.nombre || "Línea " + c.linea.id)}</strong>` +
+          `<span class="resultado-sentido">Sentido ${esc(c.ruta.sentido)}</span>` +
+        `</span>` +
+        `<span class="resultado-caminata">${fmtDist(c.caminataOrigen)} + ${fmtDist(c.caminataDestino)}</span>` +
+      `</button>`;
+    }).join("");
+  resultadoBuscador.hidden = false;
+
+  resultadoBuscador.querySelectorAll(".resultado-opcion").forEach((btn) => {
+    btn.addEventListener("click", () => aplicarResultado(candidatasActuales[Number(btn.dataset.i)]));
+  });
+  aplicarResultado(candidatas[0]); // por defecto se enfoca la más recomendada (menor caminata total)
+}
+
+function aplicarResultado(c) {
+  resultadoBuscador.querySelectorAll(".resultado-opcion").forEach((btn) => {
+    btn.classList.toggle("activa", candidatasActuales[Number(btn.dataset.i)] === c);
+  });
+
+  enfocar(c.linea.id);
+  const otras = c.linea.rutas.filter((r) => r.id !== c.ruta.id);
+  estado.rutasApagadas.clear();
+  otras.forEach((r) => estado.rutasApagadas.add(r.id));
+  const li = filasPorId.get(c.linea.id);
+  if (li) {
+    li.querySelectorAll(".pill.sentido").forEach((b) => {
+      const activo = b.dataset.ruta === c.ruta.id;
+      b.classList.toggle("activo", activo);
+      b.setAttribute("aria-pressed", String(activo));
+    });
+  }
+  reestilarLinea(c.linea.id);
+  armarAnimacion(c.linea.id);
+
+  const bOrigen = L.latLng(buscador.origen.lat, buscador.origen.lng);
+  const bDestino = L.latLng(buscador.destino.lat, buscador.destino.lng);
+  mapa.flyToBounds(L.latLngBounds(bOrigen, bDestino), { padding: [70, 70], maxZoom: 16, duration: 0.8 });
+}
+
+btnBuscarLinea.addEventListener("click", () => {
+  if (!buscador.origen || !buscador.destino) return;
+  mostrarResultadoBuscador(buscarLineaSugerida(buscador.origen, buscador.destino));
+});
+
+document.getElementById("btn-limpiar-buscador").addEventListener("click", () => {
+  buscador.origen = null;
+  buscador.destino = null;
+  buscador.eligiendoEnMapa = null;
+  candidatasActuales = [];
+  inputOrigen.value = "";
+  inputDestino.value = "";
+  sugerenciasOrigen.hidden = true;
+  sugerenciasDestino.hidden = true;
+  document.querySelectorAll(".btn-elegir-mapa").forEach((b) => b.classList.remove("activo"));
+  document.getElementById("mapa").classList.remove("cursor-elegir");
+  if (marcadorOrigenBuscador) { mapa.removeLayer(marcadorOrigenBuscador); marcadorOrigenBuscador = null; }
+  if (marcadorDestinoBuscador) { mapa.removeLayer(marcadorDestinoBuscador); marcadorDestinoBuscador = null; }
+  resultadoBuscador.hidden = true;
+  actualizarBotonBuscar();
+});
+
+/* ── Caja del buscador: plegado (mismo patrón que la caja de capas) ──── */
+const cajaBuscador = document.getElementById("caja-buscador");
+/* Panel oculto por completo mientras BUSCADOR_LINEA_HABILITADO sea false
+   (ver interruptor al inicio del script) — mismo criterio que "Paradas". */
+cajaBuscador.style.display = BUSCADOR_LINEA_HABILITADO ? "" : "none";
+const buscadorHead = document.getElementById("buscador-head");
+function plegarBuscador(plegar) {
+  cajaBuscador.classList.toggle("plegada", plegar);
+  buscadorHead.setAttribute("aria-expanded", String(!plegar));
+}
+buscadorHead.addEventListener("click", () => plegarBuscador(!cajaBuscador.classList.contains("plegada")));
+buscadorHead.addEventListener("keydown", (e) => {
+  if (e.key === "Enter" || e.key === " ") { e.preventDefault(); buscadorHead.click(); }
+});
+L.DomEvent.disableClickPropagation(cajaBuscador);
+L.DomEvent.disableScrollPropagation(cajaBuscador);
 
 /* ── Botones de acción sobre el mapa (ubicación / encuadre) ───── */
 const CtrlAcciones = L.Control.extend({
