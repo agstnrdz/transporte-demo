@@ -603,6 +603,7 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
 }
 .ctrl-acciones button:last-child { border-bottom: none; }
 .ctrl-acciones button:hover { background: var(--hover-wash); color: var(--ink-1); }
+.ctrl-acciones button.deshabilitado { opacity: 0.35; pointer-events: none; }
 
 /* botón de ayuda / tutorial: aparte de ctrl-acciones (no dentro de la misma
    caja) y en rojo, a propósito, para que se note que es otra cosa: la
@@ -1066,12 +1067,12 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
    completo la capa de paradas (panel de capas + "paradas cercanas" del
    botón de ubicación), sin borrar nada del código. Para reactivarlas
    en otra instancia, alcanza con volver esto a "true". */
-const PARADAS_HABILITADAS = true;
+const PARADAS_HABILITADAS = false;
 
 /* Interruptor del panel "Buscar línea" (origen/destino → línea sugerida):
    oculta por completo la caja flotante, sin borrar nada del código. Volver
    a "true" para reactivarla. */
-const BUSCADOR_LINEA_HABILITADO = true;
+const BUSCADOR_LINEA_HABILITADO = false;
 
 /* Interruptor del tutorial guiado (botón "?" + oferta automática en las
    primeras visitas): con esto en false no se crea el botón ni se ofrece
@@ -1082,7 +1083,7 @@ const BUSCADOR_LINEA_HABILITADO = true;
    BUSCADOR_LINEA_HABILITADO en false, esos pasos van a señalar algo que
    no existe en el sitio — conviene revisar/editar esos pasos puntuales
    antes de reactivarlo en ese caso. */
-const TOUR_HABILITADO = true;
+const TOUR_HABILITADO = false;
 
 /* ══════════════════════════════════════════════════════════════════
    Armado de datos: lee los 23 window.LINEA_*_DATA (GeoJSON crudo)
@@ -1317,7 +1318,11 @@ function toast(msg, ms = 4000) {
 const ATTR = "Instituto Geográfico Nacional + OpenStreetMap. Google Satelital. Fuente: Dirección General de Transporte (recorridos 2026). Procesamiento: Modernización e Investigación Territorial";
 const mapa = L.map("mapa", { zoomControl: false, attributionControl: true });
 mapa.attributionControl.setPrefix(false);
-L.control.zoom({ position: "bottomright" }).addTo(mapa);
+/* Sin el control de zoom por defecto de Leaflet (abajo a la derecha): ahí
+   quedaba tapado por el panel lateral. Los botones +/- viven ahora en
+   CtrlAcciones, arriba a la izquierda, junto a ubicación/encuadre (ver
+   más abajo en el script) — el zoom con rueda/pellizco/teclado sigue
+   andando igual, esto sólo saca el control visual de en medio. */
 L.control.scale({ imperial: false, position: "bottomleft" }).addTo(mapa);
 
 const capaArgenmapClaro = L.tileLayer(
@@ -2273,12 +2278,21 @@ buscadorHead.addEventListener("keydown", (e) => {
 L.DomEvent.disableClickPropagation(cajaBuscador);
 L.DomEvent.disableScrollPropagation(cajaBuscador);
 
-/* ── Botones de acción sobre el mapa (ubicación / encuadre) ───── */
+/* ── Botones de acción sobre el mapa (zoom / ubicación / encuadre) ──
+   El zoom +/- vive acá adentro (mismos botones, mismo estilo que
+   ubicación/encuadre) en vez del control de zoom separado de Leaflet,
+   que quedaba tapado por el panel lateral, abajo a la derecha. ── */
 const CtrlAcciones = L.Control.extend({
   options: { position: "topleft" },
   onAdd() {
     const div = L.DomUtil.create("div", "ctrl-acciones");
     div.innerHTML =
+      `<button id="btn-zoom-in" title="Acercar" aria-label="Acercar">` +
+        `<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>` +
+      `</button>` +
+      `<button id="btn-zoom-out" title="Alejar" aria-label="Alejar">` +
+        `<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14"/></svg>` +
+      `</button>` +
       `<button id="btn-ubicarme" title="${PARADAS_HABILITADAS ? "Mi ubicación y paradas cercanas" : "Mi ubicación"}" aria-label="Mi ubicación">` +
         `<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3.2"/><circle cx="12" cy="12" r="8"/><path d="M12 1.5V4m0 16v2.5M1.5 12H4m16 0h2.5"/></svg>` +
       `</button>` +
@@ -2290,6 +2304,18 @@ const CtrlAcciones = L.Control.extend({
   },
 });
 mapa.addControl(new CtrlAcciones());
+
+document.getElementById("btn-zoom-in").addEventListener("click", () => mapa.zoomIn());
+document.getElementById("btn-zoom-out").addEventListener("click", () => mapa.zoomOut());
+/* Atenuados en el tope/piso de zoom, igual que hacía el control de
+   Leaflet por defecto (leaflet-disabled) — se revisa en cada zoomend. */
+function actualizarBotonesZoom() {
+  const z = mapa.getZoom();
+  document.getElementById("btn-zoom-in").classList.toggle("deshabilitado", z >= mapa.getMaxZoom());
+  document.getElementById("btn-zoom-out").classList.toggle("deshabilitado", z <= mapa.getMinZoom());
+}
+mapa.on("zoomend", actualizarBotonesZoom);
+actualizarBotonesZoom();
 
 /* ── Botón de ayuda / tutorial: rojo, apilado debajo de ubicación y
      encuadre (mismo mecanismo de L.Control, así Leaflet lo apila solo).
