@@ -127,44 +127,50 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
 .vt-cuerpo { position: relative; flex: 1 1 auto; min-height: 0; background: var(--mapa-fondo); overscroll-behavior: contain; }
 #mapa { position: absolute; inset: 0; background: var(--mapa-fondo); z-index: 1; }
 
-/* ══ Pila flotante arriba a la derecha: caja de capas + buscador de línea ══ */
+/* ══ Panel lateral fijo: un solo panel pegado al borde derecho del visor,
+   con las 3 secciones (Recorridos, Paradas, Buscar línea) como "solapas"
+   plegables dentro del mismo bloque. Antes eran 3 cajas flotantes
+   independientes, cada una con su propio borde/sombra/radio y separadas
+   por un gap — se leían como 3 widgets sueltos (lenguaje cómodo para
+   alguien acostumbrado a capas de GIS, no tanto para el resto). Ahora
+   comparten un único borde y una única sombra (una sola "tarjeta"), y las
+   secciones se diferencian con una línea divisoria fina entre ellas en
+   vez de separación física. El alto sigue ajustándose al contenido (no es
+   un panel de alto fijo con hueco vacío abajo cuando todo está plegado):
+   si las solapas abiertas superan el alto disponible, el panel entero
+   scrollea internamente, igual que antes. */
 #pila-flotante {
   position: absolute;
   top: 12px;
-  right: 0px;
-  max-width: calc(100% - 48px);
-  /* "height" fija (no sólo max-height): el max-height en % de las cajas de
-     abajo necesita que ESTE contenedor tenga una altura definida para poder
-     resolverse — con sólo max-height acá, el % de las hijas no aplicaba y
-     la lista de líneas crecía sin límite ni scroll propio. */
-  height: calc(100% - 24px);
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  z-index: 1200;
-  pointer-events: none; /* el espacio vacío bajo las cajas no debe tapar el mapa */
-  overflow-y: auto; /* si las cajas abiertas superan el alto disponible, se
-     scrollea la pila entera para poder llegar a las de más abajo */
-  overflow-x: hidden;
-  scrollbar-width: thin;
-}
-#pila-flotante > .caja-flotante { pointer-events: auto; }
-/* Caja flotante genérica: mismo aspecto para la de capas y la del buscador,
-   cada una se pliega de forma independiente. */
-.caja-flotante {
+  right: 0;
   width: 305px;
   max-width: calc(100% - 24px);
   max-height: calc(100% - 24px);
   display: flex;
   flex-direction: column;
-  font-size: 11.5px;
   background: var(--panel);
   border: 1px solid var(--hair);
-  border-radius: 12px;
+  border-right: none; /* no se ve: el panel queda al ras del límite derecho del sitio */
+  border-radius: 12px 0 0 12px; /* redondeado sólo del lado que no toca el borde */
   box-shadow: 0 6px 20px rgba(0,0,0,0.20), 0 1px 4px rgba(0,0,0,0.12);
-  overflow: hidden;
-  flex-shrink: 0;
+  z-index: 1200;
+  overflow-y: auto; /* si las solapas abiertas superan el alto disponible,
+     scrollea el panel entero para poder llegar a las de más abajo */
+  overflow-x: hidden;
+  scrollbar-width: auto;
 }
+/* Cada solapa es una sección del panel único (ya no una caja flotante con
+   chrome propio): sin borde/radio/sombra individual, sólo una línea fina
+   la separa de la siguiente. Se pliega de forma independiente — varias
+   solapas pueden estar abiertas a la vez. */
+.caja-flotante {
+  display: flex;
+  flex-direction: column;
+  font-size: 11.5px;
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--hair);
+}
+.caja-flotante:last-child { border-bottom: none; }
 .caja-head {
   display: flex;
   align-items: center;
@@ -174,6 +180,7 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   border-bottom: 1px solid var(--hair);
   cursor: pointer;
   user-select: none;
+  transition: background 0.15s;
 }
 .caja-head h2 {
   /* Subtítulo "Capas": mismo tamaño, color y fondo más oscuros, sin contorno */
@@ -199,20 +206,39 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
 .caja-flotante.plegada .btn-plegar { transform: rotate(-90deg); }
 .caja-flotante.plegada .caja-body { display: none; }
 .caja-flotante.plegada .caja-head { border-bottom: none; }
+/* Solapa abierta: leve resalte en su cabecera para que sea obvio, de un
+   vistazo, cuál de las 3 secciones está expandida dentro del panel. */
+.caja-flotante:not(.plegada) .caja-head { background: color-mix(in srgb, var(--ink-1) 4%, var(--panel)); }
 
-.caja-body { overflow-y: auto; scrollbar-width: thin; padding: 4px 8px 10px; }
+/* Encabezado "Recorridos" fijo: si hay varias solapas abiertas a la vez y
+   el panel entero scrollea, esta cabecera se queda siempre a la vista
+   arriba de todo en vez de desaparecer al scrollear — ayuda a ubicarse
+   dentro del panel. Fondo opaco obligatorio (sticky sobre contenido que
+   sigue scrolleando detrás). */
+.caja-head-fija {
+  position: sticky;
+  top: 0;
+  z-index: 15;
+  background: var(--panel);
+}
+
+/* Tope de alto por solapa (no sólo por el panel entero): si no, una sola
+   sección larga (ej. la lista de 23 líneas) se comería todo el panel y
+   dejaría a las otras dos solapas abiertas fuera de vista. Cada una
+   scrollea de forma independiente al llegar a este tope. */
+.caja-body { overflow-y: auto; scrollbar-width: auto; padding: 4px 8px 10px; max-height: min(50vh, 420px); }
+/* Recorridos: sin padding arriba — el primer elemento de adentro es la
+   cabecera sticky "Líneas" (ver .seccion-head, más abajo). */
+#caja-capas .caja-body { padding-top: 0; } /* Hueco debajo de 'RECORRIDOS' */
 /* El cuerpo del buscador es corto (dos campos + resultado): no necesita
-   scroll propio, y así el desplegable de sugerencias no queda recortado. */
-.caja-body-buscador { overflow: visible; }
-/* La caja del buscador en sí también recorta (overflow:hidden, heredado de
-   .caja-flotante, para los bordes redondeados) — eso cortaba el desplegable
-   de sugerencias contra el borde del panel. Acá se permite que sobresalga;
-   como todo el contenido interno comparte el mismo fondo que la caja, los
-   bordes redondeados no se notan afectados. */
-#caja-buscador { overflow: visible; }
+   scroll ni tope propio, y así el desplegable de sugerencias no queda
+   recortado. Ya no hace falta una excepción aparte para #caja-buscador
+   (como antes): al no tener las solapas su propio border-radius, no hay
+   bordes redondeados contra los que el desplegable pueda cortarse. */
+.caja-body-buscador { overflow: visible; max-height: none; }
 
 /* La caja de Paradas no tiene botón de plegar propio: el switch de su
-   cabecera ES el control (prende/apaga la capa y expande/pliega la caja),
+   cabecera ES el control (prende/apaga la capa y expande/pliega la solapa),
    así que el resto de la cabecera no debería insinuar que es clickeable. */
 #caja-paradas .caja-head { cursor: default; }
 
@@ -349,15 +375,32 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
 .resultado-vacio { margin: 4px 2px 0; font-size: 11.5px; color: var(--muted); line-height: 1.4; }
 #mapa.cursor-elegir { cursor: crosshair; }
 
-/* ── Mapa base (segmentado: Argenmap / Satelital Google) ── */
+/* ── Mapa base (segmentado: Argenmap / Satelital Google) — control
+   flotante arriba a la izquierda, junto a ubicación/encuadre, no dentro
+   del panel de Recorridos (así queda más a mano, no hay que abrir el
+   panel para cambiar de vista). ── */
 .segmentado {
   display: flex;
   border: 1px solid var(--hair);
   border-radius: 9px;
   overflow: hidden;
 }
-.segmentado.base { margin: 2px 2px 4px; }
-.segmentado.base .seg { flex: 1; text-align: center; }
+.segmentado.base {
+  background: var(--panel);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.22);
+  margin-bottom: 0px; /* gap corto contra los botones de ubicación/encuadre, de abajo */
+}
+/* Más grande que el .seg genérico (que también usan los filtros de
+   Paradas, adentro del panel): acá afuera, flotando sobre el mapa, tiene
+   que leerse y tocarse bien de entrada, sin depender de la escala
+   compacta pensada para vivir dentro de un panel angosto. */
+.segmentado.base .seg {
+  flex: 1;
+  text-align: center;
+  font-size: 12.5px;
+  font-weight: 700;
+  padding: 6px 10px;
+}
 .seg {
   font-size: 11px;
   font-weight: 600;
@@ -732,7 +775,8 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   /* Botón de pantalla completa: sólo se oculta en mobile (el de tema queda) */
   #btn-fs { display: none; }
   .vt-btn-header { width: 32px; height: 32px; }
-  .caja-flotante { width: min(272px, calc(100% - 24px)); font-size: 11px; }
+  #pila-flotante { width: min(272px, calc(100% - 24px)); }
+  .caja-flotante { font-size: 11px; }
   .btn-ojo, .btn-plegar { width: 30px; height: 30px; }
   .linea-main { padding: 7px 6px; }
   .pill { padding: 5px 11px; }
@@ -853,16 +897,20 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
     </button>
   </div>
 
-  <!-- Cuerpo: mapa + caja de capas flotante -->
+  <!-- Cuerpo: mapa + panel lateral -->
   <div class="vt-cuerpo">
     <div id="mapa" role="application" aria-label="Mapa de líneas de colectivo"></div>
 
-    <!-- Pila flotante: caja de capas + buscador de línea, apiladas -->
+    <!-- Panel lateral fijo (pegado al borde derecho): Recorridos, Paradas y
+         Buscar línea como solapas plegables dentro del mismo panel, cada
+         una se abre/cierra de forma independiente. -->
     <div id="pila-flotante">
 
-      <!-- Solapa de capas: mapa base + líneas + paradas -->
+      <!-- Solapa de capas: líneas + paradas (el selector de mapa base
+           Argenmap/Satelital se movió afuera, arriba a la izquierda,
+           junto a los botones de ubicación/encuadre — ver CtrlBase). -->
       <div id="caja-capas" class="caja-flotante plegada">
-        <div class="caja-head" id="caja-head" role="button" aria-expanded="false" tabindex="0">
+        <div class="caja-head caja-head-fija" id="caja-head" role="button" aria-expanded="false" tabindex="0">
           <h2>Recorridos</h2>
           <span class="stats" id="stats-row"></span>
           <span class="btn-plegar" aria-hidden="true">
@@ -870,11 +918,6 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
           </span>
         </div>
         <div class="caja-body">
-
-          <div class="segmentado base" role="group" aria-label="Mapa base">
-            <button class="seg activo" id="btn-base-mapa" title="Mapa base Argenmap (IGN)">Argenmap</button>
-            <button class="seg" id="btn-base-sat" title="Imagen satelital de Google">Satelital</button>
-          </div>
 
           <section id="seccion-lineas">
             <div class="seccion-head">
@@ -966,7 +1009,7 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
           </div>
 
           <button id="btn-buscar-linea" class="btn-buscar-primario" disabled>Buscar línea</button>
-          <button id="btn-limpiar-buscador" class="btn-mini btn-limpiar">Limpiar</button>
+          <button id="btn-limpiar-buscador" class="btn-mini btn-limpiar">Limpiar resultados</button>
 
           <div id="resultado-buscador" hidden></div>
         </div>
@@ -1029,6 +1072,17 @@ const PARADAS_HABILITADAS = true;
    oculta por completo la caja flotante, sin borrar nada del código. Volver
    a "true" para reactivarla. */
 const BUSCADOR_LINEA_HABILITADO = true;
+
+/* Interruptor del tutorial guiado (botón "?" + oferta automática en las
+   primeras visitas): con esto en false no se crea el botón ni se ofrece
+   el tour solo, sin borrar nada del código — mismo criterio que los dos
+   interruptores de arriba. OJO: varios pasos del tour (ver pasosTour, más
+   abajo) apuntan a "Buscar línea" y mencionan "paradas cercanas"; si se
+   reactiva el tour en una instancia con PARADAS_HABILITADAS o
+   BUSCADOR_LINEA_HABILITADO en false, esos pasos van a señalar algo que
+   no existe en el sitio — conviene revisar/editar esos pasos puntuales
+   antes de reactivarlo en ese caso. */
+const TOUR_HABILITADO = true;
 
 /* ══════════════════════════════════════════════════════════════════
    Armado de datos: lee los 23 window.LINEA_*_DATA (GeoJSON crudo)
@@ -1716,6 +1770,26 @@ CONT.querySelectorAll(".filtro-fila").forEach((fila) => {
 });
 
 /* ── Mapa base: botón Argenmap / Satelital ────────────────────── */
+/* Control flotante arriba a la izquierda (mismo mecanismo que
+   CtrlAcciones/CtrlAyuda, más abajo en el script), en vez de vivir
+   dentro del panel de Recorridos: así queda a mano sin tener que abrir
+   el panel para cambiar de vista. Se crea acá, antes de engancharle los
+   listeners, para que los botones ya existan en el DOM en este punto. */
+const CtrlBase = L.Control.extend({
+  options: { position: "topleft" },
+  onAdd() {
+    const div = L.DomUtil.create("div", "segmentado base");
+    div.setAttribute("role", "group");
+    div.setAttribute("aria-label", "Mapa base");
+    div.innerHTML =
+      `<button class="seg activo" id="btn-base-mapa" title="Mapa base Argenmap (IGN)">Argenmap</button>` +
+      `<button class="seg" id="btn-base-sat" title="Imagen satelital de Google">Satelital</button>`;
+    L.DomEvent.disableClickPropagation(div);
+    return div;
+  },
+});
+mapa.addControl(new CtrlBase());
+
 document.getElementById("btn-base-mapa").addEventListener("click", () => {
   baseActiva = "mapa";
   document.getElementById("btn-base-mapa").classList.add("activo");
@@ -2218,22 +2292,27 @@ const CtrlAcciones = L.Control.extend({
 mapa.addControl(new CtrlAcciones());
 
 /* ── Botón de ayuda / tutorial: rojo, apilado debajo de ubicación y
-     encuadre (mismo mecanismo de L.Control, así Leaflet lo apila solo). ── */
-const CtrlAyuda = L.Control.extend({
-  options: { position: "topleft" },
-  onAdd() {
-    const div = L.DomUtil.create("div", "ctrl-ayuda");
-    div.innerHTML =
-      `<button id="btn-tutorial" title="Ver tutorial de uso" aria-label="Ver tutorial de uso">?</button>`;
-    L.DomEvent.disableClickPropagation(div);
-    return div;
-  },
-});
-mapa.addControl(new CtrlAyuda());
-document.getElementById("btn-tutorial").addEventListener("click", () => {
-  cerrarTour();
-  iniciarTour();
-});
+     encuadre (mismo mecanismo de L.Control, así Leaflet lo apila solo).
+     Sólo se crea si TOUR_HABILITADO (ver interruptor al inicio del
+     script) — igual que Paradas y Buscar línea, no se borra nada del
+     código, sólo no se muestra el botón ni se agrega su listener. ── */
+if (TOUR_HABILITADO) {
+  const CtrlAyuda = L.Control.extend({
+    options: { position: "topleft" },
+    onAdd() {
+      const div = L.DomUtil.create("div", "ctrl-ayuda");
+      div.innerHTML =
+        `<button id="btn-tutorial" title="Ver tutorial de uso" aria-label="Ver tutorial de uso">?</button>`;
+      L.DomEvent.disableClickPropagation(div);
+      return div;
+    },
+  });
+  mapa.addControl(new CtrlAyuda());
+  document.getElementById("btn-tutorial").addEventListener("click", () => {
+    cerrarTour();
+    iniciarTour();
+  });
+}
 
 document.getElementById("btn-ubicarme").addEventListener("click", ubicarme);
 
@@ -2322,7 +2401,7 @@ const pasosTour = [
   },
   {
     target: () => document.getElementById("btn-encuadre"),
-    texto: "Este botón centra el mapa para ver toda la red. Arriba a la derecha también podés cambiar a modo oscuro o a vista satelital.",
+    texto: "Este botón centra el mapa para ver toda la red. Arriba de estos botones podés cambiar a vista satelital, y arriba a la derecha, a modo oscuro.",
     ultimo: true,
   },
 ];
@@ -2463,17 +2542,20 @@ document.addEventListener("keydown", (e) => {
   if (e.key === "Escape" && elBlock) cerrarTour();
 });
 
-/* Oferta automática en las primeras visitas, si no se completó antes */
-(function ofrecerTourSiCorresponde() {
-  let completado = false, ofrecidas = 0;
-  try {
-    completado = localStorage.getItem(TOUR_COMPLETADO_KEY) === "1";
-    ofrecidas = parseInt(localStorage.getItem(TOUR_OFRECIDAS_KEY) || "0", 10);
-  } catch (e) { /* localStorage puede estar bloqueado */ }
-  if (completado || ofrecidas >= TOUR_MAX_OFRECIDAS) return;
-  try { localStorage.setItem(TOUR_OFRECIDAS_KEY, String(ofrecidas + 1)); } catch (e) { /* noop */ }
-  setTimeout(mostrarModalInicial, 500);
-})();
+/* Oferta automática en las primeras visitas, si no se completó antes —
+   sólo si TOUR_HABILITADO (ver interruptor al inicio del script). */
+if (TOUR_HABILITADO) {
+  (function ofrecerTourSiCorresponde() {
+    let completado = false, ofrecidas = 0;
+    try {
+      completado = localStorage.getItem(TOUR_COMPLETADO_KEY) === "1";
+      ofrecidas = parseInt(localStorage.getItem(TOUR_OFRECIDAS_KEY) || "0", 10);
+    } catch (e) { /* localStorage puede estar bloqueado */ }
+    if (completado || ofrecidas >= TOUR_MAX_OFRECIDAS) return;
+    try { localStorage.setItem(TOUR_OFRECIDAS_KEY, String(ofrecidas + 1)); } catch (e) { /* noop */ }
+    setTimeout(mostrarModalInicial, 500);
+  })();
+}
 })();
 </script>
 </body>
