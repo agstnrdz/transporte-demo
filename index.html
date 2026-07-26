@@ -776,12 +776,54 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   /* Botón de pantalla completa: sólo se oculta en mobile (el de tema queda) */
   #btn-fs { display: none; }
   .vt-btn-header { width: 32px; height: 32px; }
-  #pila-flotante { width: min(272px, calc(100% - 24px)); }
+  /* ═══ Hoja inferior (bottom sheet), sólo en mobile ═══
+     Antes el panel flotaba arriba a la derecha con hasta 272px de ancho,
+     a la misma altura que los controles topleft del mapa (Argenmap/
+     Satelital, zoom, ubicación) — en pantallas angostas (~360-400px) el
+     borde izquierdo del panel invadía esos controles. Ahora se ancla
+     abajo, a todo el ancho: colapsado ocupa sólo el alto de la manija +
+     las 3 cabeceras, así el mapa (con sus controles) queda siempre libre
+     arriba. La manija (.vt-sheet-manija) la agrega el script sólo en
+     mobile — ver "Hoja inferior en mobile" en el <script>, más abajo. */
+  #pila-flotante {
+    top: auto;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    max-width: 100%;
+    max-height: min(72dvh, 560px);
+    border-right: 1px solid var(--hair);
+    border-bottom: none;
+    border-radius: 16px 16px 0 0;
+    box-shadow: 0 -6px 20px rgba(0,0,0,0.20), 0 -1px 4px rgba(0,0,0,0.12);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .vt-sheet-manija {
+    display: flex;
+    justify-content: center;
+    padding: 9px 0 3px;
+    touch-action: none;
+    cursor: grab;
+    flex-shrink: 0;
+  }
+  .vt-sheet-manija::after {
+    content: "";
+    width: 36px; height: 4px;
+    border-radius: 999px;
+    background: var(--hair);
+  }
   .caja-flotante { font-size: 11px; }
   .btn-ojo, .btn-plegar { width: 30px; height: 30px; }
   .linea-main { padding: 7px 6px; }
   .pill { padding: 5px 11px; }
-  #tarjeta-cercanas { bottom: 30px; }
+  /* "Paradas más cercanas" y el toast flotan arriba de la hoja inferior
+     (no a una distancia fija del piso): --vt-sheet-alto lo mantiene
+     actualizado el script con el alto real del panel en todo momento, así
+     nunca quedan tapados por la hoja ni dejan un hueco de más cuando está
+     colapsada. */
+  #tarjeta-cercanas { bottom: calc(var(--vt-sheet-alto, 140px) + 14px); }
+  #toast { bottom: calc(var(--vt-sheet-alto, 140px) + 14px); }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -2277,6 +2319,62 @@ buscadorHead.addEventListener("keydown", (e) => {
 });
 L.DomEvent.disableClickPropagation(cajaBuscador);
 L.DomEvent.disableScrollPropagation(cajaBuscador);
+
+/* ── Hoja inferior en mobile: manija de arrastre ──────────────────────
+   Sólo se crea si el viewport arranca en mobile (mismo breakpoint de
+   640px que ya usa enfocarLinea() más arriba para auto-plegar Recorridos
+   al elegir una línea). Un tap alterna entre "abrir Recorridos" y "cerrar
+   lo que esté abierto"; un swipe vertical sobre la manija hace lo mismo
+   sin soltar el dedo. No toca la caja de Paradas: su propio switch ya es
+   el control de su plegado (ver comentario en #caja-paradas .caja-head),
+   forzarla desde acá rompería esa relación 1 a 1.
+   Además, un ResizeObserver mantiene --vt-sheet-alto (en #visor-transporte)
+   con el alto real del panel, para que "paradas cercanas" y el toast
+   floten siempre arriba de la hoja (ver reglas en el media query de
+   arriba) sin importar cuántas solapas estén abiertas. Esto corre
+   siempre (no sólo en mobile): en desktop no tiene efecto porque el CSS
+   de escritorio no usa esa variable. */
+const panelSheet = document.getElementById("pila-flotante");
+function actualizarAltoSheet() {
+  CONT.style.setProperty("--vt-sheet-alto", panelSheet.getBoundingClientRect().height + "px");
+}
+new ResizeObserver(actualizarAltoSheet).observe(panelSheet);
+actualizarAltoSheet();
+
+if (window.matchMedia("(max-width: 640px)").matches) {
+  const manija = document.createElement("div");
+  manija.className = "vt-sheet-manija";
+  manija.setAttribute("role", "button");
+  manija.setAttribute("tabindex", "0");
+  manija.setAttribute("aria-label", "Abrir o cerrar el panel de recorridos");
+  panelSheet.insertBefore(manija, panelSheet.firstChild);
+
+  const haySolapaAbierta = () =>
+    !caja.classList.contains("plegada") || !cajaBuscador.classList.contains("plegada");
+  const alternarSheet = () => {
+    if (haySolapaAbierta()) { plegarCaja(true); plegarBuscador(true); }
+    else { plegarCaja(false); }
+  };
+
+  manija.addEventListener("click", alternarSheet);
+  manija.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); alternarSheet(); }
+  });
+
+  let arranqueY = null;
+  manija.addEventListener("touchstart", (e) => { arranqueY = e.touches[0].clientY; }, { passive: true });
+  manija.addEventListener("touchend", (e) => {
+    if (arranqueY == null) return;
+    const dy = e.changedTouches[0].clientY - arranqueY;
+    arranqueY = null;
+    const UMBRAL = 30;
+    if (dy > UMBRAL) { plegarCaja(true); plegarBuscador(true); }        // swipe hacia abajo: cerrar todo
+    else if (dy < -UMBRAL && !haySolapaAbierta()) { plegarCaja(false); } // swipe hacia arriba: abrir Recorridos
+  }, { passive: true });
+
+  L.DomEvent.disableClickPropagation(manija);
+  L.DomEvent.disableScrollPropagation(manija);
+}
 
 /* ── Botones de acción sobre el mapa (zoom / ubicación / encuadre) ──
    El zoom +/- vive acá adentro (mismos botones, mismo estilo que
