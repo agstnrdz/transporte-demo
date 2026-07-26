@@ -237,10 +237,15 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
    bordes redondeados contra los que el desplegable pueda cortarse. */
 .caja-body-buscador { overflow: visible; max-height: none; }
 
-/* La caja de Paradas no tiene botón de plegar propio: el switch de su
-   cabecera ES el control (prende/apaga la capa y expande/pliega la solapa),
-   así que el resto de la cabecera no debería insinuar que es clickeable. */
+/* La caja de Paradas no tiene, en desktop, botón de plegar propio: el
+   switch de su cabecera ES el único control (prende/apaga la capa y
+   expande/pliega la solapa), así que el resto de la cabecera no debería
+   insinuar que es clickeable. En mobile se suma un botón de plegar
+   independiente (.btn-plegar-paradas, oculto acá y mostrado sólo en el
+   media query de mobile) para poder ocultar los filtros sin apagar la
+   capa — ahí el espacio pesa más que en desktop. */
 #caja-paradas .caja-head { cursor: default; }
+.btn-plegar-paradas { display: none; }
 
 .seccion-head {
   display: flex;
@@ -784,7 +789,12 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
      abajo, a todo el ancho: colapsado ocupa sólo el alto de la manija +
      las 3 cabeceras, así el mapa (con sus controles) queda siempre libre
      arriba. La manija (.vt-sheet-manija) la agrega el script sólo en
-     mobile — ver "Hoja inferior en mobile" en el <script>, más abajo. */
+     mobile — ver "Hoja inferior en mobile" en el <script>, más abajo.
+     "transition: transform" es para el rebote al soltar un arrastre:
+     mientras el dedo arrastra la manija el script apaga esta transición
+     (para que el panel siga al dedo 1 a 1, sin demora) y la reactiva al
+     soltar, así vuelve a su lugar con una animación suave en vez de
+     saltar de golpe. */
   #pila-flotante {
     top: auto;
     bottom: 0;
@@ -798,25 +808,78 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
     border-radius: 16px 16px 0 0;
     box-shadow: 0 -6px 20px rgba(0,0,0,0.20), 0 -1px 4px rgba(0,0,0,0.12);
     padding-bottom: env(safe-area-inset-bottom, 0px);
+    transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1);
   }
+  /* Manija: barra (afordancia de "esto se arrastra") + una flecha real
+     que rota según el estado — mismo lenguaje visual que .btn-plegar de
+     cada solapa, para que se reconozca de un vistazo. Flecha hacia
+     arriba = "tocá para abrir Recorridos"; hacia abajo (con alguna
+     solapa abierta) = "tocá para cerrar". El estado lo sincroniza el
+     script con la clase .vt-sheet-abierto en #pila-flotante, así se
+     mantiene correcto sea cual sea la solapa que el usuario abra. */
   .vt-sheet-manija {
     display: flex;
-    justify-content: center;
-    padding: 9px 0 3px;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 8px 0 4px;
     touch-action: none;
     cursor: grab;
     flex-shrink: 0;
   }
-  .vt-sheet-manija::after {
+  .vt-sheet-manija::before {
     content: "";
     width: 36px; height: 4px;
     border-radius: 999px;
     background: var(--hair);
   }
+  .vt-sheet-manija svg {
+    color: var(--muted);
+    transition: transform 0.2s ease;
+    transform: rotate(180deg); /* colapsado: flecha hacia arriba, "abrir" */
+  }
+  #pila-flotante.vt-sheet-abierto .vt-sheet-manija svg { transform: rotate(0deg); } /* abierto: "cerrar" */
+
+  /* Apertura/cierre de cada solapa, animado: en desktop sigue siendo el
+     display:none instantáneo de la regla de más arriba (no se toca);
+     acá se anima max-height + opacity en vez de saltar de golpe, para
+     que al tocar o arrastrar la manija se note que el panel reacciona. */
+  .caja-body {
+    padding: 4px 8px 8px;
+    transition: max-height 0.25s ease, opacity 0.2s ease, padding 0.25s ease;
+  }
+  .caja-flotante.plegada .caja-body {
+    display: block;
+    overflow: hidden;
+    max-height: 0;
+    opacity: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    pointer-events: none;
+  }
+  /* El buscador usaba max-height:none a propósito (para no recortar el
+     desplegable de sugerencias) — acá necesita un valor concreto para
+     poder animarse; overflow sigue en "visible", así que el desplegable
+     igual no se corta si el contenido lo supera. */
+  .caja-body-buscador { max-height: 340px; }
+
+  /* Cabeceras y subtítulos más compactos: menos espacio muerto en un
+     panel que ahora compite por alto con el mapa. */
+  .caja-head { padding: 6px 8px 6px 9px; }
+  .caja-head h2, .seccion-head h3 { font-size: 9.5px; padding: 2px 7px; }
+  .caja-head .stats { font-size: 10.5px; }
+  .seccion-head { padding: 1px 2px 2px; }
+  .ayuda { font-size: 12px; margin: 2px 2px 5px; }
+
   .caja-flotante { font-size: 11px; }
   .btn-ojo, .btn-plegar { width: 30px; height: 30px; }
   .linea-main { padding: 7px 6px; }
   .pill { padding: 5px 11px; }
+  /* Botón para plegar/desplegar los filtros de Paradas sin apagar la
+     capa: en desktop el switch sigue siendo el único control (ver
+     comentario en #caja-paradas .caja-head, más arriba); acá se agrega
+     este segundo control independiente sólo para ahorrar espacio. */
+  .btn-plegar-paradas { display: grid; }
   /* "Paradas más cercanas" y el toast flotan arriba de la hoja inferior
      (no a una distancia fija del piso): --vt-sheet-alto lo mantiene
      actualizado el script con el alto real del panel en todo momento, así
@@ -833,6 +896,9 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   .vt-header-texto .marquee-text { animation: none; display: inline; padding-left: 0; }
   .vt-header-texto h1, .vt-header-texto p { text-overflow: ellipsis; }
   .vt-tour-anillo { transition: none; }
+  /* Hoja inferior (mobile): sin rebote de arrastre, sin animación de
+     apertura/cierre de solapas y sin rotación de la flecha de la manija. */
+  #pila-flotante, .caja-body, .vt-sheet-manija svg { transition: none; }
 }
 
 /* ══ Tutorial guiado (primera visita) ══
@@ -984,6 +1050,9 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
             <input type="checkbox" id="chk-paradas">
             <span class="switch-track" aria-hidden="true"></span>
           </label>
+          <button type="button" id="btn-plegar-paradas" class="btn-plegar btn-plegar-paradas" aria-expanded="false" aria-label="Mostrar u ocultar filtros de paradas">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
         </div>
         <div class="caja-body">
           <div class="filtro-fila" data-campo="refugio">
@@ -1805,6 +1874,17 @@ chkParadas.addEventListener("change", (e) => {
   aplicarFiltrosParadas();
 });
 
+/* Botón de plegar independiente (sólo visible en mobile, ver CSS): pliega
+   u oculta los filtros SIN tocar el switch ni la capa en el mapa — el
+   switch de arriba sigue siendo, aparte, el que prende/apaga los datos.
+   Sólo actualiza la clase "plegada"; no toca estado.paradasOn. */
+const btnPlegarParadas = document.getElementById("btn-plegar-paradas");
+btnPlegarParadas.addEventListener("click", () => {
+  const plegar = !cajaParadas.classList.contains("plegada");
+  cajaParadas.classList.toggle("plegada", plegar);
+  btnPlegarParadas.setAttribute("aria-expanded", String(!plegar));
+});
+
 CONT.querySelectorAll(".filtro-fila").forEach((fila) => {
   const campo = fila.dataset.campo;
   fila.querySelectorAll(".seg").forEach((btn) => {
@@ -2324,10 +2404,13 @@ L.DomEvent.disableScrollPropagation(cajaBuscador);
    Sólo se crea si el viewport arranca en mobile (mismo breakpoint de
    640px que ya usa enfocarLinea() más arriba para auto-plegar Recorridos
    al elegir una línea). Un tap alterna entre "abrir Recorridos" y "cerrar
-   lo que esté abierto"; un swipe vertical sobre la manija hace lo mismo
-   sin soltar el dedo. No toca la caja de Paradas: su propio switch ya es
-   el control de su plegado (ver comentario en #caja-paradas .caja-head),
-   forzarla desde acá rompería esa relación 1 a 1.
+   lo que esté abierto"; un swipe vertical sobre la manija hace lo mismo,
+   con el panel seguiendo al dedo en vivo (translateY) y un rebote suave
+   al soltar — antes el gesto no tenía ningún feedback visual hasta soltar
+   el dedo, así que no se notaba que había algo para arrastrar. No toca la
+   caja de Paradas: su propio switch ya es el control de su plegado (ver
+   comentario en #caja-paradas .caja-head) — Paradas tiene, aparte, su
+   propio botón de plegar en mobile (btn-plegar-paradas, más arriba).
    Además, un ResizeObserver mantiene --vt-sheet-alto (en #visor-transporte)
    con el alto real del panel, para que "paradas cercanas" y el toast
    floten siempre arriba de la hoja (ver reglas en el media query de
@@ -2347,6 +2430,8 @@ if (window.matchMedia("(max-width: 640px)").matches) {
   manija.setAttribute("role", "button");
   manija.setAttribute("tabindex", "0");
   manija.setAttribute("aria-label", "Abrir o cerrar el panel de recorridos");
+  manija.innerHTML =
+    `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>`;
   panelSheet.insertBefore(manija, panelSheet.firstChild);
 
   const haySolapaAbierta = () =>
@@ -2356,18 +2441,52 @@ if (window.matchMedia("(max-width: 640px)").matches) {
     else { plegarCaja(false); }
   };
 
+  /* Sincroniza la flecha de la manija (rotada o no) con el estado real de
+     Recorridos/Buscador, sin importar cómo se hayan plegado o desplegado
+     (tocando la manija, con swipe, tocando la cabecera de cada solapa
+     directamente, o el auto-plegado de enfocarLinea() al elegir una
+     línea). Un MutationObserver evita tener que tocar plegarCaja()/
+     plegarBuscador() (definidas mucho más arriba) para avisar del cambio:
+     sólo observa, no interviene. */
+  const sincronizarManija = () => {
+    panelSheet.classList.toggle("vt-sheet-abierto", haySolapaAbierta());
+    manija.setAttribute("aria-expanded", String(haySolapaAbierta()));
+  };
+  new MutationObserver(sincronizarManija).observe(caja, { attributes: true, attributeFilter: ["class"] });
+  new MutationObserver(sincronizarManija).observe(cajaBuscador, { attributes: true, attributeFilter: ["class"] });
+  sincronizarManija();
+
   manija.addEventListener("click", alternarSheet);
   manija.addEventListener("keydown", (e) => {
     if (e.key === "Enter" || e.key === " ") { e.preventDefault(); alternarSheet(); }
   });
 
+  /* Arrastre en vivo: mientras el dedo se mueve, el panel lo sigue 1 a 1
+     (con algo de "resistencia" y un tope, tipo rubber-band) — se apaga la
+     transición de #pila-flotante para que no haya demora persiguiendo el
+     dedo. Al soltar, se saca el transform inline y se reactiva la
+     transición CSS, así el panel "rebota" de vuelta a su lugar mientras
+     plegarCaja()/plegarBuscador() deciden el estado final según el umbral. */
   let arranqueY = null;
-  manija.addEventListener("touchstart", (e) => { arranqueY = e.touches[0].clientY; }, { passive: true });
+  const TOPE_ARRIBA = -60, TOPE_ABAJO = 160, RESISTENCIA = 0.55, UMBRAL = 30;
+
+  manija.addEventListener("touchstart", (e) => {
+    arranqueY = e.touches[0].clientY;
+    panelSheet.style.transition = "none";
+  }, { passive: true });
+
+  manija.addEventListener("touchmove", (e) => {
+    if (arranqueY == null) return;
+    const dy = (e.touches[0].clientY - arranqueY) * RESISTENCIA;
+    panelSheet.style.transform = `translateY(${Math.max(TOPE_ARRIBA, Math.min(TOPE_ABAJO, dy))}px)`;
+  }, { passive: true });
+
   manija.addEventListener("touchend", (e) => {
     if (arranqueY == null) return;
     const dy = e.changedTouches[0].clientY - arranqueY;
     arranqueY = null;
-    const UMBRAL = 30;
+    panelSheet.style.transition = "";
+    panelSheet.style.transform = "";
     if (dy > UMBRAL) { plegarCaja(true); plegarBuscador(true); }        // swipe hacia abajo: cerrar todo
     else if (dy < -UMBRAL && !haySolapaAbierta()) { plegarCaja(false); } // swipe hacia arriba: abrir Recorridos
   }, { passive: true });
