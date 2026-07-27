@@ -195,6 +195,12 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   background: color-mix(in srgb, var(--ink-1) 16%, var(--panel));
 }
 .caja-head .stats { font-size: 11.5px; color: var(--ink-2); margin-left: auto; }
+/* Agrupa switch + botón de plegar (Paradas) como un solo bloque a la
+   derecha: con los dos sueltos como hijos directos de .caja-head (que es
+   flex + space-between), el switch quedaba centrado en vez de pegado al
+   borde — al agregar el botón de plegar pasaron a ser 3 items en vez de
+   2, y space-between reparte el del medio en el centro. */
+.caja-head-controles { display: flex; align-items: center; gap: 8px; }
 .btn-plegar {
   width: 26px; height: 26px;
   display: grid; place-items: center;
@@ -1046,13 +1052,15 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
       <div id="caja-paradas" class="caja-flotante plegada">
         <div class="caja-head">
           <h2>Paradas</h2>
-          <label class="switch" title="Mostrar u ocultar paradas">
-            <input type="checkbox" id="chk-paradas">
-            <span class="switch-track" aria-hidden="true"></span>
-          </label>
-          <button type="button" id="btn-plegar-paradas" class="btn-plegar btn-plegar-paradas" aria-expanded="false" aria-label="Mostrar u ocultar filtros de paradas">
-            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
-          </button>
+          <div class="caja-head-controles">
+            <label class="switch" title="Mostrar u ocultar paradas">
+              <input type="checkbox" id="chk-paradas">
+              <span class="switch-track" aria-hidden="true"></span>
+            </label>
+            <button type="button" id="btn-plegar-paradas" class="btn-plegar btn-plegar-paradas" aria-expanded="false" aria-label="Mostrar u ocultar filtros de paradas">
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+            </button>
+          </div>
         </div>
         <div class="caja-body">
           <div class="filtro-fila" data-campo="refugio">
@@ -2723,7 +2731,8 @@ function mostrarPaso(i) {
   const target = paso.target();
   if (!target) { pasoActual += 1; if (pasoActual < pasosTour.length) mostrarPaso(pasoActual); else finalizarTour(); return; }
   if (typeof target.scrollIntoView === "function") target.scrollIntoView({ block: "nearest" });
-  requestAnimationFrame(() => {
+
+  const colocar = () => {
     actualizarAnillo(target);
 
     elBurbuja = document.createElement("div");
@@ -2746,7 +2755,24 @@ function mostrarPaso(i) {
       pasoActual += 1;
       mostrarPaso(pasoActual);
     });
-  });
+  };
+
+  /* Si este paso despliega una solapa justo antes (paso.antes: plegarCaja
+     o plegarBuscador en false), hay que esperar a que termine esa
+     animación de apertura (transición de .caja-body, agregada para la
+     hoja inferior de mobile) antes de medir la posición del target con
+     getBoundingClientRect(). Midiendo un solo frame después (como antes)
+     el panel todavía está creciendo — en mobile, al estar la hoja
+     anclada abajo, "Recorridos" seguía subiendo en pantalla durante toda
+     la animación, y el anillo quedaba fijo donde el header estaba recién
+     empezada esa animación: bastante más abajo de su posición final,
+     terminando sobre alguna línea de la lista (ej. "6A") en vez de sobre
+     el título "Recorridos". Con el movimiento reducido activado no hay
+     transición que esperar (ver @media prefers-reduced-motion), así que
+     se salta la demora. */
+  const conAnimacion = !!paso.antes && !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (conAnimacion) setTimeout(() => requestAnimationFrame(colocar), 300);
+  else requestAnimationFrame(colocar);
 }
 
 function iniciarTour() {
