@@ -1204,6 +1204,22 @@ const BUSCADOR_LINEA_HABILITADO = true;
    antes de reactivarlo en ese caso. */
 const TOUR_HABILITADO = true;
 
+/* Interruptor del panel "Buscar línea" (origen/destino → línea sugerida):
+   oculta por completo la caja flotante, sin borrar nada del código. Volver
+   a "true" para reactivarla. */
+const BUSCADOR_LINEA_HABILITADO = false;
+
+/* Interruptor del tutorial guiado (botón "?" + oferta automática en las
+   primeras visitas): con esto en false no se crea el botón ni se ofrece
+   el tour solo, sin borrar nada del código — mismo criterio que los dos
+   interruptores de arriba. OJO: varios pasos del tour (ver pasosTour, más
+   abajo) apuntan a "Buscar línea" y mencionan "paradas cercanas"; si se
+   reactiva el tour en una instancia con PARADAS_HABILITADAS o
+   BUSCADOR_LINEA_HABILITADO en false, esos pasos van a señalar algo que
+   no existe en el sitio — conviene revisar/editar esos pasos puntuales
+   antes de reactivarlo en ese caso. */
+const TOUR_HABILITADO = false;
+
 /* ══════════════════════════════════════════════════════════════════
    Armado de datos: lee los 23 window.LINEA_*_DATA (GeoJSON crudo)
    y los convierte al formato interno del visor. Cada archivo es una
@@ -1248,8 +1264,9 @@ const CORRECCIONES_SENTIDO = {
   "21": { ida: "vuelta", vuelta: "ida" },
 };
 const CORRECCIONES_INVERTIR = {
-  "1": { ida: true },   // el tramo "ida" original (pasa a llamarse "vuelta") corre al revés
+  "1": { vuelta: true },  // el tramo "vuelta" original (pasa a llamarse "ida") corre al revés
   "5U": { "": true },   // sentido único, recorrido completo invertido
+  "6A": { horario: true }, // único sentido, recorrido completo invertido
   "7": { ida: true },
   "17": { ida: true },
 };
