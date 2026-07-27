@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Transporte público | Demo</title>
+<title>Transporte público | Comodoro Rivadavia</title>
 <!-- Ícono de pestaña: escudo institucional recortado del logo, sobre el
      mismo azul de la cabecera (#134768) para que se vea nítido tanto en
      pestañas claras como oscuras del navegador. -->
@@ -1187,22 +1187,6 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
    botón de ubicación), sin borrar nada del código. Para reactivarlas
    en otra instancia, alcanza con volver esto a "true". */
 const PARADAS_HABILITADAS = false;
-
-/* Interruptor del panel "Buscar línea" (origen/destino → línea sugerida):
-   oculta por completo la caja flotante, sin borrar nada del código. Volver
-   a "true" para reactivarla. */
-const BUSCADOR_LINEA_HABILITADO = false;
-
-/* Interruptor del tutorial guiado (botón "?" + oferta automática en las
-   primeras visitas): con esto en false no se crea el botón ni se ofrece
-   el tour solo, sin borrar nada del código — mismo criterio que los dos
-   interruptores de arriba. OJO: varios pasos del tour (ver pasosTour, más
-   abajo) apuntan a "Buscar línea" y mencionan "paradas cercanas"; si se
-   reactiva el tour en una instancia con PARADAS_HABILITADAS o
-   BUSCADOR_LINEA_HABILITADO en false, esos pasos van a señalar algo que
-   no existe en el sitio — conviene revisar/editar esos pasos puntuales
-   antes de reactivarlo en ese caso. */
-const TOUR_HABILITADO = false;
 
 /* Interruptor del panel "Buscar línea" (origen/destino → línea sugerida):
    oculta por completo la caja flotante, sin borrar nada del código. Volver
