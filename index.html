@@ -4,7 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Transporte público | Comodoro Rivadavia</title>
-<!-- Ícono de pestaña: escudo institucional -->
+<!-- Ícono de pestaña: escudo institucional recortado del logo, sobre el
+     mismo azul de la cabecera (#134768) para que se vea nítido tanto en
+     pestañas claras como oscuras del navegador. -->
 <link rel="icon" type="image/x-icon" href="assets/img/favicon.ico">
 <link rel="icon" type="image/png" sizes="16x16" href="assets/img/favicon-16.png">
 <link rel="icon" type="image/png" sizes="32x32" href="assets/img/favicon-32.png">
@@ -17,9 +19,9 @@
 <link rel="preconnect" href="https://mt1.google.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;550;600;650;700;750;800&display=swap" rel="stylesheet">
 <style>
-/* Reset de página sin franja blanca alrededor del visor, y el
-   fondo sigue al tema (se sincroniza desde aplicarTema()
-   en el script). */
+/* Reset de página: sin margen/franja blanca alrededor del visor, y el
+   fondo del documento sigue al tema (se sincroniza desde aplicarTema()
+   en el script) para que no quede un borde blanco/negro descalzado. */
 html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
 
 /* ═══ Visor de transporte público — tokens de tema (scoped al widget) ═══ */
@@ -37,6 +39,8 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   --geoloc:       #2a78d6;
   --ok:           #0ca30c;
   --marca:        #134768;
+  --aviso:        #c27018;
+  --tour-acento:  #d1293d;
   width: 100%;
   height: 100vh;
   height: 100dvh;
@@ -61,12 +65,15 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   --geoloc:       #3987e5;
 }
 :where(#visor-transporte) * { box-sizing: border-box; }
-/* :where() anula el aporte de especificidad del ID: este reset scoped no
+/* :where() anula el aporte de especificidad del ID: este reset scoped ya no
    puede ganarle a reglas de un componente con dos clases (ej. .seg.activo,
-   .pill.activo), que antes perdían contra este selector. */
+   .pill.activo), que antes perdían silenciosamente contra este selector. */
 :where(#visor-transporte) button { font: inherit; color: inherit; background: none; border: none; cursor: pointer; touch-action: manipulation; }
 :where(#visor-transporte) button:focus-visible { outline: 2px solid var(--geoloc); outline-offset: 2px; }
 :where(#visor-transporte) a { color: inherit; }
+
+/* pantalla completa: ya no hace falta anular borde/radio (no existen más);
+   el cuerpo ya ocupa el espacio disponible por sí solo (ver .vt-cuerpo). */
 
 /* ══ Cabecera institucional ══ */
 .vt-header {
@@ -120,24 +127,50 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
 .vt-cuerpo { position: relative; flex: 1 1 auto; min-height: 0; background: var(--mapa-fondo); overscroll-behavior: contain; }
 #mapa { position: absolute; inset: 0; background: var(--mapa-fondo); z-index: 1; }
 
-/* ══ Caja de capas flotante (solapa de líneas y paradas) ══ */
-#caja-capas {
+/* ══ Panel lateral fijo: un solo panel pegado al borde derecho del visor,
+   con las 3 secciones (Recorridos, Paradas, Buscar línea) como "solapas"
+   plegables dentro del mismo bloque. Antes eran 3 cajas flotantes
+   independientes, cada una con su propio borde/sombra/radio y separadas
+   por un gap — se leían como 3 widgets sueltos (lenguaje cómodo para
+   alguien acostumbrado a capas de GIS, no tanto para el resto). Ahora
+   comparten un único borde y una única sombra (una sola "tarjeta"), y las
+   secciones se diferencian con una línea divisoria fina entre ellas en
+   vez de separación física. El alto sigue ajustándose al contenido (no es
+   un panel de alto fijo con hueco vacío abajo cuando todo está plegado):
+   si las solapas abiertas superan el alto disponible, el panel entero
+   scrollea internamente, igual que antes. */
+#pila-flotante {
   position: absolute;
   top: 12px;
-  right: 12px;
-  width: 272px;
+  right: 0;
+  width: 305px;
   max-width: calc(100% - 24px);
   max-height: calc(100% - 24px);
   display: flex;
   flex-direction: column;
-  font-size: 11.5px;
   background: var(--panel);
   border: 1px solid var(--hair);
-  border-radius: 12px;
+  border-right: none; /* no se ve: el panel queda al ras del límite derecho del sitio */
+  border-radius: 12px 0 0 12px; /* redondeado sólo del lado que no toca el borde */
   box-shadow: 0 6px 20px rgba(0,0,0,0.20), 0 1px 4px rgba(0,0,0,0.12);
   z-index: 1200;
-  overflow: hidden;
+  overflow-y: auto; /* si las solapas abiertas superan el alto disponible,
+     scrollea el panel entero para poder llegar a las de más abajo */
+  overflow-x: hidden;
+  scrollbar-width: auto;
 }
+/* Cada solapa es una sección del panel único (ya no una caja flotante con
+   chrome propio): sin borde/radio/sombra individual, sólo una línea fina
+   la separa de la siguiente. Se pliega de forma independiente — varias
+   solapas pueden estar abiertas a la vez. */
+.caja-flotante {
+  display: flex;
+  flex-direction: column;
+  font-size: 11.5px;
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--hair);
+}
+.caja-flotante:last-child { border-bottom: none; }
 .caja-head {
   display: flex;
   align-items: center;
@@ -147,6 +180,7 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   border-bottom: 1px solid var(--hair);
   cursor: pointer;
   user-select: none;
+  transition: background 0.15s;
 }
 .caja-head h2 {
   /* Subtítulo "Capas": mismo tamaño, color y fondo más oscuros, sin contorno */
@@ -161,6 +195,12 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   background: color-mix(in srgb, var(--ink-1) 16%, var(--panel));
 }
 .caja-head .stats { font-size: 11.5px; color: var(--ink-2); margin-left: auto; }
+/* Agrupa switch + botón de plegar (Paradas) como un solo bloque a la
+   derecha: con los dos sueltos como hijos directos de .caja-head (que es
+   flex + space-between), el switch quedaba centrado en vez de pegado al
+   borde — al agregar el botón de plegar pasaron a ser 3 items en vez de
+   2, y space-between reparte el del medio en el centro. */
+.caja-head-controles { display: flex; align-items: center; gap: 8px; }
 .btn-plegar {
   width: 26px; height: 26px;
   display: grid; place-items: center;
@@ -169,13 +209,49 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   transition: transform 0.2s, background 0.15s;
 }
 .btn-plegar:hover { background: var(--hover-wash); color: var(--ink-1); }
-#caja-capas.plegada .btn-plegar { transform: rotate(-90deg); }
-#caja-capas.plegada .caja-body { display: none; }
-#caja-capas.plegada .caja-head { border-bottom: none; }
+.caja-flotante.plegada .btn-plegar { transform: rotate(-90deg); }
+.caja-flotante.plegada .caja-body { display: none; }
+.caja-flotante.plegada .caja-head { border-bottom: none; }
+/* Solapa abierta: leve resalte en su cabecera para que sea obvio, de un
+   vistazo, cuál de las 3 secciones está expandida dentro del panel. */
+.caja-flotante:not(.plegada) .caja-head { background: color-mix(in srgb, var(--ink-1) 4%, var(--panel)); }
 
-.caja-body { overflow-y: auto; scrollbar-width: thin; padding: 4px 8px 10px; }
+/* Encabezado "Recorridos" fijo: si hay varias solapas abiertas a la vez y
+   el panel entero scrollea, esta cabecera se queda siempre a la vista
+   arriba de todo en vez de desaparecer al scrollear — ayuda a ubicarse
+   dentro del panel. Fondo opaco obligatorio (sticky sobre contenido que
+   sigue scrolleando detrás). */
+.caja-head-fija {
+  position: sticky;
+  top: 0;
+  z-index: 15;
+  background: var(--panel);
+}
 
-#seccion-paradas { margin-top: 6px; padding-top: 8px; border-top: 1px solid var(--hair); }
+/* Tope de alto por solapa (no sólo por el panel entero): si no, una sola
+   sección larga (ej. la lista de 23 líneas) se comería todo el panel y
+   dejaría a las otras dos solapas abiertas fuera de vista. Cada una
+   scrollea de forma independiente al llegar a este tope. */
+.caja-body { overflow-y: auto; scrollbar-width: auto; padding: 4px 8px 10px; max-height: min(50vh, 420px); }
+/* Recorridos: sin padding arriba — el primer elemento de adentro es la
+   cabecera sticky "Líneas" (ver .seccion-head, más abajo). */
+#caja-capas .caja-body { padding-top: 0; } /* Hueco debajo de 'RECORRIDOS' */
+/* El cuerpo del buscador es corto (dos campos + resultado): no necesita
+   scroll ni tope propio, y así el desplegable de sugerencias no queda
+   recortado. Ya no hace falta una excepción aparte para #caja-buscador
+   (como antes): al no tener las solapas su propio border-radius, no hay
+   bordes redondeados contra los que el desplegable pueda cortarse. */
+.caja-body-buscador { overflow: visible; max-height: none; }
+
+/* La caja de Paradas no tiene, en desktop, botón de plegar propio: el
+   switch de su cabecera ES el único control (prende/apaga la capa y
+   expande/pliega la solapa), así que el resto de la cabecera no debería
+   insinuar que es clickeable. En mobile se suma un botón de plegar
+   independiente (.btn-plegar-paradas, oculto acá y mostrado sólo en el
+   media query de mobile) para poder ocultar los filtros sin apagar la
+   capa — ahí el espacio pesa más que en desktop. */
+#caja-paradas .caja-head { cursor: default; }
+.btn-plegar-paradas { display: none; }
 
 .seccion-head {
   display: flex;
@@ -188,7 +264,7 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   z-index: 5;
 }
 .seccion-head h3 {
-  /* Subtítulo "Líneas" / "Paradas": mismo tamaño, color y fondo más oscuros, sin contorno */
+  /* Subtítulo "Líneas" / "Paradas": mismo tamaño, color y fondo más oscuros */
   margin: 0;
   font-size: 10px;
   font-weight: 700;
@@ -199,11 +275,12 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   border-radius: 6px;
   background: color-mix(in srgb, var(--ink-1) 16%, var(--panel));
 }
-.ayuda { margin: 2px 2px 6px; font-size: 10.5px; line-height: 1.4; color: var(--muted); }
+/* ── Texto de ayuda en el buscador de líneas ── */
+.ayuda { margin: 2px 2px 6px; font-size: 13px; line-height: 1.4; color: var(--muted); }
 
 .mini-acciones { display: flex; gap: 6px; }
-.btn-mini {
-  font-size: 10px;
+.btn-mini { /* ── Botón de 'Limpiar' ── */
+  font-size: 12px;
   font-weight: 650;
   letter-spacing: 0.02em;
   padding: 4px 12px;
@@ -213,16 +290,128 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   transition: background 0.15s, color 0.15s;
 }
 .btn-mini:hover { background: color-mix(in srgb, var(--ink-1) 14%, var(--panel)); color: var(--ink-1); }
+.btn-limpiar.resaltado { background: color-mix(in srgb, var(--aviso) 24%, var(--panel)); color: var(--ink-1); }
+.btn-limpiar.resaltado:hover { background: color-mix(in srgb, var(--aviso) 36%, var(--panel)); }
 
-/* ── Mapa base (segmentado: Argenmap / Satelital Google) ── */
+/* ── Buscador de línea sugerida (prototipo: origen/destino → línea) ── */
+.campo-viaje { margin-bottom: 8px; }
+.campo-viaje-label { /* ── Botón 'DESDE' y 'HASTA' ── */
+  display: block;
+  font-size: 11px;
+  font-weight: 650;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0 2px 3px;
+}
+.campo-viaje-fila { display: flex; gap: 6px; align-items: stretch; }
+.autocompletar { position: relative; flex: 1; min-width: 0; }
+.autocompletar input { /* ── Texto de ejemplo en el input ── */
+  width: 100%;
+  font: inherit;
+  font-size: 12px;
+  padding: 9px 10px;
+  border-radius: 9px;
+  border: 1px solid var(--hair);
+  background: var(--panel);
+  color: var(--ink-1);
+}
+.autocompletar input:focus-visible { outline: 2px solid var(--geoloc); outline-offset: 1px; }
+.sugerencias {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  list-style: none;
+  margin: 0;
+  padding: 5px;
+  background: var(--panel);
+  border: 1px solid var(--hair);
+  border-radius: 10px;
+  box-shadow: var(--sombra);
+  max-height: 260px;
+  overflow-y: auto;
+  z-index: 20;
+}
+.sugerencias li { padding: 9px 11px; border-radius: 7px; font-size: 13px; cursor: pointer; }
+.sugerencias li:hover, .sugerencias li.resaltado { background: var(--hover-wash); }
+.sugerencia-fuente { display: block; font-size: 10.5px; color: var(--muted); font-weight: 500; margin-top: 2px; }
+.btn-elegir-mapa {
+  width: 34px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 9px;
+  border: 1px solid var(--hair);
+  color: var(--muted);
+}
+.btn-elegir-mapa:hover { background: var(--hover-wash); color: var(--ink-1); }
+.btn-elegir-mapa.activo { background: var(--activo-bg); color: var(--activo-fg); border-color: var(--activo-bg); }
+.btn-buscar-primario { /* ── botón de 'Buscar línea' ── */
+  display: block;
+  width: 100%;
+  margin-top: 4px;
+  padding: 8px 12px;
+  font-size: 12.5px;
+  font-weight: 650;
+  border-radius: 9px;
+  text-align: center;
+  background: var(--activo-bg);
+  color: var(--activo-fg);
+}
+.btn-buscar-primario:hover { opacity: 0.9; }
+.btn-buscar-primario:disabled { opacity: 0.35; pointer-events: none; }
+.btn-limpiar { display: block; margin: 6px auto 0; }
+#resultado-buscador { margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--hair); }
+.resultado-ayuda { margin: 0 2px 6px; font-size: 11px; color: var(--muted); }
+.resultado-opcion {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 7px 8px;
+  margin-bottom: 4px;
+  border-radius: 9px;
+  border: 1.5px solid var(--hair);
+  text-align: left;
+  transition: border-color 0.15s, background 0.15s;
+}
+.resultado-opcion:last-child { margin-bottom: 0; }
+.resultado-opcion:hover { background: var(--hover-wash); }
+.resultado-opcion.activa { border-color: var(--activo-bg); background: var(--hover-wash); }
+.resultado-texto { display: flex; flex-direction: column; line-height: 1.25; flex: 1; min-width: 0; }
+.resultado-texto strong { font-size: 12.5px; }
+.resultado-sentido { font-size: 10.5px; color: var(--ink-2); }
+.resultado-caminata { font-size: 10.5px; color: var(--ink-2); font-weight: 650; white-space: nowrap; }
+.resultado-vacio { margin: 4px 2px 0; font-size: 11.5px; color: var(--muted); line-height: 1.4; }
+#mapa.cursor-elegir { cursor: crosshair; }
+
+/* ── Mapa base (segmentado: Argenmap / Satelital Google) — control
+   flotante arriba a la izquierda, junto a ubicación/encuadre, no dentro
+   del panel de Recorridos (así queda más a mano, no hay que abrir el
+   panel para cambiar de vista). ── */
 .segmentado {
   display: flex;
   border: 1px solid var(--hair);
   border-radius: 9px;
   overflow: hidden;
 }
-.segmentado.base { margin: 2px 2px 4px; }
-.segmentado.base .seg { flex: 1; text-align: center; }
+.segmentado.base {
+  background: var(--panel);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.22);
+  margin-bottom: 0px; /* gap corto contra los botones de ubicación/encuadre, de abajo */
+}
+/* Más grande que el .seg genérico (que también usan los filtros de
+   Paradas, adentro del panel): acá afuera, flotando sobre el mapa, tiene
+   que leerse y tocarse bien de entrada, sin depender de la escala
+   compacta pensada para vivir dentro de un panel angosto. */
+.segmentado.base .seg {
+  flex: 1;
+  text-align: center;
+  font-size: 12.5px;
+  font-weight: 700;
+  padding: 6px 10px;
+}
 .seg {
   font-size: 11px;
   font-weight: 600;
@@ -372,7 +561,6 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   border-radius: 8px;
 }
 #conteo-paradas strong { color: var(--ink-1); }
-#seccion-paradas.apagada #filtros-paradas { opacity: 0.35; pointer-events: none; }
 
 /* ══ Animaciones de mapa ══ */
 .linea-flujo { animation: vt-flujo 0.9s linear infinite; }
@@ -426,6 +614,29 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
 }
 .ctrl-acciones button:last-child { border-bottom: none; }
 .ctrl-acciones button:hover { background: var(--hover-wash); color: var(--ink-1); }
+.ctrl-acciones button.deshabilitado { opacity: 0.35; pointer-events: none; }
+
+/* botón de ayuda / tutorial: aparte de ctrl-acciones (no dentro de la misma
+   caja) y en rojo, a propósito, para que se note que es otra cosa: la
+   entrada manual al tutorial guiado, disponible siempre. */
+.ctrl-ayuda { margin-top: 8px !important; }
+.ctrl-ayuda button {
+  width: 36px; height: 36px;
+  display: grid; place-items: center;
+  border-radius: 999px;
+  background: var(--tour-acento);
+  color: #fff;
+  font-size: 17px;
+  font-weight: 800;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.28);
+  transition: transform 0.15s;
+}
+.ctrl-ayuda button:hover { transform: scale(1.06); }
+.ctrl-ayuda button.vt-tour-pulso { animation: vt-tour-pulso 0.7s ease-in-out 3; }
+@keyframes vt-tour-pulso {
+  0%, 100% { box-shadow: 0 2px 10px rgba(0,0,0,0.28); }
+  50% { box-shadow: 0 2px 10px rgba(0,0,0,0.28), 0 0 0 8px color-mix(in srgb, var(--tour-acento) 35%, transparent); }
+}
 
 /* tooltips y popups */
 #visor-transporte .leaflet-tooltip.tt-linea, #visor-transporte .leaflet-tooltip.tt-parada {
@@ -576,11 +787,112 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   /* Botón de pantalla completa: sólo se oculta en mobile (el de tema queda) */
   #btn-fs { display: none; }
   .vt-btn-header { width: 32px; height: 32px; }
-  #caja-capas { width: min(272px, calc(100% - 24px)); font-size: 11px; }
+  /* ═══ Hoja inferior (bottom sheet), sólo en mobile ═══
+     Antes el panel flotaba arriba a la derecha con hasta 272px de ancho,
+     a la misma altura que los controles topleft del mapa (Argenmap/
+     Satelital, zoom, ubicación) — en pantallas angostas (~360-400px) el
+     borde izquierdo del panel invadía esos controles. Ahora se ancla
+     abajo, a todo el ancho: colapsado ocupa sólo el alto de la manija +
+     las 3 cabeceras, así el mapa (con sus controles) queda siempre libre
+     arriba. La manija (.vt-sheet-manija) la agrega el script sólo en
+     mobile — ver "Hoja inferior en mobile" en el <script>, más abajo.
+     "transition: transform" es para el rebote al soltar un arrastre:
+     mientras el dedo arrastra la manija el script apaga esta transición
+     (para que el panel siga al dedo 1 a 1, sin demora) y la reactiva al
+     soltar, así vuelve a su lugar con una animación suave en vez de
+     saltar de golpe. */
+  #pila-flotante {
+    top: auto;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    max-width: 100%;
+    max-height: min(72dvh, 560px);
+    border-right: 1px solid var(--hair);
+    border-bottom: none;
+    border-radius: 16px 16px 0 0;
+    box-shadow: 0 -6px 20px rgba(0,0,0,0.20), 0 -1px 4px rgba(0,0,0,0.12);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  /* Manija: barra (afordancia de "esto se arrastra") + una flecha real
+     que rota según el estado — mismo lenguaje visual que .btn-plegar de
+     cada solapa, para que se reconozca de un vistazo. Flecha hacia
+     arriba = "tocá para abrir Recorridos"; hacia abajo (con alguna
+     solapa abierta) = "tocá para cerrar". El estado lo sincroniza el
+     script con la clase .vt-sheet-abierto en #pila-flotante, así se
+     mantiene correcto sea cual sea la solapa que el usuario abra. */
+  .vt-sheet-manija {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 8px 0 4px;
+    touch-action: none;
+    cursor: grab;
+    flex-shrink: 0;
+  }
+  .vt-sheet-manija::before {
+    content: "";
+    width: 36px; height: 4px;
+    border-radius: 999px;
+    background: var(--hair);
+  }
+  .vt-sheet-manija svg {
+    color: var(--muted);
+    transition: transform 0.2s ease;
+    transform: rotate(180deg); /* colapsado: flecha hacia arriba, "abrir" */
+  }
+  #pila-flotante.vt-sheet-abierto .vt-sheet-manija svg { transform: rotate(0deg); } /* abierto: "cerrar" */
+
+  /* Apertura/cierre de cada solapa, animado: en desktop sigue siendo el
+     display:none instantáneo de la regla de más arriba (no se toca);
+     acá se anima max-height + opacity en vez de saltar de golpe, para
+     que al tocar o arrastrar la manija se note que el panel reacciona. */
+  .caja-body {
+    padding: 4px 8px 8px;
+    transition: max-height 0.25s ease, opacity 0.2s ease, padding 0.25s ease;
+  }
+  .caja-flotante.plegada .caja-body {
+    display: block;
+    overflow: hidden;
+    max-height: 0;
+    opacity: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    pointer-events: none;
+  }
+  /* El buscador usaba max-height:none a propósito (para no recortar el
+     desplegable de sugerencias) — acá necesita un valor concreto para
+     poder animarse; overflow sigue en "visible", así que el desplegable
+     igual no se corta si el contenido lo supera. */
+  .caja-body-buscador { max-height: 340px; }
+
+  /* Cabeceras y subtítulos más compactos: menos espacio muerto en un
+     panel que ahora compite por alto con el mapa. */
+  .caja-head { padding: 6px 8px 6px 9px; }
+  .caja-head h2, .seccion-head h3 { font-size: 9.5px; padding: 2px 7px; }
+  .caja-head .stats { font-size: 10.5px; }
+  .seccion-head { padding: 1px 2px 2px; }
+  .ayuda { font-size: 12px; margin: 2px 2px 5px; }
+
+  .caja-flotante { font-size: 11px; }
   .btn-ojo, .btn-plegar { width: 30px; height: 30px; }
   .linea-main { padding: 7px 6px; }
   .pill { padding: 5px 11px; }
-  #tarjeta-cercanas { bottom: 30px; }
+  /* Botón para plegar/desplegar los filtros de Paradas sin apagar la
+     capa: en desktop el switch sigue siendo el único control (ver
+     comentario en #caja-paradas .caja-head, más arriba); acá se agrega
+     este segundo control independiente sólo para ahorrar espacio. */
+  .btn-plegar-paradas { display: grid; }
+  /* "Paradas más cercanas" y el toast flotan arriba de la hoja inferior
+     (no a una distancia fija del piso): --vt-sheet-alto lo mantiene
+     actualizado el script con el alto real del panel en todo momento, así
+     nunca quedan tapados por la hoja ni dejan un hueco de más cuando está
+     colapsada. */
+  #tarjeta-cercanas { bottom: calc(var(--vt-sheet-alto, 140px) + 14px); }
+  #toast { bottom: calc(var(--vt-sheet-alto, 140px) + 14px); }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -589,6 +901,91 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
      en vez de deslizar, para no perder la lectura del contenido. */
   .vt-header-texto .marquee-text { animation: none; display: inline; padding-left: 0; }
   .vt-header-texto h1, .vt-header-texto p { text-overflow: ellipsis; }
+  .vt-tour-anillo { transition: none; }
+  /* Hoja inferior (mobile): sin rebote de arrastre, sin animación de
+     apertura/cierre de solapas y sin rotación de la flecha de la manija. */
+  #pila-flotante, .caja-body, .vt-sheet-manija svg { transition: none; }
+}
+
+/* ══ Tutorial guiado (primera visita) ══
+   No se intenta "levantar" el botón real por encima del velo con z-index:
+   varios de los controles reales viven dentro de contextos de apilamiento
+   propios (el mapa, los controles de Leaflet) y no pueden asomar por
+   encima de un hermano fuera de ese contexto. En cambio, el velo oscurece
+   todo por igual y un anillo decorativo (elemento aparte, no el botón
+   real) se dibuja encima marcando la posición — visualmente igual de claro
+   y sin pelearse con los z-index internos.
+   Los elementos (velo, anillo, modal, burbuja) se insertan como hijos de
+   #visor-transporte (variable CONT en el script), no de <body>: así heredan
+   la tipografía Inter y las variables de tema (--panel, --ink-1, etc.) del
+   visor. Esto no reintroduce el problema de apilamiento de arriba porque
+   #visor-transporte no tiene position/transform propios: sigue sin crear
+   su propio contexto de apilamiento, y position:fixed en sus hijos se
+   posiciona igual respecto de la ventana. */
+.vt-tour-block {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 10, 10, 0.5);
+  z-index: 9000;
+}
+.vt-tour-anillo {
+  position: fixed;
+  z-index: 9001;
+  border: 3px solid var(--tour-acento);
+  border-radius: 12px;
+  box-shadow: 0 0 0 3px rgba(255,255,255,0.85), 0 0 16px rgba(0,0,0,0.45);
+  pointer-events: none;
+  transition: top 0.2s ease, left 0.2s ease, width 0.2s ease, height 0.2s ease;
+}
+.vt-tour-modal, .vt-tour-burbuja {
+  position: fixed;
+  z-index: 9002;
+  background: var(--panel);
+  color: var(--ink-1);
+  border-radius: 16px;
+  box-shadow: var(--sombra);
+  padding: 20px;
+}
+.vt-tour-modal {
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(380px, calc(100vw - 32px));
+  text-align: center;
+}
+.vt-tour-modal h3 { margin: 0 0 12px; font-size: 22px; font-weight: 800; }
+.vt-tour-modal p { margin: 0 0 20px; font-size: 17.5px; line-height: 1.5; color: var(--ink-2); }
+.vt-tour-acciones { display: flex; flex-direction: column; gap: 10px; }
+.vt-tour-btn-si {
+  background: var(--tour-acento);
+  color: #fff;
+  padding: 14px;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 17px;
+}
+.vt-tour-btn-si:hover { opacity: 0.92; }
+.vt-tour-btn-luego { padding: 11px; font-size: 15.5px; color: var(--muted); font-weight: 600; }
+.vt-tour-btn-luego:hover { color: var(--ink-1); }
+
+.vt-tour-burbuja { width: min(340px, calc(100vw - 32px)); }
+.vt-tour-paso {
+  font-size: 13px;
+  font-weight: 750;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--tour-acento);
+  margin: 0 0 10px;
+}
+.vt-tour-burbuja p.vt-tour-texto { margin: 0 0 18px; font-size: 18px; line-height: 1.55; }
+.vt-tour-pie { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.vt-tour-saltear { font-size: 15px; color: var(--muted); font-weight: 600; padding: 9px 2px; }
+.vt-tour-saltear:hover { color: var(--ink-1); }
+.vt-tour-ok { background: var(--tour-acento); color: #fff; padding: 12px 22px; border-radius: 9px; font-weight: 700; font-size: 16px; }
+.vt-tour-ok:hover { opacity: 0.92; }
+
+@media (max-width: 640px) {
+  .vt-tour-modal, .vt-tour-burbuja { padding: 16px; }
 }
 </style>
 </head>
@@ -615,74 +1012,129 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
     </button>
   </div>
 
-  <!-- Cuerpo: mapa + caja de capas flotante -->
+  <!-- Cuerpo: mapa + panel lateral -->
   <div class="vt-cuerpo">
     <div id="mapa" role="application" aria-label="Mapa de líneas de colectivo"></div>
 
-    <!-- Solapa de capas: mapa base + líneas + paradas -->
-    <div id="caja-capas">
-      <div class="caja-head" id="caja-head" role="button" aria-expanded="true" tabindex="0">
-        <h2>Recorridos</h2>
-        <span class="stats" id="stats-row"></span>
-        <span class="btn-plegar" aria-hidden="true">
-          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
-        </span>
-      </div>
-      <div class="caja-body">
+    <!-- Panel lateral fijo (pegado al borde derecho): Recorridos, Paradas y
+         Buscar línea como solapas plegables dentro del mismo panel, cada
+         una se abre/cierra de forma independiente. -->
+    <div id="pila-flotante">
 
-        <div class="segmentado base" role="group" aria-label="Mapa base">
-          <button class="seg activo" id="btn-base-mapa" title="Mapa base Argenmap (IGN)">Argenmap</button>
-          <button class="seg" id="btn-base-sat" title="Imagen satelital de Google">Satelital</button>
+      <!-- Solapa de capas: líneas + paradas (el selector de mapa base
+           Argenmap/Satelital se movió afuera, arriba a la izquierda,
+           junto a los botones de ubicación/encuadre — ver CtrlBase). -->
+      <div id="caja-capas" class="caja-flotante plegada">
+        <div class="caja-head caja-head-fija" id="caja-head" role="button" aria-expanded="false" tabindex="0">
+          <h2>Recorridos</h2>
+          <span class="stats" id="stats-row"></span>
+          <span class="btn-plegar" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+          </span>
         </div>
+        <div class="caja-body">
 
-        <section id="seccion-lineas">
-          <div class="seccion-head">
-            <h3>Líneas</h3>
-            <div class="mini-acciones">
-              <button id="btn-todas" class="btn-mini">Todas</button>
-              <button id="btn-ninguna" class="btn-mini">Ninguna</button>
+          <section id="seccion-lineas">
+            <div class="seccion-head">
+              <h3>Líneas</h3>
+              <div class="mini-acciones">
+                <button id="btn-todas" class="btn-mini">Todas</button>
+                <button id="btn-ninguna" class="btn-mini">Ninguna</button>
+              </div>
             </div>
-          </div>
-          <ul id="lista-lineas"></ul>
-        </section>
+            <ul id="lista-lineas"></ul>
+          </section>
+        </div>
+      </div>
 
-        <section id="seccion-paradas">
-          <div class="seccion-head">
-            <h3>Paradas</h3>
+      <!-- Paradas: filtros por refugio/cartel/poste. El switch prende/apaga
+           la capa en el mapa y a la vez expande/pliega esta caja. -->
+      <div id="caja-paradas" class="caja-flotante plegada">
+        <div class="caja-head">
+          <h2>Paradas</h2>
+          <div class="caja-head-controles">
             <label class="switch" title="Mostrar u ocultar paradas">
-              <input type="checkbox" id="chk-paradas" checked>
+              <input type="checkbox" id="chk-paradas">
               <span class="switch-track" aria-hidden="true"></span>
             </label>
+            <button type="button" id="btn-plegar-paradas" class="btn-plegar btn-plegar-paradas" aria-expanded="false" aria-label="Mostrar u ocultar filtros de paradas">
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+            </button>
           </div>
-          <div id="filtros-paradas">
-            <div class="filtro-fila" data-campo="refugio">
-              <span class="filtro-nombre">Refugio</span>
-              <div class="segmentado" role="group" aria-label="Filtro refugio">
-                <button class="seg activo" data-val="todas">Todas</button>
-                <button class="seg" data-val="si">Sí</button>
-                <button class="seg" data-val="no">No</button>
-              </div>
+        </div>
+        <div class="caja-body">
+          <div class="filtro-fila" data-campo="refugio">
+            <span class="filtro-nombre">Refugio</span>
+            <div class="segmentado" role="group" aria-label="Filtro refugio">
+              <button class="seg activo" data-val="todas">Todas</button>
+              <button class="seg" data-val="si">Sí</button>
+              <button class="seg" data-val="no">No</button>
             </div>
-            <div class="filtro-fila" data-campo="cartel">
-              <span class="filtro-nombre">Cartel</span>
-              <div class="segmentado" role="group" aria-label="Filtro cartel">
-                <button class="seg activo" data-val="todas">Todas</button>
-                <button class="seg" data-val="si">Sí</button>
-                <button class="seg" data-val="no">No</button>
-              </div>
-            </div>
-            <div class="filtro-fila" data-campo="poste">
-              <span class="filtro-nombre">Poste</span>
-              <div class="segmentado" role="group" aria-label="Filtro poste">
-                <button class="seg activo" data-val="todas">Todas</button>
-                <button class="seg" data-val="si">Sí</button>
-                <button class="seg" data-val="no">No</button>
-              </div>
-            </div>
-            <div id="conteo-paradas" aria-live="polite"></div>
           </div>
-        </section>
+          <div class="filtro-fila" data-campo="cartel">
+            <span class="filtro-nombre">Cartel</span>
+            <div class="segmentado" role="group" aria-label="Filtro cartel">
+              <button class="seg activo" data-val="todas">Todas</button>
+              <button class="seg" data-val="si">Sí</button>
+              <button class="seg" data-val="no">No</button>
+            </div>
+          </div>
+          <div class="filtro-fila" data-campo="poste">
+            <span class="filtro-nombre">Poste</span>
+            <div class="segmentado" role="group" aria-label="Filtro poste">
+              <button class="seg activo" data-val="todas">Todas</button>
+              <button class="seg" data-val="si">Sí</button>
+              <button class="seg" data-val="no">No</button>
+            </div>
+          </div>
+          <div id="conteo-paradas" aria-live="polite"></div>
+        </div>
       </div>
+
+      <!-- Buscador de línea sugerida (prototipo): origen/destino → mejor línea -->
+      <div id="caja-buscador" class="caja-flotante plegada">
+        <div class="caja-head" id="buscador-head" role="button" aria-expanded="false" tabindex="0">
+          <h2>Buscar línea</h2>
+          <span class="btn-plegar" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+          </span>
+        </div>
+        <div class="caja-body caja-body-buscador">
+          <p class="ayuda">Elegí una intersección o marcá el punto en el mapa para el origen y el destino del viaje.</p>
+
+          <div class="campo-viaje">
+            <label class="campo-viaje-label" for="input-origen">Desde</label>
+            <div class="campo-viaje-fila">
+              <div class="autocompletar">
+                <input type="text" id="input-origen" placeholder="Ej: Jornada y Crónica" autocomplete="off">
+                <ul class="sugerencias" id="sugerencias-origen" hidden></ul>
+              </div>
+              <button class="btn-elegir-mapa" data-campo="origen" title="Marcar origen en el mapa" aria-label="Marcar origen en el mapa">
+                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.4"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="campo-viaje">
+            <label class="campo-viaje-label" for="input-destino">Hasta</label>
+            <div class="campo-viaje-fila">
+              <div class="autocompletar">
+                <input type="text" id="input-destino" placeholder="Ej: San Martín y Belgrano" autocomplete="off">
+                <ul class="sugerencias" id="sugerencias-destino" hidden></ul>
+              </div>
+              <button class="btn-elegir-mapa" data-campo="destino" title="Marcar destino en el mapa" aria-label="Marcar destino en el mapa">
+                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.4"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <button id="btn-buscar-linea" class="btn-buscar-primario" disabled>Buscar línea</button>
+          <button id="btn-limpiar-buscador" class="btn-mini btn-limpiar">Limpiar resultados</button>
+
+          <div id="resultado-buscador" hidden></div>
+        </div>
+      </div>
+
     </div>
 
     <!-- tarjeta de paradas cercanas -->
@@ -730,10 +1182,27 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
 (function () {
 "use strict";
 
-/* Interruptor temporal: oculta y desactiva por
+/* Interruptor temporal (requerimiento externo): oculta y desactiva por
    completo la capa de paradas (panel de capas + "paradas cercanas" del
-   botón de ubicación), sin borrar código. */
+   botón de ubicación), sin borrar nada del código. Para reactivarlas
+   en otra instancia, alcanza con volver esto a "true". */
 const PARADAS_HABILITADAS = false;
+
+/* Interruptor del panel "Buscar línea" (origen/destino → línea sugerida):
+   oculta por completo la caja flotante, sin borrar nada del código. Volver
+   a "true" para reactivarla. */
+const BUSCADOR_LINEA_HABILITADO = false;
+
+/* Interruptor del tutorial guiado (botón "?" + oferta automática en las
+   primeras visitas): con esto en false no se crea el botón ni se ofrece
+   el tour solo, sin borrar nada del código — mismo criterio que los dos
+   interruptores de arriba. OJO: varios pasos del tour (ver pasosTour, más
+   abajo) apuntan a "Buscar línea" y mencionan "paradas cercanas"; si se
+   reactiva el tour en una instancia con PARADAS_HABILITADAS o
+   BUSCADOR_LINEA_HABILITADO en false, esos pasos van a señalar algo que
+   no existe en el sitio — conviene revisar/editar esos pasos puntuales
+   antes de reactivarlo en ese caso. */
+const TOUR_HABILITADO = false;
 
 /* ══════════════════════════════════════════════════════════════════
    Armado de datos: lee los 23 window.LINEA_*_DATA (GeoJSON crudo)
@@ -784,13 +1253,6 @@ const CORRECCIONES_INVERTIR = {
   "7": { ida: true },
   "17": { ida: true },
 };
-
-/* Líneas sin punto viajero: la geometría de origen tiene varios tramos
-   sueltos (loops cerrados dispersos) que el cosido no puede unir en un
-   solo trazo, y eso generaba un punto animado por cada tramo suelto.
-   Se apaga el punto acá hasta que se corrija el dato de origen; el trazo
-   de la línea y el efecto de flujo punteado siguen mostrándose igual. */
-const SIN_PUNTO_VIAJERO = new Set(["5U"]);
 
 /* Cosido de tramos del MultiLineString: encadena fin→inicio por
    proximidad SIN invertir tramos (digitalizados en sentido de
@@ -876,6 +1338,44 @@ for (const id of IDS_LINEAS) {
 }
 const PARADAS_DATA = Array.isArray(window.PARADAS_DATA) ? window.PARADAS_DATA : [];
 
+/* ── Índice de esquinas (para el autocompletar del buscador de línea) ───
+   Se arma a partir de las paradas relevadas, agrupando por "calle + esquina"
+   (varias paradas pueden compartir la misma esquina, una por mano). No
+   depende de que la capa de Paradas esté habilitada ni visible: el dato
+   se usa igual puertas adentro, aunque PARADAS_HABILITADAS sea false. */
+function normalizarTxt(s) {
+  return String(s || "").trim().toLowerCase()
+    .normalize("NFD").replace(/[̀-ͯ]/g, ""); // sin acentos, para filtrar sin importar tildes
+}
+/* placeholders del relevamiento para "no identificada" (no son nombres reales) */
+function esPlaceholder(s) {
+  const n = normalizarTxt(s);
+  return !n || n === "-" || n === "calle sin nombre";
+}
+const ESQUINAS_DATA = (() => {
+  const grupos = new Map();
+  for (const p of PARADAS_DATA) {
+    const calle = String(p.calle || "").trim();
+    const esquina = String(p.esquina || "").trim();
+    const calleValida = calle && !esPlaceholder(calle);
+    const esquinaValida = esquina && !esPlaceholder(esquina);
+    if (!calleValida && !esquinaValida) continue; // no hay nada útil relevado en esta parada
+    const etiqueta = calleValida ? (esquinaValida ? `${calle} y ${esquina}` : calle) : esquina;
+    const clave = normalizarTxt(etiqueta);
+    if (!grupos.has(clave)) {
+      grupos.set(clave, { etiqueta, lat: p.lat, lng: p.lng, n: 1 });
+    } else {
+      /* promedio de coordenadas de las paradas que comparten esquina, para
+         centrar el punto sugerido entre ambas manos */
+      const g = grupos.get(clave);
+      g.lat = (g.lat * g.n + p.lat) / (g.n + 1);
+      g.lng = (g.lng * g.n + p.lng) / (g.n + 1);
+      g.n++;
+    }
+  }
+  return [...grupos.values()].sort((a, b) => a.etiqueta.localeCompare(b.etiqueta, "es"));
+})();
+
 if (!LINEAS_DATA.length) {
   document.getElementById("mapa").innerHTML =
     '<p style="padding:24px">No se pudieron cargar los datos remotos de líneas ' +
@@ -937,7 +1437,11 @@ function toast(msg, ms = 4000) {
 const ATTR = "Instituto Geográfico Nacional + OpenStreetMap. Google Satelital. Fuente: Dirección General de Transporte (recorridos 2026). Procesamiento: Modernización e Investigación Territorial";
 const mapa = L.map("mapa", { zoomControl: false, attributionControl: true });
 mapa.attributionControl.setPrefix(false);
-L.control.zoom({ position: "bottomright" }).addTo(mapa);
+/* Sin el control de zoom por defecto de Leaflet (abajo a la derecha): ahí
+   quedaba tapado por el panel lateral. Los botones +/- viven ahora en
+   CtrlAcciones, arriba a la izquierda, junto a ubicación/encuadre (ver
+   más abajo en el script) — el zoom con rueda/pellizco/teclado sigue
+   andando igual, esto sólo saca el control visual de en medio. */
 L.control.scale({ imperial: false, position: "bottomleft" }).addTo(mapa);
 
 const capaArgenmapClaro = L.tileLayer(
@@ -977,7 +1481,7 @@ const estado = {
   enfocada: null,
   autoEncendida: null, // id de la línea que se prendió sola al enfocarla (no por el ojo); se apaga al desenfocar
   rutasApagadas: new Set(),
-  paradasOn: PARADAS_HABILITADAS,
+  paradasOn: false, // arranca apagado; PARADAS_HABILITADAS sólo controla si la caja existe
   filtros: { refugio: "todas", cartel: "todas", poste: "todas" },
 };
 
@@ -1063,7 +1567,6 @@ function armarAnimacion(id) {
   limpiarAnimacion();
   const linea = lineaPorId.get(id);
   const items = rutasPorLinea.get(id).filter((it) => mapa.hasLayer(it.poly));
-  const conPunto = !SIN_PUNTO_VIAJERO.has(id);
   for (const it of items) {
     const overlay = L.polyline(it.poly.getLatLngs(), {
       pane: "foco", color: "#ffffff", weight: 2.4, opacity: 0.95,
@@ -1072,25 +1575,35 @@ function armarAnimacion(id) {
     }).addTo(mapa);
     anim.overlays.push(overlay);
 
-    if (!conPunto) continue;
-
-    /* un punto viajero por cada path (evita saltos en rutas partidas) */
+    /* Un solo punto viajero por ruta, sobre su tramo continuo más largo.
+       Algunos recorridos vienen digitalizados en varios fragmentos separados
+       por huecos grandes (ver coser() / GAP_MAX) — la línea 5U es el caso
+       más extremo, con 8 fragmentos sueltos. Animar un punto por fragmento
+       hacía que esas líneas mostraran varios puntos a la vez, en vez de los
+       2 (ida/vuelta) esperados. El trazado punteado de fondo (arriba) sigue
+       dibujándose sobre todos los tramos; sólo el punto que se mueve queda
+       acotado al tramo más largo, que es el más representativo del recorrido. */
+    let mejorPts = null, mejorAcum = null, mejorTotal = -1;
     for (const path of it.ruta.paths) {
       const pts = path.map(([la, ln]) => L.latLng(la, ln));
       const acum = [0];
       for (let i = 1; i < pts.length; i++) acum.push(acum[i - 1] + pts[i - 1].distanceTo(pts[i]));
       const total = acum[acum.length - 1];
-      if (total < 50) continue;
-      const halo = L.circleMarker(pts[0], {
+      if (total > mejorTotal) { mejorTotal = total; mejorPts = pts; mejorAcum = acum; }
+    }
+    if (mejorPts && mejorTotal >= 50) {
+      const halo = L.circleMarker(mejorPts[0], {
         pane: "foco", radius: 11, color: colorLinea(linea), weight: 2.5,
         fill: false, className: "dot-viajero-halo", interactive: false,
       }).addTo(mapa);
-      const dot = L.circleMarker(pts[0], {
+      const dot = L.circleMarker(mejorPts[0], {
         pane: "foco", radius: 5.5, color: "#ffffff", weight: 2,
         fillColor: colorLinea(linea), fillOpacity: 1, interactive: false,
       }).addTo(mapa);
-      const dur = Math.min(38000, Math.max(14000, total / 0.1));
-      anim.dots.push({ pts, acum, total, dur, dot, halo, idx: 1, offset: Math.random() * 0.35 });
+      /* velocidad del recorrido animado: duración proporcional al largo del
+         tramo, entre 26 y 70 segundos (más lenta todavía que el ajuste anterior). */
+      const dur = Math.min(70000, Math.max(26000, mejorTotal / 0.24));
+      anim.dots.push({ pts: mejorPts, acum: mejorAcum, total: mejorTotal, dur, dot, halo, idx: 1, offset: Math.random() * 0.35 });
     }
   }
   if (anim.dots.length) {
@@ -1276,16 +1789,21 @@ cajaHead.addEventListener("click", () => plegarCaja(!caja.classList.contains("pl
 cajaHead.addEventListener("keydown", (e) => {
   if (e.key === "Enter" || e.key === " ") { e.preventDefault(); cajaHead.click(); }
 });
-/* en pantallas chicas arranca plegada */
-if (window.matchMedia("(max-width: 640px)").matches) plegarCaja(true);
 L.DomEvent.disableClickPropagation(caja);
 L.DomEvent.disableScrollPropagation(caja);
 
 /* ── Paradas ──────────────────────────────────────────────────── */
-/* Apartado "Paradas" oculto del panel de capas mientras PARADAS_HABILITADAS
-   sea false (ver interruptor al inicio del script). */
-document.getElementById("seccion-paradas").style.display = PARADAS_HABILITADAS ? "" : "none";
-document.getElementById("chk-paradas").checked = PARADAS_HABILITADAS;
+/* Caja "Paradas" oculta por completo mientras PARADAS_HABILITADAS sea false
+   (ver interruptor al inicio del script) — mismo criterio que "Buscar línea". */
+const cajaParadas = document.getElementById("caja-paradas");
+const chkParadas = document.getElementById("chk-paradas");
+cajaParadas.style.display = PARADAS_HABILITADAS ? "" : "none";
+/* el interruptor arranca apagado y la caja plegada aunque el panel esté
+   habilitado — el usuario lo prende manualmente si quiere ver paradas */
+chkParadas.checked = false;
+cajaParadas.classList.toggle("plegada", true);
+L.DomEvent.disableClickPropagation(cajaParadas);
+L.DomEvent.disableScrollPropagation(cajaParadas);
 
 const grupoParadas = L.layerGroup().addTo(mapa);
 const marcadoresParadas = new Map();
@@ -1345,7 +1863,6 @@ function aplicarFiltrosParadas() {
   cont.innerHTML = estado.paradasOn
     ? `Mostrando <strong>${n}</strong> de ${PARADAS_DATA.length} paradas`
     : "Capa de paradas apagada";
-  document.getElementById("seccion-paradas").classList.toggle("apagada", !estado.paradasOn);
 }
 
 function reestilarParadas() {
@@ -1359,9 +1876,21 @@ mapa.on("zoomend", () => {
   grupoParadas.eachLayer((m) => m.setRadius(r));
 });
 
-document.getElementById("chk-paradas").addEventListener("change", (e) => {
+chkParadas.addEventListener("change", (e) => {
   estado.paradasOn = e.target.checked;
+  cajaParadas.classList.toggle("plegada", !e.target.checked);
   aplicarFiltrosParadas();
+});
+
+/* Botón de plegar independiente (sólo visible en mobile, ver CSS): pliega
+   u oculta los filtros SIN tocar el switch ni la capa en el mapa — el
+   switch de arriba sigue siendo, aparte, el que prende/apaga los datos.
+   Sólo actualiza la clase "plegada"; no toca estado.paradasOn. */
+const btnPlegarParadas = document.getElementById("btn-plegar-paradas");
+btnPlegarParadas.addEventListener("click", () => {
+  const plegar = !cajaParadas.classList.contains("plegada");
+  cajaParadas.classList.toggle("plegada", plegar);
+  btnPlegarParadas.setAttribute("aria-expanded", String(!plegar));
 });
 
 CONT.querySelectorAll(".filtro-fila").forEach((fila) => {
@@ -1376,6 +1905,26 @@ CONT.querySelectorAll(".filtro-fila").forEach((fila) => {
 });
 
 /* ── Mapa base: botón Argenmap / Satelital ────────────────────── */
+/* Control flotante arriba a la izquierda (mismo mecanismo que
+   CtrlAcciones/CtrlAyuda, más abajo en el script), en vez de vivir
+   dentro del panel de Recorridos: así queda a mano sin tener que abrir
+   el panel para cambiar de vista. Se crea acá, antes de engancharle los
+   listeners, para que los botones ya existan en el DOM en este punto. */
+const CtrlBase = L.Control.extend({
+  options: { position: "topleft" },
+  onAdd() {
+    const div = L.DomUtil.create("div", "segmentado base");
+    div.setAttribute("role", "group");
+    div.setAttribute("aria-label", "Mapa base");
+    div.innerHTML =
+      `<button class="seg activo" id="btn-base-mapa" title="Mapa base Argenmap (IGN)">Argenmap</button>` +
+      `<button class="seg" id="btn-base-sat" title="Imagen satelital de Google">Satelital</button>`;
+    L.DomEvent.disableClickPropagation(div);
+    return div;
+  },
+});
+mapa.addControl(new CtrlBase());
+
 document.getElementById("btn-base-mapa").addEventListener("click", () => {
   baseActiva = "mapa";
   document.getElementById("btn-base-mapa").classList.add("activo");
@@ -1483,12 +2032,492 @@ function ubicarme() {
 }
 document.getElementById("btn-cerrar-cercanas").addEventListener("click", limpiarGeo);
 
-/* ── Botones de acción sobre el mapa (ubicación / encuadre) ───── */
+/* ── Buscador de línea sugerida (prototipo) ───────────────────────────
+   Origen + destino (por esquina relevada o tocando el mapa) → mejor línea.
+   Como las paradas no tienen un campo que las vincule a una línea, la
+   sugerencia se calcula geométricamente: para cada línea/sentido, se busca
+   el punto más cercano del trazado a cada extremo, y se exige que el
+   destino quede "más adelante" que el origen sobre esa ruta (mismo tramo
+   continuo, en el sentido de circulación). Es un cálculo aproximado —no
+   contempla combinaciones de líneas ni horarios— pensado como prototipo. */
+const CAMINATA_MAX = 900;   // metros — más allá de esto no sugerimos caminar (antes 550: en zonas con menos cobertura de líneas no encontraba ninguna)
+const RECORRIDO_MIN = 250;  // metros — evita sugerencias donde origen y destino casi se superponen sobre la ruta
+
+/* Punto más cercano de una ruta a un punto dado, junto con su posición
+   acumulada (arc-length) dentro del mismo "path" continuo de esa ruta —
+   necesaria para comparar si el destino queda más adelante que el origen. */
+function puntoMasCercanoEnRuta(punto, ruta) {
+  let mejor = null;
+  ruta.paths.forEach((path, pathIdx) => {
+    if (path.length < 2) return;
+    const pts = path.map(([la, ln]) => L.latLng(la, ln));
+    let acum = 0;
+    for (let i = 1; i < pts.length; i++) {
+      const a = pts[i - 1], b = pts[i];
+      const segLen = a.distanceTo(b);
+      const dx = b.lng - a.lng, dy = b.lat - a.lat;
+      const len2 = dx * dx + dy * dy;
+      let t = len2 > 0 ? ((punto.lng - a.lng) * dx + (punto.lat - a.lat) * dy) / len2 : 0;
+      t = Math.max(0, Math.min(1, t));
+      const proy = L.latLng(a.lat + t * (b.lat - a.lat), a.lng + t * (b.lng - a.lng));
+      const d = punto.distanceTo(proy);
+      if (!mejor || d < mejor.dist) mejor = { pathIdx, pos: acum + segLen * t, dist: d };
+      acum += segLen;
+    }
+  });
+  return mejor;
+}
+
+function buscarLineaSugerida(origen, destino) {
+  const pOrigen = L.latLng(origen.lat, origen.lng);
+  const pDestino = L.latLng(destino.lat, destino.lng);
+  const candidatas = [];
+  for (const linea of LINEAS_DATA) {
+    for (const ruta of linea.rutas) {
+      const cOrigen = puntoMasCercanoEnRuta(pOrigen, ruta);
+      const cDestino = puntoMasCercanoEnRuta(pDestino, ruta);
+      if (!cOrigen || !cDestino) continue;
+      if (cOrigen.pathIdx !== cDestino.pathIdx) continue; // no se puede establecer el orden con confianza
+      if (cOrigen.dist > CAMINATA_MAX || cDestino.dist > CAMINATA_MAX) continue;
+      if (cDestino.pos - cOrigen.pos < RECORRIDO_MIN) continue; // no avanza en el sentido correcto (o el tramo es insignificante)
+      candidatas.push({
+        linea, ruta,
+        caminataOrigen: cOrigen.dist, caminataDestino: cDestino.dist,
+        caminataTotal: cOrigen.dist + cDestino.dist,
+      });
+    }
+  }
+  candidatas.sort((a, b) => a.caminataTotal - b.caminataTotal);
+  return candidatas.slice(0, 3); // hasta 3 opciones, ordenadas de menor a mayor caminata total
+}
+
+/* Etiqueta amigable de un punto tocado directamente en el mapa: si cae
+   cerca de una esquina relevada, usa ese nombre; si no, muestra coordenadas. */
+function etiquetaAproximada(lat, lng) {
+  const p = L.latLng(lat, lng);
+  let mejor = null;
+  for (const e of ESQUINAS_DATA) {
+    const d = p.distanceTo([e.lat, e.lng]);
+    if (!mejor || d < mejor.d) mejor = { e, d };
+  }
+  if (mejor && mejor.d <= 120) return mejor.e.etiqueta;
+  return `Punto en el mapa (${lat.toFixed(5)}, ${lng.toFixed(5)})`;
+}
+
+function colorOrigenBuscador() { return geoColor(); } // mismo celeste que "Mi ubicación"
+function colorDestinoBuscador() { return temaActual() === "dark" ? "#f2a640" : "#c96c06"; }
+
+const buscador = { origen: null, destino: null, eligiendoEnMapa: null };
+let marcadorOrigenBuscador = null, marcadorDestinoBuscador = null;
+
+function marcarPuntoBuscador(campo, lat, lng, etiqueta) {
+  const prev = campo === "origen" ? marcadorOrigenBuscador : marcadorDestinoBuscador;
+  if (prev) mapa.removeLayer(prev);
+  const color = campo === "origen" ? colorOrigenBuscador() : colorDestinoBuscador();
+  const m = L.circleMarker([lat, lng], {
+    radius: 7, color: "#ffffff", weight: 2.5, fillColor: color, fillOpacity: 1,
+  }).bindTooltip(`${campo === "origen" ? "Desde" : "Hasta"}: ${esc(etiqueta)}`,
+    { direction: "top", offset: [0, -6], className: "tt-parada" }).addTo(mapa);
+  if (campo === "origen") marcadorOrigenBuscador = m; else marcadorDestinoBuscador = m;
+}
+
+/* ── Respaldo: nomenclador nacional (API Georef, apis.datos.gob.ar) ──────
+   El listado de esquinas relevadas (ESQUINAS_DATA) es instantáneo y anda
+   sin conexión, pero sólo cubre lo que releva la propia Municipalidad.
+   Como RESPALDO —no como dependencia dura— cuando ese listado no alcanza
+   se consulta el nomenclador nacional (gratuito, sin API key, CC-BY 4.0)
+   para intersecciones que no estén en nuestro relevamiento. Si la consulta
+   falla por lo que sea (sin red, CORS bloqueado, timeout, servicio caído)
+   se descarta en silencio: el buscador sigue funcionando sólo con el
+   listado local, nunca se rompe por esto.
+   Interruptor rápido para desactivar si el servicio da problemas. */
+const GEOREF_HABILITADO = true;
+const GEOREF_URL = "https://apis.datos.gob.ar/georef/api/direcciones";
+const GEOREF_TIMEOUT_MS = 5000;
+const georefCache = new Map();
+
+const MINUSCULAS_CONECTORES = new Set(["y", "de", "del", "la", "las", "los", "el"]);
+function tituloCase(s) {
+  return String(s || "").toLowerCase().split(" ").map((palabra, i) => {
+    if (i > 0 && MINUSCULAS_CONECTORES.has(palabra)) return palabra;
+    return palabra.replace(/^[a-záéíóúñ]/, (c) => c.toUpperCase());
+  }).join(" ");
+}
+function etiquetaDesdeGeoref(d) {
+  const c1 = d.calle && d.calle.nombre;
+  const c2 = d.calle_cruce_1 && d.calle_cruce_1.nombre;
+  const base = c1 && c2 ? `${c1} y ${c2}` : (c1 || d.nomenclatura || "");
+  return tituloCase(base);
+}
+
+/* OJO con el departamento: la ciudad de Comodoro Rivadavia administrativamente
+   pertenece al departamento "Escalante" (no existe un departamento llamado
+   "Comodoro Rivadavia" en el nomenclador). Se filtra además por localidad
+   censal para no mezclar resultados con Rada Tilly, que comparte departamento. */
+async function consultarGeoref(texto) {
+  const clave = normalizarTxt(texto);
+  if (georefCache.has(clave)) return georefCache.get(clave);
+  const params = new URLSearchParams({
+    direccion: texto,
+    provincia: "chubut",
+    departamento: "escalante",
+    localidad_censal: "comodoro rivadavia",
+    max: "5",
+  });
+  let resultado = [];
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), GEOREF_TIMEOUT_MS);
+  try {
+    const resp = await fetch(`${GEOREF_URL}?${params.toString()}`, { signal: controller.signal });
+    if (resp.ok) {
+      const data = await resp.json();
+      resultado = (data.direcciones || [])
+        .filter((d) => d.ubicacion && d.ubicacion.lat != null && d.ubicacion.lon != null)
+        .map((d) => ({ etiqueta: etiquetaDesdeGeoref(d), lat: d.ubicacion.lat, lng: d.ubicacion.lon, fuente: "georef" }));
+    }
+  } catch (e) {
+    resultado = []; // sin red, CORS bloqueado, timeout, etc. — es un respaldo opcional, se ignora
+  } finally {
+    clearTimeout(timer);
+  }
+  georefCache.set(clave, resultado);
+  return resultado;
+}
+
+const inputOrigen = document.getElementById("input-origen");
+const inputDestino = document.getElementById("input-destino");
+const sugerenciasOrigen = document.getElementById("sugerencias-origen");
+const sugerenciasDestino = document.getElementById("sugerencias-destino");
+const btnBuscarLinea = document.getElementById("btn-buscar-linea");
+const resultadoBuscador = document.getElementById("resultado-buscador");
+const btnLimpiarBuscador = document.getElementById("btn-limpiar-buscador");
+/* resalta "Limpiar" en naranja tenue mientras haya un resultado visible,
+   para que quede claro que ese botón sirve para reiniciar la búsqueda */
+function mostrarCajaResultado() {
+  resultadoBuscador.hidden = false;
+  btnLimpiarBuscador.classList.add("resaltado");
+}
+function ocultarCajaResultado() {
+  resultadoBuscador.hidden = true;
+  btnLimpiarBuscador.classList.remove("resaltado");
+}
+
+function actualizarBotonBuscar() {
+  btnBuscarLinea.disabled = !(buscador.origen && buscador.destino);
+}
+
+function armarAutocompletarBuscador(campo, input, lista) {
+  let filtradas = [];
+  let activo = -1;
+  let georefToken = 0;
+  let georefTimer = null;
+  let vigente = true; // false tras elegir/cerrar la lista: evita que una respuesta tardía de Georef la reabra sola
+
+  function render() {
+    lista.innerHTML = filtradas
+      .map((it, i) => {
+        const fuente = it.fuente === "georef" ? `<span class="sugerencia-fuente">Nomenclador nacional</span>` : "";
+        return `<li data-i="${i}" class="${i === activo ? "resaltado" : ""}">${esc(it.etiqueta)}${fuente}</li>`;
+      })
+      .join("");
+    lista.hidden = !filtradas.length;
+  }
+  function agregarDeGeoref(nuevas) {
+    if (!nuevas.length) return;
+    const yaHay = new Set(filtradas.map((f) => normalizarTxt(f.etiqueta)));
+    const sinRepetir = nuevas.filter((e) => !yaHay.has(normalizarTxt(e.etiqueta)));
+    if (!sinRepetir.length) return;
+    filtradas = filtradas.concat(sinRepetir).slice(0, 10);
+    render();
+  }
+  function elegir(it) {
+    input.value = it.etiqueta;
+    buscador[campo] = { lat: it.lat, lng: it.lng, etiqueta: it.etiqueta };
+    vigente = false;
+    lista.hidden = true;
+    marcarPuntoBuscador(campo, it.lat, it.lng, it.etiqueta);
+    ocultarCajaResultado();
+    actualizarBotonBuscar();
+  }
+  input.addEventListener("input", () => {
+    buscador[campo] = null;
+    ocultarCajaResultado();
+    actualizarBotonBuscar();
+    clearTimeout(georefTimer);
+    georefToken++;
+    vigente = true;
+    const valor = input.value;
+    const q = normalizarTxt(valor);
+    if (!q) { filtradas = []; lista.hidden = true; return; }
+    filtradas = ESQUINAS_DATA.filter((e) => normalizarTxt(e.etiqueta).includes(q)).slice(0, 8);
+    activo = -1;
+    render();
+    /* Respaldo Georef: sólo si el relevamiento propio no alcanza y el texto
+       ya parece una intersección de dos calles (al menos dos palabras), y
+       con debounce para no disparar una consulta por cada tecla. */
+    const esPosibleInterseccion = valor.trim().split(/\s+/).length >= 2;
+    if (GEOREF_HABILITADO && filtradas.length < 4 && esPosibleInterseccion) {
+      const miToken = georefToken;
+      georefTimer = setTimeout(async () => {
+        const extra = await consultarGeoref(valor);
+        if (miToken !== georefToken || !vigente) return; // el usuario ya siguió escribiendo o cerró la lista
+        agregarDeGeoref(extra);
+      }, 450);
+    }
+  });
+  input.addEventListener("keydown", (e) => {
+    if (lista.hidden || !filtradas.length) return;
+    if (e.key === "ArrowDown") { e.preventDefault(); activo = Math.min(activo + 1, filtradas.length - 1); render(); }
+    else if (e.key === "ArrowUp") { e.preventDefault(); activo = Math.max(activo - 1, 0); render(); }
+    else if (e.key === "Enter") { if (activo >= 0) { e.preventDefault(); elegir(filtradas[activo]); } }
+    else if (e.key === "Escape") { lista.hidden = true; vigente = false; }
+  });
+  input.addEventListener("blur", () => { setTimeout(() => { lista.hidden = true; vigente = false; }, 150); });
+  lista.addEventListener("mousedown", (e) => {
+    const li = e.target.closest("li");
+    if (!li) return;
+    e.preventDefault(); // evita que el input pierda foco antes de registrar el click
+    elegir(filtradas[Number(li.dataset.i)]);
+  });
+}
+armarAutocompletarBuscador("origen", inputOrigen, sugerenciasOrigen);
+armarAutocompletarBuscador("destino", inputDestino, sugerenciasDestino);
+
+document.querySelectorAll(".btn-elegir-mapa").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    const campo = btn.dataset.campo;
+    const yaActivo = buscador.eligiendoEnMapa === campo;
+    document.querySelectorAll(".btn-elegir-mapa").forEach((b) => b.classList.remove("activo"));
+    document.getElementById("mapa").classList.remove("cursor-elegir");
+    if (yaActivo) { buscador.eligiendoEnMapa = null; return; }
+    buscador.eligiendoEnMapa = campo;
+    btn.classList.add("activo");
+    document.getElementById("mapa").classList.add("cursor-elegir");
+    toast(`Tocá el mapa para marcar ${campo === "origen" ? "el origen" : "el destino"}.`, 6000);
+  });
+});
+mapa.on("click", (e) => {
+  if (!buscador.eligiendoEnMapa) return;
+  const campo = buscador.eligiendoEnMapa;
+  buscador.eligiendoEnMapa = null;
+  document.querySelectorAll(".btn-elegir-mapa").forEach((b) => b.classList.remove("activo"));
+  document.getElementById("mapa").classList.remove("cursor-elegir");
+  const { lat, lng } = e.latlng;
+  const etiqueta = etiquetaAproximada(lat, lng);
+  buscador[campo] = { lat, lng, etiqueta };
+  (campo === "origen" ? inputOrigen : inputDestino).value = etiqueta;
+  marcarPuntoBuscador(campo, lat, lng, etiqueta);
+  ocultarCajaResultado();
+  actualizarBotonBuscar();
+});
+
+let candidatasActuales = [];
+
+function mostrarResultadoBuscador(candidatas) {
+  candidatasActuales = candidatas;
+  if (!candidatas.length) {
+    resultadoBuscador.innerHTML =
+      `<p class="resultado-vacio">No encontramos una línea directa entre esos dos puntos. ` +
+      `Puede que haga falta combinar dos líneas (todavía no lo calculamos).</p>`;
+    resultadoBuscador.hidden = false;
+    return;
+  }
+  resultadoBuscador.innerHTML =
+    (candidatas.length > 1 ? `<p class="resultado-ayuda">Elegí la que más te convenga:</p>` : "") +
+    candidatas.map((c, i) => {
+      const cChip = atenuar(c.linea.color);
+      const fg = colorChipTexto(cChip);
+      return `<button class="resultado-opcion" data-i="${i}" type="button">` +
+        `<span class="chip" style="--c:${cChip};--chip-fg:${fg}">${esc(CHIP_LABEL[c.linea.id] || c.linea.id)}</span>` +
+        `<span class="resultado-texto">` +
+          `<strong>${esc(c.linea.nombre || "Línea " + c.linea.id)}</strong>` +
+          `<span class="resultado-sentido">Sentido ${esc(c.ruta.sentido)}</span>` +
+        `</span>` +
+        `<span class="resultado-caminata">${fmtDist(c.caminataOrigen)} + ${fmtDist(c.caminataDestino)}</span>` +
+      `</button>`;
+    }).join("");
+  mostrarCajaResultado();
+
+  resultadoBuscador.querySelectorAll(".resultado-opcion").forEach((btn) => {
+    btn.addEventListener("click", () => aplicarResultado(candidatasActuales[Number(btn.dataset.i)]));
+  });
+  aplicarResultado(candidatas[0]); // por defecto se enfoca la más recomendada (menor caminata total)
+}
+
+function aplicarResultado(c) {
+  resultadoBuscador.querySelectorAll(".resultado-opcion").forEach((btn) => {
+    btn.classList.toggle("activa", candidatasActuales[Number(btn.dataset.i)] === c);
+  });
+
+  enfocar(c.linea.id);
+  const otras = c.linea.rutas.filter((r) => r.id !== c.ruta.id);
+  estado.rutasApagadas.clear();
+  otras.forEach((r) => estado.rutasApagadas.add(r.id));
+  const li = filasPorId.get(c.linea.id);
+  if (li) {
+    li.querySelectorAll(".pill.sentido").forEach((b) => {
+      const activo = b.dataset.ruta === c.ruta.id;
+      b.classList.toggle("activo", activo);
+      b.setAttribute("aria-pressed", String(activo));
+    });
+  }
+  reestilarLinea(c.linea.id);
+  armarAnimacion(c.linea.id);
+
+  const bOrigen = L.latLng(buscador.origen.lat, buscador.origen.lng);
+  const bDestino = L.latLng(buscador.destino.lat, buscador.destino.lng);
+  mapa.flyToBounds(L.latLngBounds(bOrigen, bDestino), { padding: [70, 70], maxZoom: 14, duration: 0.8 });
+}
+
+btnBuscarLinea.addEventListener("click", () => {
+  if (!buscador.origen || !buscador.destino) return;
+  mostrarResultadoBuscador(buscarLineaSugerida(buscador.origen, buscador.destino));
+});
+
+document.getElementById("btn-limpiar-buscador").addEventListener("click", () => {
+  buscador.origen = null;
+  buscador.destino = null;
+  buscador.eligiendoEnMapa = null;
+  candidatasActuales = [];
+  inputOrigen.value = "";
+  inputDestino.value = "";
+  sugerenciasOrigen.hidden = true;
+  sugerenciasDestino.hidden = true;
+  document.querySelectorAll(".btn-elegir-mapa").forEach((b) => b.classList.remove("activo"));
+  document.getElementById("mapa").classList.remove("cursor-elegir");
+  if (marcadorOrigenBuscador) { mapa.removeLayer(marcadorOrigenBuscador); marcadorOrigenBuscador = null; }
+  if (marcadorDestinoBuscador) { mapa.removeLayer(marcadorDestinoBuscador); marcadorDestinoBuscador = null; }
+  ocultarCajaResultado();
+  actualizarBotonBuscar();
+});
+
+/* ── Caja del buscador: plegado (mismo patrón que la caja de capas) ──── */
+const cajaBuscador = document.getElementById("caja-buscador");
+/* Panel oculto por completo mientras BUSCADOR_LINEA_HABILITADO sea false
+   (ver interruptor al inicio del script) — mismo criterio que "Paradas". */
+cajaBuscador.style.display = BUSCADOR_LINEA_HABILITADO ? "" : "none";
+const buscadorHead = document.getElementById("buscador-head");
+function plegarBuscador(plegar) {
+  cajaBuscador.classList.toggle("plegada", plegar);
+  buscadorHead.setAttribute("aria-expanded", String(!plegar));
+}
+buscadorHead.addEventListener("click", () => plegarBuscador(!cajaBuscador.classList.contains("plegada")));
+buscadorHead.addEventListener("keydown", (e) => {
+  if (e.key === "Enter" || e.key === " ") { e.preventDefault(); buscadorHead.click(); }
+});
+L.DomEvent.disableClickPropagation(cajaBuscador);
+L.DomEvent.disableScrollPropagation(cajaBuscador);
+
+/* ── Hoja inferior en mobile: manija de arrastre ──────────────────────
+   Sólo se crea si el viewport arranca en mobile (mismo breakpoint de
+   640px que ya usa enfocarLinea() más arriba para auto-plegar Recorridos
+   al elegir una línea). Un tap alterna entre "abrir Recorridos" y "cerrar
+   lo que esté abierto"; un swipe vertical sobre la manija hace lo mismo,
+   con el panel seguiendo al dedo en vivo (translateY) y un rebote suave
+   al soltar — antes el gesto no tenía ningún feedback visual hasta soltar
+   el dedo, así que no se notaba que había algo para arrastrar. No toca la
+   caja de Paradas: su propio switch ya es el control de su plegado (ver
+   comentario en #caja-paradas .caja-head) — Paradas tiene, aparte, su
+   propio botón de plegar en mobile (btn-plegar-paradas, más arriba).
+   Además, un ResizeObserver mantiene --vt-sheet-alto (en #visor-transporte)
+   con el alto real del panel, para que "paradas cercanas" y el toast
+   floten siempre arriba de la hoja (ver reglas en el media query de
+   arriba) sin importar cuántas solapas estén abiertas. Esto corre
+   siempre (no sólo en mobile): en desktop no tiene efecto porque el CSS
+   de escritorio no usa esa variable. */
+const panelSheet = document.getElementById("pila-flotante");
+function actualizarAltoSheet() {
+  CONT.style.setProperty("--vt-sheet-alto", panelSheet.getBoundingClientRect().height + "px");
+}
+new ResizeObserver(actualizarAltoSheet).observe(panelSheet);
+actualizarAltoSheet();
+
+if (window.matchMedia("(max-width: 640px)").matches) {
+  const manija = document.createElement("div");
+  manija.className = "vt-sheet-manija";
+  manija.setAttribute("role", "button");
+  manija.setAttribute("tabindex", "0");
+  manija.setAttribute("aria-label", "Abrir o cerrar el panel de recorridos");
+  manija.innerHTML =
+    `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>`;
+  panelSheet.insertBefore(manija, panelSheet.firstChild);
+
+  const haySolapaAbierta = () =>
+    !caja.classList.contains("plegada") || !cajaBuscador.classList.contains("plegada");
+  const alternarSheet = () => {
+    if (haySolapaAbierta()) { plegarCaja(true); plegarBuscador(true); }
+    else { plegarCaja(false); }
+  };
+
+  /* Sincroniza la flecha de la manija (rotada o no) con el estado real de
+     Recorridos/Buscador, sin importar cómo se hayan plegado o desplegado
+     (tocando la manija, con swipe, tocando la cabecera de cada solapa
+     directamente, o el auto-plegado de enfocarLinea() al elegir una
+     línea). Un MutationObserver evita tener que tocar plegarCaja()/
+     plegarBuscador() (definidas mucho más arriba) para avisar del cambio:
+     sólo observa, no interviene. */
+  const sincronizarManija = () => {
+    panelSheet.classList.toggle("vt-sheet-abierto", haySolapaAbierta());
+    manija.setAttribute("aria-expanded", String(haySolapaAbierta()));
+  };
+  new MutationObserver(sincronizarManija).observe(caja, { attributes: true, attributeFilter: ["class"] });
+  new MutationObserver(sincronizarManija).observe(cajaBuscador, { attributes: true, attributeFilter: ["class"] });
+  sincronizarManija();
+
+  manija.addEventListener("click", alternarSheet);
+  manija.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); alternarSheet(); }
+  });
+
+  /* Arrastre en vivo: mientras el dedo se mueve, el panel lo sigue 1 a 1
+     (con algo de "resistencia" y un tope, tipo rubber-band) — se apaga la
+     transición de #pila-flotante para que no haya demora persiguiendo el
+     dedo. Al soltar, se saca el transform inline y se reactiva la
+     transición CSS, así el panel "rebota" de vuelta a su lugar mientras
+     plegarCaja()/plegarBuscador() deciden el estado final según el umbral. */
+  let arranqueY = null;
+  const TOPE_ARRIBA = -60, TOPE_ABAJO = 160, RESISTENCIA = 0.55, UMBRAL = 30;
+
+  manija.addEventListener("touchstart", (e) => {
+    arranqueY = e.touches[0].clientY;
+    panelSheet.style.transition = "none";
+  }, { passive: true });
+
+  manija.addEventListener("touchmove", (e) => {
+    if (arranqueY == null) return;
+    const dy = (e.touches[0].clientY - arranqueY) * RESISTENCIA;
+    panelSheet.style.transform = `translateY(${Math.max(TOPE_ARRIBA, Math.min(TOPE_ABAJO, dy))}px)`;
+  }, { passive: true });
+
+  manija.addEventListener("touchend", (e) => {
+    if (arranqueY == null) return;
+    const dy = e.changedTouches[0].clientY - arranqueY;
+    arranqueY = null;
+    panelSheet.style.transition = "";
+    panelSheet.style.transform = "";
+    if (dy > UMBRAL) { plegarCaja(true); plegarBuscador(true); }        // swipe hacia abajo: cerrar todo
+    else if (dy < -UMBRAL && !haySolapaAbierta()) { plegarCaja(false); } // swipe hacia arriba: abrir Recorridos
+  }, { passive: true });
+
+  L.DomEvent.disableClickPropagation(manija);
+  L.DomEvent.disableScrollPropagation(manija);
+}
+
+/* ── Botones de acción sobre el mapa (zoom / ubicación / encuadre) ──
+   El zoom +/- vive acá adentro (mismos botones, mismo estilo que
+   ubicación/encuadre) en vez del control de zoom separado de Leaflet,
+   que quedaba tapado por el panel lateral, abajo a la derecha. ── */
 const CtrlAcciones = L.Control.extend({
   options: { position: "topleft" },
   onAdd() {
     const div = L.DomUtil.create("div", "ctrl-acciones");
     div.innerHTML =
+      `<button id="btn-zoom-in" title="Acercar" aria-label="Acercar">` +
+        `<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>` +
+      `</button>` +
+      `<button id="btn-zoom-out" title="Alejar" aria-label="Alejar">` +
+        `<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14"/></svg>` +
+      `</button>` +
       `<button id="btn-ubicarme" title="${PARADAS_HABILITADAS ? "Mi ubicación y paradas cercanas" : "Mi ubicación"}" aria-label="Mi ubicación">` +
         `<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3.2"/><circle cx="12" cy="12" r="8"/><path d="M12 1.5V4m0 16v2.5M1.5 12H4m16 0h2.5"/></svg>` +
       `</button>` +
@@ -1500,6 +2529,41 @@ const CtrlAcciones = L.Control.extend({
   },
 });
 mapa.addControl(new CtrlAcciones());
+
+document.getElementById("btn-zoom-in").addEventListener("click", () => mapa.zoomIn());
+document.getElementById("btn-zoom-out").addEventListener("click", () => mapa.zoomOut());
+/* Atenuados en el tope/piso de zoom, igual que hacía el control de
+   Leaflet por defecto (leaflet-disabled) — se revisa en cada zoomend. */
+function actualizarBotonesZoom() {
+  const z = mapa.getZoom();
+  document.getElementById("btn-zoom-in").classList.toggle("deshabilitado", z >= mapa.getMaxZoom());
+  document.getElementById("btn-zoom-out").classList.toggle("deshabilitado", z <= mapa.getMinZoom());
+}
+mapa.on("zoomend", actualizarBotonesZoom);
+actualizarBotonesZoom();
+
+/* ── Botón de ayuda / tutorial: rojo, apilado debajo de ubicación y
+     encuadre (mismo mecanismo de L.Control, así Leaflet lo apila solo).
+     Sólo se crea si TOUR_HABILITADO (ver interruptor al inicio del
+     script) — igual que Paradas y Buscar línea, no se borra nada del
+     código, sólo no se muestra el botón ni se agrega su listener. ── */
+if (TOUR_HABILITADO) {
+  const CtrlAyuda = L.Control.extend({
+    options: { position: "topleft" },
+    onAdd() {
+      const div = L.DomUtil.create("div", "ctrl-ayuda");
+      div.innerHTML =
+        `<button id="btn-tutorial" title="Ver tutorial de uso" aria-label="Ver tutorial de uso">?</button>`;
+      L.DomEvent.disableClickPropagation(div);
+      return div;
+    },
+  });
+  mapa.addControl(new CtrlAyuda());
+  document.getElementById("btn-tutorial").addEventListener("click", () => {
+    cerrarTour();
+    iniciarTour();
+  });
+}
 
 document.getElementById("btn-ubicarme").addEventListener("click", ubicarme);
 
@@ -1551,6 +2615,215 @@ aplicarFiltrosParadas();
 actualizarPanelFoco();
 if (faltantes.length) {
   toast(`Atención: no se pudieron cargar ${faltantes.length} líneas (${faltantes.join(", ")}).`, 8000);
+}
+
+/* ══ Tutorial guiado ══════════════════════════════════════════════
+   Burbujas de ayuda para quien recién llega al visor (pensado para
+   público no necesariamente familiarizado con mapas web). Opt-in
+   explícito al entrar, avance manual paso a paso, siempre se puede
+   saltear o volver a verlo después desde el botón "?" rojo. Como el
+   sitio es estático (sin backend), el estado vive en localStorage. */
+const TOUR_COMPLETADO_KEY = "vt_tour_completado";
+const TOUR_OFRECIDAS_KEY = "vt_tour_ofrecidas";
+const TOUR_MAX_OFRECIDAS = 2; // se ofrece solo en las primeras 2 visitas; después, solo vía el botón "?"
+
+const pasosTour = [
+  {
+    target: () => document.getElementById("caja-head"),
+    antes: () => plegarCaja(false),
+    texto: "Tocá acá para ver el listado de las líneas de colectivo, con sus recorridos de ida y vuelta.",
+  },
+  {
+    target: () => document.querySelector("#lista-lineas .linea-main"),
+    texto: "Tocá una línea para ver su recorrido en el mapa. Volvé a tocarla para ocultarlo.",
+  },
+  {
+    target: () => document.querySelector("#lista-lineas .btn-ojo"),
+    texto: "Tocá los ojos para activar varias líneas en simultáneo.",
+  },
+  {
+    target: () => document.getElementById("buscador-head"),
+    antes: () => plegarBuscador(false),
+    texto: "¿No sabés qué línea tomar? Elegí desde dónde salís y hasta dónde vas, y te sugerimos la línea más conveniente.",
+  },
+  {
+    target: () => document.getElementById("btn-ubicarme"),
+    texto: "Tocá acá para ver dónde estás y las paradas de colectivo más cercanas.",
+  },
+  {
+    target: () => document.getElementById("btn-encuadre"),
+    texto: "Este botón centra el mapa para ver toda la red. Arriba de estos botones podés cambiar a vista satelital, y arriba a la derecha, a modo oscuro.",
+    ultimo: true,
+  },
+];
+
+let pasoActual = -1;
+let elBlock = null, elAnillo = null, elBurbuja = null, elModalInicial = null, onResizeTour = null;
+
+function asegurarVelo() {
+  if (elBlock) return;
+  elBlock = document.createElement("div");
+  elBlock.className = "vt-tour-block";
+  CONT.appendChild(elBlock);
+}
+
+function actualizarAnillo(target) {
+  if (!elAnillo) {
+    elAnillo = document.createElement("div");
+    elAnillo.className = "vt-tour-anillo";
+    CONT.appendChild(elAnillo);
+  }
+  const r = target.getBoundingClientRect();
+  const pad = 6;
+  elAnillo.style.top = `${r.top - pad}px`;
+  elAnillo.style.left = `${r.left - pad}px`;
+  elAnillo.style.width = `${r.width + pad * 2}px`;
+  elAnillo.style.height = `${r.height + pad * 2}px`;
+}
+
+function posicionarBurbuja(rect) {
+  const margen = 14;
+  const vw = window.innerWidth, vh = window.innerHeight;
+  const bw = elBurbuja.offsetWidth, bh = elBurbuja.offsetHeight;
+  const espacioAbajo = vh - rect.bottom, espacioArriba = rect.top;
+  const top = (espacioAbajo >= bh + margen || espacioAbajo >= espacioArriba)
+    ? Math.min(rect.bottom + margen, vh - bh - margen)
+    : Math.max(margen, rect.top - bh - margen);
+  const left = Math.max(margen, Math.min(rect.left + rect.width / 2 - bw / 2, vw - bw - margen));
+  elBurbuja.style.top = `${Math.max(margen, top)}px`;
+  elBurbuja.style.left = `${left}px`;
+}
+
+function limpiarPaso() {
+  if (elBurbuja) { elBurbuja.remove(); elBurbuja = null; }
+}
+
+function cerrarTour() {
+  limpiarPaso();
+  if (elModalInicial) { elModalInicial.remove(); elModalInicial = null; }
+  if (elAnillo) { elAnillo.remove(); elAnillo = null; }
+  if (elBlock) { elBlock.remove(); elBlock = null; }
+  if (onResizeTour) { window.removeEventListener("resize", onResizeTour); onResizeTour = null; }
+  /* al salir del tutorial (completo o no) los paneles quedan cerrados,
+     igual que como los encuentra alguien que recién llega al sitio */
+  plegarCaja(true);
+  plegarBuscador(true);
+  pasoActual = -1;
+}
+
+function pulsarAyuda() {
+  const btn = document.getElementById("btn-tutorial");
+  if (!btn) return;
+  btn.classList.add("vt-tour-pulso");
+  setTimeout(() => btn.classList.remove("vt-tour-pulso"), 2200);
+}
+
+function finalizarTour() {
+  cerrarTour();
+  try { localStorage.setItem(TOUR_COMPLETADO_KEY, "1"); } catch (e) { /* puede estar bloqueado */ }
+  pulsarAyuda();
+}
+
+function mostrarPaso(i) {
+  limpiarPaso();
+  const paso = pasosTour[i];
+  if (paso.antes) paso.antes();
+  const target = paso.target();
+  if (!target) { pasoActual += 1; if (pasoActual < pasosTour.length) mostrarPaso(pasoActual); else finalizarTour(); return; }
+  if (typeof target.scrollIntoView === "function") target.scrollIntoView({ block: "nearest" });
+
+  const colocar = () => {
+    actualizarAnillo(target);
+
+    elBurbuja = document.createElement("div");
+    elBurbuja.className = "vt-tour-burbuja";
+    elBurbuja.setAttribute("role", "dialog");
+    elBurbuja.setAttribute("aria-live", "polite");
+    elBurbuja.innerHTML =
+      `<p class="vt-tour-paso">Paso ${i + 1} de ${pasosTour.length}</p>` +
+      `<p class="vt-tour-texto">${paso.texto}</p>` +
+      `<div class="vt-tour-pie">` +
+        `<button class="vt-tour-saltear">Saltear tutorial</button>` +
+        `<button class="vt-tour-ok">${paso.ultimo ? "Entendido" : "Ok"}</button>` +
+      `</div>`;
+    CONT.appendChild(elBurbuja);
+    posicionarBurbuja(target.getBoundingClientRect());
+
+    elBurbuja.querySelector(".vt-tour-saltear").addEventListener("click", cerrarTour);
+    elBurbuja.querySelector(".vt-tour-ok").addEventListener("click", () => {
+      if (paso.ultimo) { finalizarTour(); return; }
+      pasoActual += 1;
+      mostrarPaso(pasoActual);
+    });
+  };
+
+  /* Si este paso despliega una solapa justo antes (paso.antes: plegarCaja
+     o plegarBuscador en false), hay que esperar a que termine esa
+     animación de apertura (transición de .caja-body, agregada para la
+     hoja inferior de mobile) antes de medir la posición del target con
+     getBoundingClientRect(). Midiendo un solo frame después (como antes)
+     el panel todavía está creciendo — en mobile, al estar la hoja
+     anclada abajo, "Recorridos" seguía subiendo en pantalla durante toda
+     la animación, y el anillo quedaba fijo donde el header estaba recién
+     empezada esa animación: bastante más abajo de su posición final,
+     terminando sobre alguna línea de la lista (ej. "6A") en vez de sobre
+     el título "Recorridos". Con el movimiento reducido activado no hay
+     transición que esperar (ver @media prefers-reduced-motion), así que
+     se salta la demora. */
+  const conAnimacion = !!paso.antes && !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (conAnimacion) setTimeout(() => requestAnimationFrame(colocar), 300);
+  else requestAnimationFrame(colocar);
+}
+
+function iniciarTour() {
+  if (elModalInicial) { elModalInicial.remove(); elModalInicial = null; }
+  asegurarVelo();
+  onResizeTour = () => {
+    if (elAnillo && elBurbuja) {
+      const t = pasosTour[pasoActual] && pasosTour[pasoActual].target();
+      if (t) { actualizarAnillo(t); posicionarBurbuja(t.getBoundingClientRect()); }
+    }
+  };
+  window.addEventListener("resize", onResizeTour);
+  pasoActual = 0;
+  mostrarPaso(0);
+}
+
+function mostrarModalInicial() {
+  asegurarVelo();
+  elModalInicial = document.createElement("div");
+  elModalInicial.className = "vt-tour-modal";
+  elModalInicial.setAttribute("role", "dialog");
+  elModalInicial.setAttribute("aria-label", "Tutorial de uso del mapa");
+  elModalInicial.innerHTML =
+    `<h3>¿Querés aprender a <br>usar el mapa?</h3>` +
+    `<p>Te mostramos en unos pasos cómo ver los recorridos, buscar tu línea <br>y ubicarte en el mapa.</p>` +
+    `<div class="vt-tour-acciones">` +
+      `<button class="vt-tour-btn-si">Sí, mostrame</button>` +
+      `<button class="vt-tour-btn-luego">Más tarde</button>` +
+    `</div>`;
+  CONT.appendChild(elModalInicial);
+  elModalInicial.querySelector(".vt-tour-btn-si").addEventListener("click", iniciarTour);
+  elModalInicial.querySelector(".vt-tour-btn-luego").addEventListener("click", cerrarTour);
+}
+
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && elBlock) cerrarTour();
+});
+
+/* Oferta automática en las primeras visitas, si no se completó antes —
+   sólo si TOUR_HABILITADO (ver interruptor al inicio del script). */
+if (TOUR_HABILITADO) {
+  (function ofrecerTourSiCorresponde() {
+    let completado = false, ofrecidas = 0;
+    try {
+      completado = localStorage.getItem(TOUR_COMPLETADO_KEY) === "1";
+      ofrecidas = parseInt(localStorage.getItem(TOUR_OFRECIDAS_KEY) || "0", 10);
+    } catch (e) { /* localStorage puede estar bloqueado */ }
+    if (completado || ofrecidas >= TOUR_MAX_OFRECIDAS) return;
+    try { localStorage.setItem(TOUR_OFRECIDAS_KEY, String(ofrecidas + 1)); } catch (e) { /* noop */ }
+    setTimeout(mostrarModalInicial, 500);
+  })();
 }
 })();
 </script>
