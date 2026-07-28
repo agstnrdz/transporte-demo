@@ -2011,7 +2011,7 @@ function popupParada(p) {
                  `</div>`;
         }).join("") +
       `</div>`
-    : `<p class="pop-lineas-vacio">Ninguna línea relevada a ${RADIO_PARADA_LINEA} m o menos de esta parada.</p>`;
+    : `<p class="pop-lineas-vacio">Ninguna línea relevada pasa a ${RADIO_PARADA_LINEA} m o menos de esta parada.</p>`;
   return `<p class="pop-titulo">Parada ${esc(p.id)}</p>` +
          `<p class="pop-sub">${esc(p.calle || "Calle sin nombre")}${esquina}</p>` +
          `<div class="pop-chips">${attr("Refugio", p.refugio)}${attr("Cartel", p.cartel)}${attr("Poste", p.poste)}</div>` +
