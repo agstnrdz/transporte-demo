@@ -865,10 +865,11 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
      arriba. La manija (.vt-sheet-manija) la agrega el script sólo en
      mobile — ver "Hoja inferior en mobile" en el <script>, más abajo.
      "transition: transform" es para el rebote al soltar un arrastre:
-     mientras el dedo arrastra la manija el script apaga esta transición
+     mientras el dedo arrastra el panel el script apaga esta transición
      (para que el panel siga al dedo 1 a 1, sin demora) y la reactiva al
-     soltar, así vuelve a su lugar con una animación suave en vez de
-     saltar de golpe. */
+     soltar, así vuelve a su lugar con una animación con un poco de rebote
+     (overshoot) en vez de un frenado seco — se nota más "viva" al soltar
+     el dedo, sea cual sea el punto del panel del que se arrastró. */
   #pila-flotante {
     top: auto;
     bottom: 0;
@@ -882,7 +883,7 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
     border-radius: 16px 16px 0 0;
     box-shadow: 0 -6px 20px rgba(0,0,0,0.20), 0 -1px 4px rgba(0,0,0,0.12);
     padding-bottom: env(safe-area-inset-bottom, 0px);
-    transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+    transition: transform 0.32s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
   /* Manija: barra (afordancia de "esto se arrastra") + una flecha real
      que rota según el estado — mismo lenguaje visual que .btn-plegar de
@@ -920,7 +921,9 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
      que al tocar o arrastrar la manija se note que el panel reacciona. */
   .caja-body {
     padding: 4px 8px 8px;
-    transition: max-height 0.25s ease, opacity 0.2s ease, padding 0.25s ease;
+    transition: max-height 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+                opacity 0.22s ease,
+                padding 0.28s cubic-bezier(0.22, 1, 0.36, 1);
   }
   .caja-flotante.plegada .caja-body {
     display: block;
@@ -940,6 +943,13 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   /* Cabeceras y subtítulos más compactos: menos espacio muerto en un
      panel que ahora compite por alto con el mapa. */
   .caja-head { padding: 6px 8px 6px 9px; }
+  /* Con la hoja cerrada (ninguna solapa de Recorridos/Buscador abierta),
+     lo único visible de las 3 cajas son estas 3 cabeceras + la manija —
+     achicarlas un poco más acá (sin tocar el tamaño en el resto de los
+     casos) deja más mapa libre en la franja colapsada. Se engancha a la
+     misma clase .vt-sheet-abierto que ya sincroniza la flecha de la
+     manija (ver "Hoja inferior en mobile" en el <script>). */
+  #pila-flotante:not(.vt-sheet-abierto) .caja-head { padding: 4px 8px 4px 9px; }
   .caja-head h2, .seccion-head h3 { font-size: 9.5px; padding: 2px 7px; }
   .caja-head .stats { font-size: 10.5px; }
   .seccion-head { padding: 1px 2px 2px; }
@@ -1961,7 +1971,7 @@ function popupParada(p) {
   const cercanas = lineasEnParada(p);
   const lineasHtml = cercanas.length
     ? `<div class="pop-lineas">` +
-        `<p class="pop-lineas-titulo">Líneas que pasan a ${RADIO_PARADA_LINEA} m de esta parada</p>` +
+        `<p class="pop-lineas-titulo">Líneas que pasan por esta parada</p>` +
         cercanas.map((l) => {
           const bg = colorChip(l), fg = colorChipTexto(bg);
           return `<div class="pop-linea-fila">` +
@@ -2623,27 +2633,44 @@ if (window.matchMedia("(max-width: 640px)").matches) {
     if (e.key === "Enter" || e.key === " ") { e.preventDefault(); alternarSheet(); }
   });
 
-  /* Arrastre en vivo: mientras el dedo se mueve, el panel lo sigue 1 a 1
-     (con algo de "resistencia" y un tope, tipo rubber-band) — se apaga la
-     transición de #pila-flotante para que no haya demora persiguiendo el
-     dedo. Al soltar, se saca el transform inline y se reactiva la
-     transición CSS, así el panel "rebota" de vuelta a su lugar mientras
-     plegarCaja()/plegarBuscador() deciden el estado final según el umbral. */
-  let arranqueY = null;
-  const TOPE_ARRIBA = -60, TOPE_ABAJO = 160, RESISTENCIA = 0.55, UMBRAL = 30;
+  /* Arrastre en vivo: mientras el dedo se mueve, el panel lo sigue de
+     cerca (con algo de "resistencia" y un tope, tipo rubber-band) — se
+     apaga la transición de #pila-flotante para que no haya demora
+     persiguiendo el dedo. Al soltar, se saca el transform inline y se
+     reactiva la transición CSS (ahora con rebote — ver #pila-flotante),
+     así el panel "rebota" de vuelta a su lugar mientras
+     plegarCaja()/plegarBuscador() deciden el estado final según el umbral.
 
-  manija.addEventListener("touchstart", (e) => {
+     Se agarra de todo el panel (#pila-flotante), no sólo de la manija:
+     los listeners van en fase de CAPTURA (capture: true) a propósito,
+     porque cada una de las 3 cajas (caja, cajaParadas, cajaBuscador) ya
+     tiene L.DomEvent.disableClickPropagation(), que corta la propagación
+     de touchstart en fase de burbuja para que no le llegue al mapa de
+     Leaflet — eso mismo cortaría el arrastre acá si escucháramos en
+     burbuja (nunca llegaría desde adentro de una cabecera hasta
+     #pila-flotante). En captura, en cambio, el evento pasa por acá antes
+     de llegar a esas cajas, así que el corte de más abajo no afecta.
+     Único límite: si el toque arranca dentro de un .caja-body abierto
+     (la lista de líneas, el buscador, los filtros de paradas) no se
+     inicia el arrastre del panel, para no pelearse con el scroll interno
+     ni con el tap de sus botones/checks/pills — arriba de eso (manija,
+     las 3 cabeceras, o cualquier zona vacía del panel) sí arrastra. */
+  let arranqueY = null;
+  const TOPE_ARRIBA = -60, TOPE_ABAJO = 160, RESISTENCIA = 0.82, UMBRAL = 30;
+
+  panelSheet.addEventListener("touchstart", (e) => {
+    if (e.target.closest(".caja-body")) return;
     arranqueY = e.touches[0].clientY;
     panelSheet.style.transition = "none";
-  }, { passive: true });
+  }, { passive: true, capture: true });
 
-  manija.addEventListener("touchmove", (e) => {
+  panelSheet.addEventListener("touchmove", (e) => {
     if (arranqueY == null) return;
     const dy = (e.touches[0].clientY - arranqueY) * RESISTENCIA;
     panelSheet.style.transform = `translateY(${Math.max(TOPE_ARRIBA, Math.min(TOPE_ABAJO, dy))}px)`;
-  }, { passive: true });
+  }, { passive: true, capture: true });
 
-  manija.addEventListener("touchend", (e) => {
+  panelSheet.addEventListener("touchend", (e) => {
     if (arranqueY == null) return;
     const dy = e.changedTouches[0].clientY - arranqueY;
     arranqueY = null;
@@ -2651,7 +2678,7 @@ if (window.matchMedia("(max-width: 640px)").matches) {
     panelSheet.style.transform = "";
     if (dy > UMBRAL) { plegarCaja(true); plegarBuscador(true); }        // swipe hacia abajo: cerrar todo
     else if (dy < -UMBRAL && !haySolapaAbierta()) { plegarCaja(false); } // swipe hacia arriba: abrir Recorridos
-  }, { passive: true });
+  }, { passive: true, capture: true });
 
   L.DomEvent.disableClickPropagation(manija);
   L.DomEvent.disableScrollPropagation(manija);
