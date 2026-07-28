@@ -17,6 +17,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://wms.ign.gob.ar">
 <link rel="preconnect" href="https://mt1.google.com">
+<link rel="preconnect" href="https://api.open-meteo.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;550;600;650;700;750;800&display=swap" rel="stylesheet">
 <style>
 /* Reset de página: sin margen/franja blanca alrededor del visor, y el
@@ -643,6 +644,11 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   border-color: var(--muted);
 }
 
+/* Fila superior izquierda: columna de botones (zoom/ubicación/encuadre) +
+   burbuja de clima, una al lado de la otra — ver comentario en CtrlAcciones
+   (más abajo en el script) sobre por qué van en el mismo control. */
+.ctrl-fila-superior { display: flex; align-items: flex-start; gap: 8px; }
+
 /* botones de acción (ubicación / encuadre) */
 .ctrl-acciones {
   display: flex;
@@ -663,6 +669,31 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
 .ctrl-acciones button:last-child { border-bottom: none; }
 .ctrl-acciones button:hover { background: var(--hover-wash); color: var(--ink-1); }
 .ctrl-acciones button.deshabilitado { opacity: 0.35; pointer-events: none; }
+
+/* Burbuja de clima (ícono + temperatura), estilo "iOS Maps": ícono chico
+   + número grande dentro de una píldora. Oculta por defecto (arranca con
+   el atributo "hidden" puesto en el script) hasta que actualizarClima()
+   trae un dato válido — si falla el pedido, se queda oculta en vez de
+   mostrar un estado roto. El "[hidden]" explícito es necesario: sin él,
+   la regla display:flex de acá abajo le gana al display:none por defecto
+   del atributo hidden (misma correción que ya hace falta en otras cajas
+   de este visor cuando se les fija un display propio). */
+.burbuja-clima {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 11px 4px 6px;
+  border-radius: 999px;
+  background: var(--panel);
+  border: 1px solid var(--hair);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.22);
+  font-size: 17px;
+  font-weight: 400;
+  color: var(--ink-1);
+  white-space: nowrap;
+}
+.burbuja-clima[hidden] { display: none; }
+.burbuja-clima img { display: block; width: 22px; height: 22px; }
 
 /* botón de ayuda / tutorial: aparte de ctrl-acciones (no dentro de la misma
    caja) y en rojo, a propósito, para que se note que es otra cosa: la
@@ -2687,11 +2718,20 @@ if (window.matchMedia("(max-width: 640px)").matches) {
 /* ── Botones de acción sobre el mapa (zoom / ubicación / encuadre) ──
    El zoom +/- vive acá adentro (mismos botones, mismo estilo que
    ubicación/encuadre) en vez del control de zoom separado de Leaflet,
-   que quedaba tapado por el panel lateral, abajo a la derecha. ── */
+   que quedaba tapado por el panel lateral, abajo a la derecha.
+
+   Envueltos junto con la burbuja de clima (más abajo) en una sola fila
+   flex (.ctrl-fila-superior): Leaflet apila los controles de "topleft"
+   uno debajo del otro, así que la única forma de que la burbuja quede
+   siempre alineada A LA DERECHA de esta columna de botones —sin importar
+   el ancho exacto de cada una en distintos anchos de pantalla o con el
+   selector Argenmap/Satelital de arriba— es que ambas sean hijas del
+   mismo control, no dos controles separados. ── */
 const CtrlAcciones = L.Control.extend({
   options: { position: "topleft" },
   onAdd() {
-    const div = L.DomUtil.create("div", "ctrl-acciones");
+    const fila = L.DomUtil.create("div", "ctrl-fila-superior");
+    const div = L.DomUtil.create("div", "ctrl-acciones", fila);
     div.innerHTML =
       `<button id="btn-zoom-in" title="Acercar" aria-label="Acercar">` +
         `<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>` +
@@ -2705,8 +2745,11 @@ const CtrlAcciones = L.Control.extend({
       `<button id="btn-encuadre" title="Ver toda la red" aria-label="Ver toda la red">` +
         `<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l2-7 4 14 2-7h6"/></svg>` +
       `</button>`;
-    L.DomEvent.disableClickPropagation(div);
-    return div;
+    const burbuja = L.DomUtil.create("div", "burbuja-clima", fila);
+    burbuja.id = "burbuja-clima";
+    burbuja.hidden = true; // se muestra recién cuando actualizarClima() trae un dato válido
+    L.DomEvent.disableClickPropagation(fila);
+    return fila;
   },
 });
 mapa.addControl(new CtrlAcciones());
@@ -2722,6 +2765,68 @@ function actualizarBotonesZoom() {
 }
 mapa.on("zoomend", actualizarBotonesZoom);
 actualizarBotonesZoom();
+
+/* ── Burbuja de clima (estilo "iOS Maps"): ícono + temperatura ────────
+   Coordenada fija del centro de Comodoro Rivadavia (no geolocalización
+   del usuario: el clima que tiene sentido mostrar acá es el de la ciudad
+   del servicio, no el de quien esté mirando el mapa — y de paso evita el
+   problema ya conocido de geolocalización bloqueada al abrir por file://).
+   Fuente: Open-Meteo (api.open-meteo.com), gratuita, sin API key y con
+   CORS habilitado para consumirse directo desde el navegador — mismo
+   criterio que el nomenclador nacional (Georef) usado como respaldo del
+   buscador de línea, más abajo. Si el pedido falla (sin conexión, API
+   caída), la burbuja se queda oculta en vez de mostrar un estado roto. */
+const CLIMA_LAT = -45.8659, CLIMA_LON = -67.4823; // Comodoro Rivadavia (centro, aprox.)
+const CLIMA_REFRESCO_MS = 25 * 60 * 1000; // 25 min: el clima no cambia tan seguido como para pedirlo más rápido
+
+/* Códigos de clima WMO (los que devuelve Open-Meteo) agrupados en los
+   íconos disponibles en assets/img/clima/. Los códigos no mapeados caen
+   en "nublado" por defecto. */
+const CLIMA_ICONOS = {
+  0: ["sol", "Despejado"], 1: ["sol", "Mayormente despejado"],
+  2: ["parcial", "Parcialmente nublado"],
+  3: ["nublado", "Nublado"],
+  45: ["niebla", "Niebla"], 48: ["niebla", "Niebla con escarcha"],
+  51: ["lluvia", "Llovizna débil"], 53: ["lluvia", "Llovizna"], 55: ["lluvia", "Llovizna intensa"],
+  56: ["lluvia", "Llovizna helada"], 57: ["lluvia", "Llovizna helada intensa"],
+  61: ["lluvia", "Lluvia débil"], 63: ["lluvia", "Lluvia"], 65: ["lluvia", "Lluvia intensa"],
+  66: ["lluvia", "Lluvia helada"], 67: ["lluvia", "Lluvia helada intensa"],
+  71: ["nieve", "Nevada débil"], 73: ["nieve", "Nevada"], 75: ["nieve", "Nevada intensa"], 77: ["nieve", "Granizo fino"],
+  80: ["lluvia", "Chubascos débiles"], 81: ["lluvia", "Chubascos"], 82: ["lluvia", "Chubascos intensos"],
+  85: ["nieve", "Chubascos de nieve"], 86: ["nieve", "Chubascos de nieve intensos"],
+  95: ["tormenta", "Tormenta"], 96: ["tormenta", "Tormenta con granizo"], 99: ["tormenta", "Tormenta con granizo intenso"],
+};
+/* De noche (is_day=0 en la respuesta), despejado/mayormente despejado
+   muestran luna en vez de sol — mismo criterio visual que Apple Maps. */
+function iconoClima(codigo, esDeNoche) {
+  if ((codigo === 0 || codigo === 1) && esDeNoche) return ["luna", "Despejado"];
+  return CLIMA_ICONOS[codigo] || ["nublado", "Sin datos"];
+}
+
+async function actualizarClima() {
+  const burbuja = document.getElementById("burbuja-clima");
+  if (!burbuja) return;
+  try {
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${CLIMA_LAT}&longitude=${CLIMA_LON}` +
+                `&current_weather=true&timezone=auto`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const datos = await res.json();
+    const actual = datos && datos.current_weather;
+    if (!actual || typeof actual.temperature !== "number") throw new Error("Respuesta sin current_weather");
+    const [icono, etiqueta] = iconoClima(actual.weathercode, actual.is_day === 0);
+    const temp = Math.round(actual.temperature);
+    burbuja.innerHTML =
+      `<img src="assets/img/clima/${icono}.svg" width="22" height="22" alt="">` +
+      `<span>${temp}°</span>`;
+    burbuja.title = `${etiqueta}, ${temp}°C en Comodoro Rivadavia`;
+    burbuja.hidden = false;
+  } catch (e) {
+    burbuja.hidden = true; // sin datos: se oculta, no se muestra roto
+  }
+}
+actualizarClima();
+setInterval(actualizarClima, CLIMA_REFRESCO_MS);
 
 /* ── Botón de ayuda / tutorial: rojo, apilado debajo de ubicación y
      encuadre (mismo mecanismo de L.Control, así Leaflet lo apila solo).
