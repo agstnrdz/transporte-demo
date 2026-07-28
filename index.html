@@ -519,6 +519,54 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   opacity: 1;
 }
 
+/* "Ver horarios": mismo formato de pill que Ida/Vuelta, pero no es un
+   toggle de filtro (no representa on/off de una capa) sino una acción
+   que abre/cierra el panel de abajo — arranca a opacidad plena y marca
+   "presionado" (relleno, igual look que .pill.activo) mientras el panel
+   de horarios está abierto. */
+.pill-accion { opacity: 0.85; border-color: var(--ink-1); }
+.pill-accion:hover { opacity: 1; background: var(--hover-wash); }
+.pill-accion[aria-expanded="true"] {
+  background: var(--activo-bg);
+  color: var(--activo-fg);
+  border-color: var(--activo-bg);
+  opacity: 1;
+}
+
+/* Panel de horarios de una línea: ocupa todo el ancho disponible en vez
+   de ser un ítem más del flex-wrap de pills (flex-basis 100% lo empuja a
+   su propia fila, debajo de Ida/Vuelta/Ver horarios). */
+.linea-horarios { flex: 1 1 100%; margin-top: 8px; }
+.horarios-cols { display: flex; gap: 12px; }
+.horarios-col { flex: 1; min-width: 0; }
+.horarios-titulo {
+  margin: 0 0 4px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+.horarios-lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 160px;
+  overflow-y: auto;
+}
+.horarios-lista li {
+  display: flex;
+  justify-content: flex-start;
+  gap: 8px;
+  padding: 2.5px 0;
+  font-size: 11px;
+  border-bottom: 1px dashed var(--hair);
+}
+.horarios-lista li:last-child { border-bottom: none; }
+.horarios-hora { font-weight: 650; color: var(--ink-1); }
+.horarios-frec { color: var(--ink-2); white-space: nowrap; }
+.horarios-vacio { margin: 4px 0 0; font-size: 11px; color: var(--muted); }
+
 /* ── Switch ── */
 .switch { position: relative; display: inline-block; }
 .switch input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
@@ -684,6 +732,26 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   color: var(--muted);
 }
 .pop-attr.si { color: var(--ok); border-color: color-mix(in srgb, var(--ok) 45%, transparent); }
+/* ── Líneas cercanas dentro del popup de una parada ── */
+.pop-lineas { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--hair); }
+.pop-lineas-titulo {
+  margin: 0 0 6px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+.pop-linea-fila { display: flex; align-items: center; gap: 6px; font-size: 12px; margin-bottom: 4px; }
+.pop-linea-fila:last-child { margin-bottom: 0; }
+.pop-lineas-vacio {
+  margin: 8px 0 0;
+  padding-top: 8px;
+  border-top: 1px solid var(--hair);
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.4;
+}
 #visor-transporte .leaflet-container a.leaflet-popup-close-button { color: var(--muted); }
 
 /* ══ Tarjeta de cercanas ══ */
@@ -1178,6 +1246,7 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
 <script src="layers_transporte/linea_21_data.js"></script>
 <script src="layers_transporte/linea_22_data.js"></script>
 <script src="layers_transporte/paradas_data.js"></script>
+<script src="layers_transporte/horarios_data.js"></script>
 <script>
 (function () {
 "use strict";
@@ -1690,6 +1759,28 @@ const FLECHAS = { ida: "→", vuelta: "←", circular: "↻", unico: "→" };
    (colores, tooltips, correcciones, datos fuente). */
 const CHIP_LABEL = { "8H": "8", "8AH": "8" };
 
+/* ── Horarios por línea (panel "Recorridos" → detalle de cada línea) ──
+   HORARIOS_DATA viene de horarios_data.js (mismo patrón que PARADAS_DATA
+   y LINEA_X_DATA: window.HORARIOS_DATA cargado por <script src>, no por
+   fetch, para que funcione igual abriendo el archivo directamente por
+   file:// que serviéndolo por http(s)). Se arma bajo demanda (recién al
+   tocar "Ver horarios" la primera vez), no de entrada por las 23 líneas. */
+function filaHorario(h) {
+  return `<li><span class="horarios-hora">${esc(h.horario)}</span>` +
+         `<span class="horarios-frec">${esc(h.frecuencia || "")}</span></li>`;
+}
+function columnaHorarios(etiqueta, filas) {
+  const cuerpo = (filas && filas.length)
+    ? `<ul class="horarios-lista">${filas.map(filaHorario).join("")}</ul>`
+    : `<p class="horarios-vacio">Sin horarios cargados.</p>`;
+  return `<div class="horarios-col"><h4 class="horarios-titulo">${esc(etiqueta)}</h4>${cuerpo}</div>`;
+}
+function contenidoHorarios(linea) {
+  const datos = (window.HORARIOS_DATA || {})[linea.id];
+  if (!datos) return `<p class="horarios-vacio">No hay horarios cargados para esta línea.</p>`;
+  return `<div class="horarios-cols">${columnaHorarios("Ida", datos.ida)}${columnaHorarios("Vuelta", datos.vuelta)}</div>`;
+}
+
 for (const linea of LINEAS_DATA) {
   const li = document.createElement("li");
   li.className = "linea-row";
@@ -1700,15 +1791,35 @@ for (const linea of LINEAS_DATA) {
     `<button class="pill sentido activo" data-ruta="${esc(r.id)}" aria-pressed="true" title="${esc(linea.nombre || "Línea " + linea.id)}">` +
     `${FLECHAS[r.tipo] || "→"} ${esc(r.sentido)}</button>`
   ).join("");
+  const tieneHorarios = !!(window.HORARIOS_DATA && window.HORARIOS_DATA[linea.id]);
+  const btnHorarios = tieneHorarios
+    ? `<button type="button" class="pill pill-accion btn-ver-horarios" aria-expanded="false">Ver horarios</button>`
+    : "";
   li.innerHTML =
     `<div class="linea-main">` +
       `<span class="chip" style="--c:${cChip};--chip-fg:${fg}">${esc(CHIP_LABEL[linea.id] || linea.id)}</span>` +
       `<span class="linea-nombre">${esc(linea.nombre)}</span>` +
       `<button class="btn-ojo" title="Mostrar u ocultar línea ${esc(linea.id)}" aria-label="Mostrar u ocultar línea ${esc(linea.id)}">${ICONO_OJO}</button>` +
     `</div>` +
-    `<div class="linea-detalle">${pills}</div>`;
+    `<div class="linea-detalle">${pills}${btnHorarios}<div class="linea-horarios" hidden></div></div>`;
   listaLineas.appendChild(li);
   filasPorId.set(linea.id, li);
+
+  const btnVerHorarios = li.querySelector(".btn-ver-horarios");
+  if (btnVerHorarios) {
+    const panelHorarios = li.querySelector(".linea-horarios");
+    btnVerHorarios.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const abrir = panelHorarios.hidden;
+      if (abrir && !panelHorarios.dataset.armado) {
+        panelHorarios.innerHTML = contenidoHorarios(linea);
+        panelHorarios.dataset.armado = "1";
+      }
+      panelHorarios.hidden = !abrir;
+      btnVerHorarios.setAttribute("aria-expanded", String(abrir));
+      btnVerHorarios.textContent = abrir ? "Ocultar horarios" : "Ver horarios";
+    });
+  }
 
   li.querySelector(".linea-main").addEventListener("click", (e) => {
     if (e.target.closest(".btn-ojo")) return;
@@ -1815,13 +1926,55 @@ function radioParadas() {
   return z >= 16 ? 6.5 : z >= 14.5 ? 4.8 : z >= 13 ? 3.6 : 2.6;
 }
 
+/* ── Líneas que pasan cerca de una parada ────────────────────────
+   Las paradas no tienen un campo que las vincule a una línea (mismo gap
+   de datos que motivó el cálculo geométrico del buscador de línea, más
+   abajo). Acá se reutiliza esa misma pieza —puntoMasCercanoEnRuta,
+   definida más adelante en este script pero disponible desde ya por ser
+   una function declaration dentro de la misma IIFE— para medir la
+   distancia mínima de la parada a cada trazado. Se consideran "de esta
+   parada" las líneas cuyo recorrido pasa a RADIO_PARADA_LINEA metros o
+   menos: umbral fijado a criterio propio del relevamiento, dejado como
+   constante nombrada para poder afinarlo sin tocar la lógica. */
+const RADIO_PARADA_LINEA = 20; // metros
+
+function lineasEnParada(p) {
+  const punto = L.latLng(p.lat, p.lng);
+  const resultado = [];
+  for (const linea of LINEAS_DATA) {
+    let mejorDist = Infinity;
+    for (const ruta of linea.rutas) {
+      const c = puntoMasCercanoEnRuta(punto, ruta);
+      if (c && c.dist < mejorDist) mejorDist = c.dist;
+    }
+    // ida y vuelta de la misma línea sólo cuentan una vez, con la mejor distancia
+    if (mejorDist <= RADIO_PARADA_LINEA) resultado.push({ linea, dist: mejorDist });
+  }
+  resultado.sort((a, b) => a.dist - b.dist);
+  return resultado.map((r) => r.linea);
+}
+
 function popupParada(p) {
   const attr = (nombre, val) =>
     `<span class="pop-attr ${val ? "si" : ""}">${val ? "✓" : "✗"} ${nombre}</span>`;
   const esquina = p.esquina ? ` <span style="color:var(--muted)">esq.</span> ${esc(p.esquina)}` : "";
+  const cercanas = lineasEnParada(p);
+  const lineasHtml = cercanas.length
+    ? `<div class="pop-lineas">` +
+        `<p class="pop-lineas-titulo">Líneas que pasan a ${RADIO_PARADA_LINEA} m de esta parada</p>` +
+        cercanas.map((l) => {
+          const bg = colorChip(l), fg = colorChipTexto(bg);
+          return `<div class="pop-linea-fila">` +
+                 `<span class="tt-chip" style="background:${bg};color:${fg}">${esc(l.id)}</span>` +
+                 `<span>${esc(l.nombre || "Línea " + l.id)}</span>` +
+                 `</div>`;
+        }).join("") +
+      `</div>`
+    : `<p class="pop-lineas-vacio">Ninguna línea relevada a ${RADIO_PARADA_LINEA} m o menos de esta parada.</p>`;
   return `<p class="pop-titulo">Parada ${esc(p.id)}</p>` +
          `<p class="pop-sub">${esc(p.calle || "Calle sin nombre")}${esquina}</p>` +
-         `<div class="pop-chips">${attr("Refugio", p.refugio)}${attr("Cartel", p.cartel)}${attr("Poste", p.poste)}</div>`;
+         `<div class="pop-chips">${attr("Refugio", p.refugio)}${attr("Cartel", p.cartel)}${attr("Poste", p.poste)}</div>` +
+         lineasHtml;
 }
 
 for (const p of PARADAS_DATA) {
