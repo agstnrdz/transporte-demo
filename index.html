@@ -1,6 +1,16 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+<!-- Google Analytics (GA4): propiedad separada del sitio institucional,
+     ver conversación de configuración. Va primero en <head>, como pide
+     Google, para que se cargue lo antes posible en cada visita. -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-S1CMYWNZZS"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-S1CMYWNZZS');
+</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Transporte público | Comodoro Rivadavia</title>
@@ -1369,7 +1379,7 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
    completo la capa de paradas (panel de capas + "paradas cercanas" del
    botón de ubicación), sin borrar nada del código. Para reactivarlas
    en otra instancia, alcanza con volver esto a "true". */
-const PARADAS_HABILITADAS = true;
+const PARADAS_HABILITADAS = false;
 
 /* Interruptor del panel "Buscar línea" (origen/destino → línea sugerida):
    oculta por completo la caja flotante, sin borrar nada del código. Volver
@@ -1392,7 +1402,7 @@ const TOUR_HABILITADO = true;
    botón en ninguna línea, aunque esa línea ya tenga datos cargados en
    horarios_data.js. Es de prueba, para ir cargando horarios.json de a
    poco sin exponerlo todavía; volver a "true" para reactivarlo. */
-const HORARIOS_HABILITADO = true;
+const HORARIOS_HABILITADO = false;
 
 /* Interruptor de los avisos/advertencias (botón "!" azul, apilado debajo
    del de ayuda + burbuja con el texto de cada aviso activo): con esto en
