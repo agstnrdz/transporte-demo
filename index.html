@@ -717,6 +717,30 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   50% { box-shadow: 0 2px 10px rgba(0,0,0,0.28), 0 0 0 8px color-mix(in srgb, var(--tour-acento) 35%, transparent); }
 }
 
+/* botón de avisos/advertencias: mismo lenguaje visual que el de ayuda
+   (círculo apilado por L.Control), pero azul (--geoloc, ya usado en el
+   botón de ubicación) para no confundirse con el rojo del tutorial —
+   y para dejar en claro que es otra cosa, con comportamiento
+   independiente (ver AVISOS_HABILITADO en el script). */
+.ctrl-aviso { margin-top: 8px !important; }
+.ctrl-aviso button {
+  width: 36px; height: 36px;
+  display: grid; place-items: center;
+  border-radius: 999px;
+  background: var(--geoloc);
+  color: #fff;
+  font-size: 17px;
+  font-weight: 800;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.28);
+  transition: transform 0.15s;
+}
+.ctrl-aviso button:hover { transform: scale(1.06); }
+.ctrl-aviso button.vt-aviso-pulso { animation: vt-aviso-pulso 0.7s ease-in-out 3; }
+@keyframes vt-aviso-pulso {
+  0%, 100% { box-shadow: 0 2px 10px rgba(0,0,0,0.28); }
+  50% { box-shadow: 0 2px 10px rgba(0,0,0,0.28), 0 0 0 8px color-mix(in srgb, var(--geoloc) 35%, transparent); }
+}
+
 /* tooltips y popups */
 #visor-transporte .leaflet-tooltip.tt-linea, #visor-transporte .leaflet-tooltip.tt-parada {
   background: var(--panel);
@@ -1100,6 +1124,50 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
 @media (max-width: 640px) {
   .vt-tour-modal, .vt-tour-burbuja { padding: 16px; }
 }
+
+/* ══ Burbuja de avisos/advertencias ══
+   Rectángulo chico con colita apuntando al botón "!" del que "sale"
+   (ver posicionarAvisoBurbuja en el script). Bloque de estilos aparte
+   del tutorial (.vt-tour-*): mismo lenguaje visual general del visor,
+   pero sin compartir clases ni z-index con el tour, para que uno se
+   pueda tocar sin afectar al otro. */
+.vt-aviso-burbuja {
+  position: fixed;
+  z-index: 1400;
+  width: min(300px, calc(100vw - 24px));
+  background: var(--panel);
+  color: var(--ink-1);
+  border: 1px solid var(--hair);
+  border-radius: 12px;
+  box-shadow: var(--sombra);
+  padding: 14px 32px 12px 14px;
+}
+/* Colita: cuadrado rotado 45°, mismo fondo/borde que la burbuja, la
+   posición horizontal (--cola-left) la fija el script según dónde haya
+   quedado la burbuja respecto del botón real. */
+.vt-aviso-burbuja::before {
+  content: "";
+  position: absolute;
+  top: -7px;
+  left: var(--cola-left, 16px);
+  width: 12px; height: 12px;
+  background: var(--panel);
+  border-left: 1px solid var(--hair);
+  border-top: 1px solid var(--hair);
+  transform: rotate(45deg);
+}
+.vt-aviso-item { margin: 0; padding: 6px 0; font-size: 13px; line-height: 1.45; border-bottom: 1px dashed var(--hair); }
+.vt-aviso-item:first-child { padding-top: 0; }
+.vt-aviso-item:last-child { border-bottom: none; padding-bottom: 0; }
+.vt-aviso-cerrar {
+  position: absolute;
+  top: 8px; right: 8px;
+  width: 24px; height: 24px;
+  display: grid; place-items: center;
+  border-radius: 7px;
+  color: var(--muted);
+}
+.vt-aviso-cerrar:hover { background: var(--hover-wash); color: var(--ink-1); }
 </style>
 </head>
 <body>
@@ -1292,6 +1360,7 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
 <script src="layers_transporte/linea_22_data.js"></script>
 <script src="layers_transporte/paradas_data.js"></script>
 <script src="layers_transporte/horarios_data.js"></script>
+<script src="layers_transporte/avisos_data.js"></script>
 <script>
 (function () {
 "use strict";
@@ -1305,7 +1374,7 @@ const PARADAS_HABILITADAS = false;
 /* Interruptor del panel "Buscar línea" (origen/destino → línea sugerida):
    oculta por completo la caja flotante, sin borrar nada del código. Volver
    a "true" para reactivarla. */
-const BUSCADOR_LINEA_HABILITADO = false;
+const BUSCADOR_LINEA_HABILITADO = true;
 
 /* Interruptor del tutorial guiado (botón "?" + oferta automática en las
    primeras visitas): con esto en false no se crea el botón ni se ofrece
@@ -1316,7 +1385,7 @@ const BUSCADOR_LINEA_HABILITADO = false;
    BUSCADOR_LINEA_HABILITADO en false, esos pasos van a señalar algo que
    no existe en el sitio — conviene revisar/editar esos pasos puntuales
    antes de reactivarlo en ese caso. */
-const TOUR_HABILITADO = false;
+const TOUR_HABILITADO = true;
 
 /* Interruptor del botón "Ver horarios" (panel de horarios por línea, en
    Recorridos → detalle de cada línea): con esto en false no se crea el
@@ -1324,6 +1393,15 @@ const TOUR_HABILITADO = false;
    horarios_data.js. Es de prueba, para ir cargando horarios.json de a
    poco sin exponerlo todavía; volver a "true" para reactivarlo. */
 const HORARIOS_HABILITADO = false;
+
+/* Interruptor de los avisos/advertencias (botón "!" azul, apilado debajo
+   del de ayuda + burbuja con el texto de cada aviso activo): con esto en
+   false no se crea el botón aunque avisos_data.js traiga avisos cargados.
+   Comportamiento totalmente aparte del tutorial guiado (no comparte
+   variables ni funciones con TOUR_HABILITADO) — se puede prender o apagar
+   cada uno sin afectar al otro. El botón tampoco se dibuja si el array de
+   avisos_data.js está vacío, aunque esto esté en true. */
+const AVISOS_HABILITADO = true;
 
 /* ══════════════════════════════════════════════════════════════════
    Armado de datos: lee los 23 window.LINEA_*_DATA (GeoJSON crudo)
@@ -2880,6 +2958,95 @@ if (TOUR_HABILITADO) {
     cerrarTour();
     iniciarTour();
   });
+}
+
+/* ── Botón de avisos/advertencias: azul, apilado con L.Control igual que
+     el de ayuda (si el tour está apagado, Leaflet lo apila con lo que
+     haya arriba, así que no depende de que exista el botón "?"). Sólo se
+     crea si AVISOS_HABILITADO y si avisos_data.js trae al menos un aviso
+     — ver el interruptor al inicio del script. Nada de esto toca ni
+     depende de las variables/funciones del tour (elBlock, elAnillo,
+     elBurbuja, cerrarTour, etc.): es un bloque aparte a propósito, para
+     poder prender o apagar uno sin afectar al otro. ── */
+const AVISOS_ACTIVOS = (window.AVISOS_DATA || []).filter((t) => typeof t === "string" && t.trim());
+if (AVISOS_HABILITADO && AVISOS_ACTIVOS.length) {
+  const AVISOS_DESCARTADOS_KEY = "vt_avisos_descartados";
+  const CtrlAvisos = L.Control.extend({
+    options: { position: "topleft" },
+    onAdd() {
+      const div = L.DomUtil.create("div", "ctrl-aviso");
+      div.innerHTML =
+        `<button id="btn-avisos" title="Ver avisos" aria-label="Ver avisos" aria-expanded="false">!</button>`;
+      L.DomEvent.disableClickPropagation(div);
+      return div;
+    },
+  });
+  mapa.addControl(new CtrlAvisos());
+
+  let elAvisoBurbuja = null;
+
+  function posicionarAvisoBurbuja() {
+    const btn = document.getElementById("btn-avisos");
+    if (!btn || !elAvisoBurbuja) return;
+    const r = btn.getBoundingClientRect();
+    const margen = 10;
+    const vw = window.innerWidth;
+    const bw = elAvisoBurbuja.offsetWidth;
+    const left = Math.max(margen, Math.min(r.left, vw - bw - margen));
+    elAvisoBurbuja.style.top = `${r.bottom + margen}px`;
+    elAvisoBurbuja.style.left = `${left}px`;
+    // colita alineada con el centro del botón, salvo que la burbuja se
+    // haya tenido que correr para no salirse de la pantalla
+    const colaLeft = Math.max(12, Math.min(r.left + r.width / 2 - left - 6, bw - 24));
+    elAvisoBurbuja.style.setProperty("--cola-left", `${colaLeft}px`);
+  }
+
+  function cerrarAvisoBurbuja() {
+    if (!elAvisoBurbuja) return;
+    elAvisoBurbuja.remove();
+    elAvisoBurbuja = null;
+    document.getElementById("btn-avisos").setAttribute("aria-expanded", "false");
+    window.removeEventListener("resize", posicionarAvisoBurbuja);
+  }
+
+  function abrirAvisoBurbuja() {
+    if (elAvisoBurbuja) return;
+    elAvisoBurbuja = document.createElement("div");
+    elAvisoBurbuja.className = "vt-aviso-burbuja";
+    elAvisoBurbuja.setAttribute("role", "alert");
+    elAvisoBurbuja.innerHTML =
+      AVISOS_ACTIVOS.map((t) => `<p class="vt-aviso-item">${esc(t)}</p>`).join("") +
+      `<button type="button" class="vt-aviso-cerrar" aria-label="Cerrar avisos">` +
+        `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>` +
+      `</button>`;
+    CONT.appendChild(elAvisoBurbuja);
+    posicionarAvisoBurbuja();
+    window.addEventListener("resize", posicionarAvisoBurbuja);
+    document.getElementById("btn-avisos").setAttribute("aria-expanded", "true");
+    elAvisoBurbuja.querySelector(".vt-aviso-cerrar").addEventListener("click", () => {
+      cerrarAvisoBurbuja();
+      try { sessionStorage.setItem(AVISOS_DESCARTADOS_KEY, "1"); } catch (e) { /* puede estar bloqueado */ }
+    });
+  }
+
+  document.getElementById("btn-avisos").addEventListener("click", () => {
+    if (elAvisoBurbuja) cerrarAvisoBurbuja();
+    else abrirAvisoBurbuja();
+  });
+
+  // Aparición automática a los 10s de entrar, salvo que ya se haya
+  // descartado en esta sesión (sessionStorage: dura hasta cerrar la
+  // pestaña, a diferencia del localStorage que usa el tour).
+  let avisosYaDescartados = false;
+  try { avisosYaDescartados = sessionStorage.getItem(AVISOS_DESCARTADOS_KEY) === "1"; } catch (e) { /* puede estar bloqueado */ }
+  if (!avisosYaDescartados) {
+    setTimeout(() => {
+      abrirAvisoBurbuja();
+      const btn = document.getElementById("btn-avisos");
+      btn.classList.add("vt-aviso-pulso");
+      setTimeout(() => btn.classList.remove("vt-aviso-pulso"), 2200);
+    }, 10000);
+  }
 }
 
 document.getElementById("btn-ubicarme").addEventListener("click", ubicarme);
