@@ -48,7 +48,7 @@ El uso de [Argenmap](https://ign-argentina.github.io/argenmap-web/) como mapa ba
 
 ### Tecnología
 
-Sitio estático construido con HTML, CSS y JavaScript, sin dependencias de build ni backend. El mapa se implementa con [Leaflet](https://leafletjs.com/). El buscador de línea complementa el listado propio de esquinas relevadas con consultas opcionales a la [API Georef](https://datosgobar.github.io/georef-ar-api/) para intersecciones no incluidas en el relevamiento; si el servicio no responde, el buscador sigue funcionando sólo con los datos propios. La burbuja de clima consulta la API pública de [Open-Meteo](https://open-meteo.com/); si el pedido falla, la burbuja simplemente no se muestra.
+Sitio estático construido con HTML, CSS y JavaScript, sin dependencias de build ni backend. El mapa se implementa con [Leaflet](https://leafletjs.com/). El buscador de línea complementa el listado propio de esquinas relevadas con consultas opcionales a la [API Georef](https://datosgobar.github.io/georef-ar-api/) para intersecciones no incluidas en el relevamiento; si el servicio no responde, el buscador sigue funcionando sólo con los datos propios. La burbuja de clima consulta la API pública de [Open-Meteo](https://open-meteo.com/).
 
 ### Licencia
 
