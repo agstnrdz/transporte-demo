@@ -1300,12 +1300,12 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
    completo la capa de paradas (panel de capas + "paradas cercanas" del
    botón de ubicación), sin borrar nada del código. Para reactivarlas
    en otra instancia, alcanza con volver esto a "true". */
-const PARADAS_HABILITADAS = false;
+const PARADAS_HABILITADAS = true;
 
 /* Interruptor del panel "Buscar línea" (origen/destino → línea sugerida):
    oculta por completo la caja flotante, sin borrar nada del código. Volver
    a "true" para reactivarla. */
-const BUSCADOR_LINEA_HABILITADO = false;
+const BUSCADOR_LINEA_HABILITADO = true;
 
 /* Interruptor del tutorial guiado (botón "?" + oferta automática en las
    primeras visitas): con esto en false no se crea el botón ni se ofrece
@@ -1316,7 +1316,14 @@ const BUSCADOR_LINEA_HABILITADO = false;
    BUSCADOR_LINEA_HABILITADO en false, esos pasos van a señalar algo que
    no existe en el sitio — conviene revisar/editar esos pasos puntuales
    antes de reactivarlo en ese caso. */
-const TOUR_HABILITADO = false;
+const TOUR_HABILITADO = true;
+
+/* Interruptor del botón "Ver horarios" (panel de horarios por línea, en
+   Recorridos → detalle de cada línea): con esto en false no se crea el
+   botón en ninguna línea, aunque esa línea ya tenga datos cargados en
+   horarios_data.js. Es de prueba, para ir cargando horarios.json de a
+   poco sin exponerlo todavía; volver a "true" para reactivarlo. */
+const HORARIOS_HABILITADO = true;
 
 /* ══════════════════════════════════════════════════════════════════
    Armado de datos: lee los 23 window.LINEA_*_DATA (GeoJSON crudo)
@@ -1836,7 +1843,7 @@ for (const linea of LINEAS_DATA) {
     `<button class="pill sentido activo" data-ruta="${esc(r.id)}" aria-pressed="true" title="${esc(linea.nombre || "Línea " + linea.id)}">` +
     `${FLECHAS[r.tipo] || "→"} ${esc(r.sentido)}</button>`
   ).join("");
-  const tieneHorarios = !!(window.HORARIOS_DATA && window.HORARIOS_DATA[linea.id]);
+  const tieneHorarios = HORARIOS_HABILITADO && !!(window.HORARIOS_DATA && window.HORARIOS_DATA[linea.id]);
   const btnHorarios = tieneHorarios
     ? `<button type="button" class="pill pill-accion btn-ver-horarios" aria-expanded="false">Ver horarios</button>`
     : "";
