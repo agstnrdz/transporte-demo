@@ -287,7 +287,7 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   background: color-mix(in srgb, var(--ink-1) 16%, var(--panel));
 }
 /* ── Texto de ayuda en el buscador de líneas ── */
-.ayuda { margin: 2px 2px 6px; font-size: 13px; line-height: 1.4; color: var(--muted); }
+.ayuda { margin: 2px 2px 6px; font-size: 13.5px; line-height: 1.4; color: var(--ink-2); }
 
 .mini-acciones { display: flex; gap: 6px; }
 .btn-mini { /* ── Botón de 'Limpiar' ── */
@@ -363,7 +363,7 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   width: 100%;
   margin-top: 4px;
   padding: 8px 12px;
-  font-size: 12.5px;
+  font-size: 13.5px;
   font-weight: 650;
   border-radius: 9px;
   text-align: center;
@@ -391,10 +391,10 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
 .resultado-opcion:hover { background: var(--hover-wash); }
 .resultado-opcion.activa { border-color: var(--activo-bg); background: var(--hover-wash); }
 .resultado-texto { display: flex; flex-direction: column; line-height: 1.25; flex: 1; min-width: 0; }
-.resultado-texto strong { font-size: 12.5px; }
-.resultado-sentido { font-size: 10.5px; color: var(--ink-2); }
+.resultado-texto strong { font-size: 13px; }
+.resultado-sentido { font-size: 11px; color: var(--ink-2); }
 .resultado-caminata { font-size: 10.5px; color: var(--ink-2); font-weight: 650; white-space: nowrap; }
-.resultado-vacio { margin: 4px 2px 0; font-size: 11.5px; color: var(--muted); line-height: 1.4; }
+.resultado-vacio { margin: 4px 2px 0; font-size: 13.5px; color: var(--ink-2); line-height: 1.4; }
 #mapa.cursor-elegir { cursor: crosshair; }
 
 /* ── Mapa base (segmentado: Argenmap / Satelital Google) — control
@@ -1166,7 +1166,7 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   border-top: 1px solid var(--hair);
   transform: rotate(45deg);
 }
-.vt-aviso-item { margin: 0; padding: 6px 0; font-size: 13px; line-height: 1.45; border-bottom: 1px dashed var(--hair); }
+.vt-aviso-item { margin: 0; padding: 6px 0; font-size: 14px; line-height: 1.45; border-bottom: 1px dashed var(--hair); }
 .vt-aviso-item:first-child { padding-top: 0; }
 .vt-aviso-item:last-child { border-bottom: none; padding-bottom: 0; }
 .vt-aviso-cerrar {
@@ -1384,7 +1384,7 @@ const PARADAS_HABILITADAS = false;
 /* Interruptor del panel "Buscar línea" (origen/destino → línea sugerida):
    oculta por completo la caja flotante, sin borrar nada del código. Volver
    a "true" para reactivarla. */
-const BUSCADOR_LINEA_HABILITADO = true;
+const BUSCADOR_LINEA_HABILITADO = false;
 
 /* Interruptor del tutorial guiado (botón "?" + oferta automática en las
    primeras visitas): con esto en false no se crea el botón ni se ofrece
@@ -2182,6 +2182,7 @@ mapa.on("zoomend", () => {
 
 chkParadas.addEventListener("change", (e) => {
   estado.paradasOn = e.target.checked;
+  medir("click_paradas", { activado: e.target.checked });
   cajaParadas.classList.toggle("plegada", !e.target.checked);
   aplicarFiltrosParadas();
 });
