@@ -1634,6 +1634,15 @@ function colorChip(linea) { return atenuar(colorLinea(linea)); }
 function fmtDist(m) { return m < 1000 ? `${Math.round(m)} m` : `${(m / 1000).toFixed(1)} km`; }
 function esc(s) { return String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
 
+/* Analítica (Google Analytics, ver snippet de gtag() en el <head>):
+   todas las llamadas a gtag('event', ...) pasan por acá (buscá "medir("
+   para ubicarlas todas). Si algún día se saca el snippet de GA del
+   <head>, window.gtag queda indefinido y esto no manda nada ni rompe
+   nada — no hace falta acordarse de sacar las llamadas de golpe. */
+function medir(nombre, parametros) {
+  if (typeof window.gtag === "function") window.gtag("event", nombre, parametros);
+}
+
 let toastTimer = null;
 function toast(msg, ms = 4000) {
   const el = document.getElementById("toast");
@@ -1963,6 +1972,7 @@ for (const linea of LINEAS_DATA) {
 
   li.querySelector(".linea-main").addEventListener("click", (e) => {
     if (e.target.closest(".btn-ojo")) return;
+    medir("click_linea", { linea_id: linea.id });
     alternarFoco(linea.id);
   });
   li.querySelector(".btn-ojo").addEventListener("click", () => {
@@ -2685,7 +2695,9 @@ function aplicarResultado(c) {
 
 btnBuscarLinea.addEventListener("click", () => {
   if (!buscador.origen || !buscador.destino) return;
-  mostrarResultadoBuscador(buscarLineaSugerida(buscador.origen, buscador.destino));
+  const candidatas = buscarLineaSugerida(buscador.origen, buscador.destino);
+  medir("click_buscar_linea", { encontro_resultado: candidatas.length > 0 });
+  mostrarResultadoBuscador(candidatas);
 });
 
 document.getElementById("btn-limpiar-buscador").addEventListener("click", () => {
