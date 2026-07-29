@@ -995,6 +995,10 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
      comentario en #caja-paradas .caja-head, más arriba); acá se agrega
      este segundo control independiente sólo para ahorrar espacio. */
   .btn-plegar-paradas { display: grid; }
+  /* Acá sí es clickeable toda la cabecera (ver el listener de
+     cajaParadasHead en el <script>) — se restaura el cursor de "esto se
+     toca" que el desktop apaga a propósito en la regla de más arriba. */
+  #caja-paradas .caja-head { cursor: pointer; }
   /* "Paradas más cercanas" y el toast flotan arriba de la hoja inferior
      (no a una distancia fija del piso): --vt-sheet-alto lo mantiene
      actualizado el script con el alto real del panel en todo momento, así
@@ -2086,6 +2090,26 @@ btnPlegarParadas.addEventListener("click", () => {
   const plegar = !cajaParadas.classList.contains("plegada");
   cajaParadas.classList.toggle("plegada", plegar);
   btnPlegarParadas.setAttribute("aria-expanded", String(!plegar));
+});
+
+/* En mobile, tocar cualquier parte de la cabecera de Paradas plegua/
+   despliega igual que Recorridos y Buscar línea (antes sólo respondía el
+   ícono chico de la derecha). En desktop se deja tal cual estaba: el
+   switch sigue siendo el único control (ver comentario en
+   "#caja-paradas .caja-head { cursor: default; }", en el CSS) — por eso
+   este listener se desentiende por completo si el viewport no es mobile.
+   En vez de duplicar la lógica de plegado, delega al click del botón que
+   ya existe (btnPlegarParadas): así ambos caminos quedan sincronizados
+   por construcción, no por coincidencia. Se ignoran los clicks que ya
+   vienen del switch (tiene su propio manejo arriba) y los que vienen del
+   propio botón (si no, el .click() de abajo dispararía este mismo
+   listener otra vez al burbujear, aunque sin loop infinito porque esa
+   segunda vuelta sí matchea el guard y corta ahí). */
+const cajaParadasHead = cajaParadas.querySelector(".caja-head");
+cajaParadasHead.addEventListener("click", (e) => {
+  if (!window.matchMedia("(max-width: 640px)").matches) return;
+  if (e.target.closest(".switch") || e.target.closest(".btn-plegar-paradas")) return;
+  btnPlegarParadas.click();
 });
 
 CONT.querySelectorAll(".filtro-fila").forEach((fila) => {
