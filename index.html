@@ -1546,12 +1546,12 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
    completo la capa de paradas (panel de capas + "paradas cercanas" del
    botón de ubicación), sin borrar nada del código. Para reactivarlas
    en otra instancia, alcanza con volver esto a "true". */
-const PARADAS_HABILITADAS = false;
+const PARADAS_HABILITADAS = true;
 
 /* Interruptor del panel "Buscar línea" (origen/destino → línea sugerida):
    oculta por completo la caja flotante, sin borrar nada del código. Volver
    a "true" para reactivarla. */
-const BUSCADOR_LINEA_HABILITADO = false;
+const BUSCADOR_LINEA_HABILITADO = true;
 
 /* Interruptor del tutorial guiado (botón "?" + oferta automática en las
    primeras visitas): con esto en false no se crea el botón ni se ofrece
@@ -1569,7 +1569,7 @@ const TOUR_HABILITADO = true;
    botón en ninguna línea, aunque esa línea ya tenga datos cargados en
    horarios_data.js. Es de prueba, para ir cargando horarios.json de a
    poco sin exponerlo todavía; volver a "true" para reactivarlo. */
-const HORARIOS_HABILITADO = false;
+const HORARIOS_HABILITADO = true;
 
 /* Interruptor de los avisos/advertencias (botón "!" azul, apilado debajo
    del de ayuda + burbuja con el texto de cada aviso activo): con esto en
