@@ -1,16 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<!-- Google Analytics (GA4): propiedad separada del sitio institucional,
-     ver conversación de configuración. Va primero en <head>, como pide
-     Google, para que se cargue lo antes posible en cada visita. -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-S1CMYWNZZS"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-S1CMYWNZZS');
-</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Transporte público | Comodoro Rivadavia</title>
@@ -52,6 +42,20 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   --marca:        #134768;
   --aviso:        #c27018;
   --tour-acento:  #d1293d;
+  /* ═ Tokens "liquid glass" (prototipo index-borrador): sólo afectan
+     fondo/borde/blur de paneles y controles flotantes — ningún color de
+     texto, tamaño, layout ni z-index se toca, así que no condicionan
+     funcionalidad ni accesibilidad. --vt-glass-bg-strong es más opaco que
+     --vt-glass-bg a propósito: se usa en el panel/hoja inferior, donde hay
+     mucho texto para leer y un blur muy transparente perdería contraste
+     contra el satelital; --vt-glass-bg (más translúcido) es para los
+     controles chicos que flotan solos sobre el mapa. */
+  --vt-glass-blur:        blur(20px) saturate(180%);
+  --vt-glass-bg:          rgba(255, 255, 255, 0.62);
+  --vt-glass-bg-strong:   rgba(255, 255, 255, 0.86);
+  --vt-glass-borde-arriba: rgba(255, 255, 255, 0.85);
+  --vt-glass-brillo:      rgba(255, 255, 255, 0.55);
+  --vt-glass-sombra:      0 8px 32px rgba(11, 11, 11, 0.16);
   width: 100%;
   height: 100vh;
   height: 100dvh;
@@ -74,6 +78,22 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   --sombra:       0 10px 30px rgba(0, 0, 0, 0.55);
   --mapa-fondo:   #141414;
   --geoloc:       #3987e5;
+  /* Vidrio en oscuro: mismo blur, pero el tinte es oscuro (no blanco) y el
+     "borde de arriba" que simula el filo del vidrio atrapando luz es un
+     blanco muy tenue en vez de casi opaco — si no, se ve como un borde
+     blanco duro pegado al panel, no como un reflejo. */
+  /* Subido un poco (26→46 de base, 0.58→0.63 de opacidad): a este nivel
+     de oscuridad, el ícono gris (--muted) de los botones de zoom/
+     ubicación/encuadre y el texto de Argenmap/Satelital cuando no está
+     activo perdían contraste contra el vidrio — un ajuste chico alcanza,
+     porque acá no hace falta mucho para volver a pasar el mínimo de
+     contraste cómodo. --vt-glass-bg-strong (el panel, con mucho texto)
+     no se toca: ese ya iba más opaco y no tenía el mismo problema. */
+  --vt-glass-bg:          rgba(46, 46, 44, 0.63);
+  --vt-glass-bg-strong:   rgba(24, 24, 23, 0.82);
+  --vt-glass-borde-arriba: rgba(255, 255, 255, 0.22);
+  --vt-glass-brillo:      rgba(255, 255, 255, 0.16);
+  --vt-glass-sombra:      0 8px 32px rgba(0, 0, 0, 0.5);
 }
 :where(#visor-transporte) * { box-sizing: border-box; }
 /* :where() anula el aporte de especificidad del ID: este reset scoped ya no
@@ -106,12 +126,24 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   width: 34px; height: 34px;
   display: grid; place-items: center;
   border-radius: 9px;
+  /* Estos botones (tema y pantalla completa) están sobre la cabecera de
+     color sólido (--marca), no sobre el mapa: ahí atrás no hay nada
+     variado para que un blur "difumine" de verdad, así que el vidrio acá
+     se limita a lo que sí se nota sobre un color plano — un overlay
+     traslúcido claro + un borde más luminoso arriba, simulando el filo
+     del vidrio en vez de un vidrio esmerilado completo. */
+  background: rgba(255,255,255,0.08);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
   border: 1px solid rgba(255,255,255,0.35);
+  border-top-color: rgba(255,255,255,0.6);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.35);
   color: #fff;
   flex-shrink: 0;
+  overflow: hidden;
   transition: background 0.15s;
 }
-.vt-btn-header:hover { background: rgba(255,255,255,0.12); }
+.vt-btn-header:hover { background: rgba(255,255,255,0.18); }
 /* Centrado a prueba del CSS del sitio anfitrión (WordPress/Elementor):
    se posiciona por coordenadas propias, no por el layout heredado del
    botón, así un reset externo de line-height/padding/width no lo corre.
@@ -159,11 +191,20 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   max-height: calc(100% - 24px);
   display: flex;
   flex-direction: column;
-  background: var(--panel);
+  /* Vidrio: fondo translúcido + blur del mapa detrás en vez de panel sólido.
+     --vt-glass-bg-strong (bastante opaco) porque acá adentro hay listas de
+     líneas y horarios para leer — un blur muy transparente se vuelve
+     ilegible apenas el satelital tiene contraste. El "borde de arriba" y el
+     brillo (inset) son lo que da la sensación de filo de vidrio iluminado;
+     el resto del borde sigue siendo --hair, tenue, como antes. */
+  background: var(--vt-glass-bg-strong);
+  backdrop-filter: var(--vt-glass-blur);
+  -webkit-backdrop-filter: var(--vt-glass-blur);
   border: 1px solid var(--hair);
+  border-top-color: var(--vt-glass-borde-arriba);
   border-right: none; /* no se ve: el panel queda al ras del límite derecho del sitio */
   border-radius: 12px 0 0 12px; /* redondeado sólo del lado que no toca el borde */
-  box-shadow: 0 6px 20px rgba(0,0,0,0.20), 0 1px 4px rgba(0,0,0,0.12);
+  box-shadow: var(--vt-glass-sombra), inset 0 1px 0 var(--vt-glass-brillo);
   z-index: 1200;
   overflow-y: auto; /* si las solapas abiertas superan el alto disponible,
      scrollea el panel entero para poder llegar a las de más abajo */
@@ -287,7 +328,7 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   background: color-mix(in srgb, var(--ink-1) 16%, var(--panel));
 }
 /* ── Texto de ayuda en el buscador de líneas ── */
-.ayuda { margin: 2px 2px 6px; font-size: 13.5px; line-height: 1.4; color: var(--ink-2); }
+.ayuda { margin: 2px 2px 6px; font-size: 13px; line-height: 1.4; color: var(--muted); }
 
 .mini-acciones { display: flex; gap: 6px; }
 .btn-mini { /* ── Botón de 'Limpiar' ── */
@@ -363,7 +404,7 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   width: 100%;
   margin-top: 4px;
   padding: 8px 12px;
-  font-size: 13.5px;
+  font-size: 12.5px;
   font-weight: 650;
   border-radius: 9px;
   text-align: center;
@@ -391,10 +432,10 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
 .resultado-opcion:hover { background: var(--hover-wash); }
 .resultado-opcion.activa { border-color: var(--activo-bg); background: var(--hover-wash); }
 .resultado-texto { display: flex; flex-direction: column; line-height: 1.25; flex: 1; min-width: 0; }
-.resultado-texto strong { font-size: 13px; }
-.resultado-sentido { font-size: 11px; color: var(--ink-2); }
+.resultado-texto strong { font-size: 12.5px; }
+.resultado-sentido { font-size: 10.5px; color: var(--ink-2); }
 .resultado-caminata { font-size: 10.5px; color: var(--ink-2); font-weight: 650; white-space: nowrap; }
-.resultado-vacio { margin: 4px 2px 0; font-size: 13.5px; color: var(--ink-2); line-height: 1.4; }
+.resultado-vacio { margin: 4px 2px 0; font-size: 11.5px; color: var(--muted); line-height: 1.4; }
 #mapa.cursor-elegir { cursor: crosshair; }
 
 /* ── Mapa base (segmentado: Argenmap / Satelital Google) — control
@@ -408,8 +449,16 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   overflow: hidden;
 }
 .segmentado.base {
-  background: var(--panel);
-  box-shadow: 0 2px 10px rgba(0,0,0,0.22);
+  /* Vidrio: mismo tratamiento que .ctrl-acciones (flota solo sobre el
+     mapa, sin mucho texto adentro) — --vt-glass-bg, más translúcido que
+     el del panel, porque el "track" del segmentado no necesita leerse
+     como una superficie opaca; el pill activo (.seg.activo, sólido negro/
+     blanco) sigue siendo el que de verdad hay que ver bien. */
+  background: var(--vt-glass-bg);
+  backdrop-filter: var(--vt-glass-blur);
+  -webkit-backdrop-filter: var(--vt-glass-blur);
+  box-shadow: 0 4px 16px rgba(11,11,11,0.18), inset 0 1px 0 var(--vt-glass-brillo);
+  border-top-color: var(--vt-glass-borde-arriba);
   margin-bottom: 0px; /* gap corto contra los botones de ubicación/encuadre, de abajo */
 }
 /* Más grande que el .seg genérico (que también usan los filtros de
@@ -621,6 +670,111 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
 }
 #conteo-paradas strong { color: var(--ink-1); }
 
+/* ══ Destello "liquid glass" al tocar (prototipo index-borrador) ══
+   Un brillo suave que aparece en el punto exacto donde se tocó/clickeó y
+   se expande difuminándose, imitando el reflejo de luz de iOS 26 al
+   tocar un control de vidrio. Es puramente decorativo y aditivo:
+   - No cambia tamaño, posición ni z-index de nada — sólo agrega un
+     ::before de brillo por encima del contenido real.
+   - No reemplaza ningún :hover/:active/.activo existente: conviven.
+   - El listener que lo dispara (más abajo en el <script>) sólo agrega y
+     saca una clase — nunca toca los listeners de click reales de cada
+     botón, así que la funcionalidad no se toca.
+   Selectores alcanzados: botones de zoom/ubicación/encuadre, Argenmap/
+   Satelital (y los .seg que ya existían adentro del panel, gratis, por
+   compartir la misma clase), tema/pantalla completa, y las cabeceras de
+   solapa del panel (Recorridos/Paradas/Buscar línea).
+
+   Por qué se veía "cuadrado" antes: un radial-gradient sin radio propio
+   usa por defecto "farthest-corner" — el círculo se dimensiona para
+   llegar a la esquina más lejana de la caja. En una caja ancha y baja
+   (el pill de Argenmap/Satelital, la cabecera de una solapa) esa esquina
+   queda lejos, así que el círculo real es enorme y lo único que entra
+   en la caja visible es su porción central, casi sin degradé — se lee
+   como un bloque parejo con un corte recto en el borde, no como un
+   brillo redondo. Ahora el radio lo calcula el script por elemento
+   (--vt-shine-radio, ver más abajo en el <script>) en vez de dejarlo
+   crecer solo, así el círculo se ve como círculo sea cual sea la forma
+   del botón/caja. De paso, la animación pasa de 850ms a 480ms (se sentía
+   lenta) con una curva de salida más rápida al principio. */
+.ctrl-acciones button, .vt-btn-header, .seg, .caja-head {
+  position: relative;
+  isolation: isolate; /* la mezcla del brillo (mix-blend-mode) no se filtra a hermanos */
+  overflow: hidden; /* recorta el brillo a los límites del propio botón/caja */
+}
+.ctrl-acciones button::before,
+.vt-btn-header::before,
+.seg::before,
+.caja-head::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    circle var(--vt-shine-radio, 40px) at var(--vt-shine-x, 50%) var(--vt-shine-y, 50%),
+    rgba(255,255,255,0.62) 0%,
+    rgba(255,255,255,0.26) 45%,
+    rgba(255,255,255,0) 100%
+  );
+  mix-blend-mode: overlay;
+}
+.ctrl-acciones button.vt-destello::before,
+.vt-btn-header.vt-destello::before,
+.seg.vt-destello::before,
+.caja-head.vt-destello::before {
+  animation: vt-destello 480ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+@keyframes vt-destello {
+  0%   { opacity: 0;   transform: scale(0.4); }
+  12%  { opacity: 1;   transform: scale(0.75); }
+  100% { opacity: 0;   transform: scale(1.35); }
+}
+@media (prefers-reduced-motion: reduce) {
+  /* Con movimiento reducido, el destello se apaga (queda todo lo demás
+     del vidrio: fondo, blur, bordes) — mismo criterio que ya usa el resto
+     del visor para esta media query. */
+  .ctrl-acciones button.vt-destello::before,
+  .vt-btn-header.vt-destello::before,
+  .seg.vt-destello::before,
+  .caja-head.vt-destello::before {
+    animation: none;
+    opacity: 0;
+  }
+}
+
+/* ══ Rebote gelatinoso al tocar (prototipo index-borrador) ══
+   Sólo en botones "de acción" discretos: zoom/ubicación/encuadre, tema,
+   pantalla completa, Argenmap/Satelital. A propósito NO incluye
+   .caja-head: esa es una fila entera del panel, y achicarla completa al
+   tocar se ve raro (deja huecos disparejos a los costados); las
+   cabeceras de solapa se quedan sólo con el destello de luz, de arriba.
+
+   El truco (el mismo lenguaje que ya usaba este visor para el rebote de
+   la hoja inferior al soltar un arrastre, ver #pila-flotante en mobile):
+   la transición "de ida" (:active, dedo/mouse abajo) es corta y sin
+   rebote — se siente el toque al instante. La transición "de vuelta"
+   (al soltar) usa una curva con overshoot (cubic-bezier con el segundo
+   valor > 1): pasa de largo por scale(1) antes de asentarse ahí, y eso
+   es lo que se lee como gelatinoso en vez de un click seco. No toca
+   ningún listener de click real: transform es puramente visual y no
+   mueve el punto donde cae el click. */
+.ctrl-acciones button, .vt-btn-header, .seg {
+  transition: transform 0.42s cubic-bezier(0.34, 1.56, 0.64, 1),
+              background 0.15s, color 0.15s;
+}
+.ctrl-acciones button:active, .vt-btn-header:active, .seg:active {
+  transform: scale(0.92);
+  transition: transform 0.08s ease-out, background 0.15s, color 0.15s;
+}
+@media (prefers-reduced-motion: reduce) {
+  .ctrl-acciones button, .vt-btn-header, .seg,
+  .ctrl-acciones button:active, .vt-btn-header:active, .seg:active {
+    transform: none;
+    transition: background 0.15s, color 0.15s;
+  }
+}
+
 /* ══ Animaciones de mapa ══ */
 .linea-flujo { animation: vt-flujo 0.9s linear infinite; }
 @keyframes vt-flujo {
@@ -663,11 +817,17 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
 .ctrl-acciones {
   display: flex;
   flex-direction: column;
-  background: var(--panel);
+  /* Vidrio: mismo criterio que .segmentado.base — flota solo sobre el
+     mapa, así que el blur tiene algo variado detrás para difuminar de
+     verdad (a diferencia de los botones de la cabecera, ver .vt-btn-header). */
+  background: var(--vt-glass-bg);
+  backdrop-filter: var(--vt-glass-blur);
+  -webkit-backdrop-filter: var(--vt-glass-blur);
   border-radius: 10px;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.22);
+  box-shadow: 0 4px 16px rgba(11,11,11,0.18), inset 0 1px 0 var(--vt-glass-brillo);
   overflow: hidden;
   border: 1px solid var(--hair);
+  border-top-color: var(--vt-glass-borde-arriba);
 }
 .ctrl-acciones button {
   padding: 9px 10px;
@@ -694,9 +854,13 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   gap: 4px;
   padding: 4px 11px 4px 6px;
   border-radius: 999px;
-  background: var(--panel);
+  /* Vidrio, igual que los demás controles flotantes sobre el mapa. */
+  background: var(--vt-glass-bg);
+  backdrop-filter: var(--vt-glass-blur);
+  -webkit-backdrop-filter: var(--vt-glass-blur);
   border: 1px solid var(--hair);
-  box-shadow: 0 2px 10px rgba(0,0,0,0.22);
+  border-top-color: var(--vt-glass-borde-arriba);
+  box-shadow: 0 4px 16px rgba(11,11,11,0.18), inset 0 1px 0 var(--vt-glass-brillo);
   font-size: 17px;
   font-weight: 400;
   color: var(--ink-1);
@@ -946,7 +1110,10 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
     border-right: 1px solid var(--hair);
     border-bottom: none;
     border-radius: 16px 16px 0 0;
-    box-shadow: 0 -6px 20px rgba(0,0,0,0.20), 0 -1px 4px rgba(0,0,0,0.12);
+    /* Misma idea que en desktop (sombra + highlight interno arriba), pero
+       con la sombra proyectada hacia arriba porque la hoja cuelga del
+       borde inferior de la pantalla. */
+    box-shadow: 0 -8px 28px rgba(11,11,11,0.18), inset 0 1px 0 var(--vt-glass-brillo);
     padding-bottom: env(safe-area-inset-bottom, 0px);
     transition: transform 0.32s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
@@ -1166,7 +1333,7 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   border-top: 1px solid var(--hair);
   transform: rotate(45deg);
 }
-.vt-aviso-item { margin: 0; padding: 6px 0; font-size: 14px; line-height: 1.45; border-bottom: 1px dashed var(--hair); }
+.vt-aviso-item { margin: 0; padding: 6px 0; font-size: 13px; line-height: 1.45; border-bottom: 1px dashed var(--hair); }
 .vt-aviso-item:first-child { padding-top: 0; }
 .vt-aviso-item:last-child { border-bottom: none; padding-bottom: 0; }
 .vt-aviso-cerrar {
@@ -1595,6 +1762,45 @@ if (!LINEAS_DATA.length) {
 
 const CONT = document.getElementById("visor-transporte");
 
+/* ── Destello "liquid glass" al tocar (prototipo index-borrador) ──
+   Delegado en CONT (no un listener por botón) para que alcance también a
+   los controles que Leaflet crea después (zoom/ubicación/encuadre,
+   Argenmap/Satelital) sin tener que engancharlo de nuevo en cada uno.
+   Sólo agrega/saca una clase — nunca toca ni reemplaza el listener de
+   click real de cada botón (esos siguen intactos, más abajo en este
+   mismo script), así que no hay riesgo de romper ninguna acción. */
+const VT_DESTELLO_SELECTOR = ".ctrl-acciones button, .vt-btn-header, .seg, .caja-head";
+CONT.addEventListener("pointerdown", (ev) => {
+  const el = ev.target.closest(VT_DESTELLO_SELECTOR);
+  if (!el || el.classList.contains("deshabilitado")) return;
+  const r = el.getBoundingClientRect();
+  // Punto de origen del destello = donde tocó el dedo/mouse, en % del
+  // propio botón (no píxeles fijos), así funciona igual sea cual sea el
+  // tamaño del control.
+  const x = r.width ? ((ev.clientX - r.left) / r.width) * 100 : 50;
+  const y = r.height ? ((ev.clientY - r.top) / r.height) * 100 : 50;
+  el.style.setProperty("--vt-shine-x", x + "%");
+  el.style.setProperty("--vt-shine-y", y + "%");
+  // Radio del círculo en píxeles reales, no en % de la caja: así se ve
+  // redondo tanto en un botón cuadrado de 34px (zoom, tema) como en una
+  // caja ancha y baja (el pill "Argenmap", la cabecera de una solapa) —
+  // antes, sin esto, el navegador dimensionaba el círculo por su cuenta
+  // hasta la esquina más lejana, y en una caja ancha eso lo hacía gigante
+  // y se veía recortado en un bloque. Un poco más grande que la mitad del
+  // lado más corto, para que el brillo alcance a asomar por los bordes.
+  const radio = Math.max(r.width, r.height) * 0.55;
+  el.style.setProperty("--vt-shine-radio", radio + "px");
+  // Si se toca de nuevo antes de que termine la animación anterior, se
+  // reinicia en vez de quedar pisada: se saca la clase, se fuerza un
+  // reflow y se vuelve a poner.
+  el.classList.remove("vt-destello");
+  void el.offsetWidth;
+  el.classList.add("vt-destello");
+});
+CONT.addEventListener("animationend", (ev) => {
+  if (ev.animationName === "vt-destello") ev.target.classList.remove("vt-destello");
+});
+
 /* ── Tema (claro por defecto) ─────────────────────────────────── */
 const TEMA_KEY = "transporte-tema";
 function temaActual() {
@@ -1633,15 +1839,6 @@ function atenuar(hex, t = 0.28) {
 function colorChip(linea) { return atenuar(colorLinea(linea)); }
 function fmtDist(m) { return m < 1000 ? `${Math.round(m)} m` : `${(m / 1000).toFixed(1)} km`; }
 function esc(s) { return String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
-
-/* Analítica (Google Analytics, ver snippet de gtag() en el <head>):
-   todas las llamadas a gtag('event', ...) pasan por acá (buscá "medir("
-   para ubicarlas todas). Si algún día se saca el snippet de GA del
-   <head>, window.gtag queda indefinido y esto no manda nada ni rompe
-   nada — no hace falta acordarse de sacar las llamadas de golpe. */
-function medir(nombre, parametros) {
-  if (typeof window.gtag === "function") window.gtag("event", nombre, parametros);
-}
 
 let toastTimer = null;
 function toast(msg, ms = 4000) {
@@ -1972,7 +2169,6 @@ for (const linea of LINEAS_DATA) {
 
   li.querySelector(".linea-main").addEventListener("click", (e) => {
     if (e.target.closest(".btn-ojo")) return;
-    medir("click_linea", { linea_id: linea.id });
     alternarFoco(linea.id);
   });
   li.querySelector(".btn-ojo").addEventListener("click", () => {
@@ -2182,7 +2378,6 @@ mapa.on("zoomend", () => {
 
 chkParadas.addEventListener("change", (e) => {
   estado.paradasOn = e.target.checked;
-  medir("click_paradas", { activado: e.target.checked });
   cajaParadas.classList.toggle("plegada", !e.target.checked);
   aplicarFiltrosParadas();
 });
@@ -2696,9 +2891,7 @@ function aplicarResultado(c) {
 
 btnBuscarLinea.addEventListener("click", () => {
   if (!buscador.origen || !buscador.destino) return;
-  const candidatas = buscarLineaSugerida(buscador.origen, buscador.destino);
-  medir("click_buscar_linea", { encontro_resultado: candidatas.length > 0 });
-  mostrarResultadoBuscador(candidatas);
+  mostrarResultadoBuscador(buscarLineaSugerida(buscador.origen, buscador.destino));
 });
 
 document.getElementById("btn-limpiar-buscador").addEventListener("click", () => {
@@ -2912,7 +3105,7 @@ const CLIMA_LAT = -45.8659, CLIMA_LON = -67.4823; // Comodoro Rivadavia (centro,
 const CLIMA_REFRESCO_MS = 25 * 60 * 1000; // 25 min: el clima no cambia tan seguido como para pedirlo más rápido
 
 /* Códigos de clima WMO (los que devuelve Open-Meteo) agrupados en los
-   íconos disponibles en assets/img/clima/. Los códigos no mapeados caen
+   íconos disponibles en assets/clima/. Los códigos no mapeados caen
    en "nublado" por defecto. */
 const CLIMA_ICONOS = {
   0: ["sol", "Despejado"], 1: ["sol", "Mayormente despejado"],
@@ -2949,7 +3142,7 @@ async function actualizarClima() {
     const [icono, etiqueta] = iconoClima(actual.weathercode, actual.is_day === 0);
     const temp = Math.round(actual.temperature);
     burbuja.innerHTML =
-      `<img src="assets/img/clima/${icono}.svg" width="22" height="22" alt="">` +
+      `<img src="assets/clima/${icono}.svg" width="22" height="22" alt="">` +
       `<span>${temp}°</span>`;
     burbuja.title = `${etiqueta}, ${temp}°C en Comodoro Rivadavia`;
     burbuja.hidden = false;
