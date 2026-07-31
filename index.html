@@ -234,12 +234,13 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
 /* La cabecera de Paradas se pliega/despliega igual que Líneas y Buscador
    (toda la fila es clickeable, cursor: pointer heredado de .caja-head):
    el switch sólo prende/apaga la capa, nunca abre o cierra la solapa de
-   filtros por sí mismo (ver el listener de chkParadas, más abajo). En
-   mobile se suma además un botón de plegar independiente
-   (.btn-plegar-paradas, oculto acá y mostrado sólo en el media query de
-   mobile) porque ahí el espacio pesa más que en desktop, pero no es
-   necesario para poder plegar/desplegar: la cabecera sola ya alcanza. */
-.btn-plegar-paradas { display: none; }
+   filtros por sí mismo (ver el listener de chkParadas, más abajo). El
+   chevron de .btn-plegar-paradas queda siempre visible (igual que en
+   Recorridos/Buscador) para que se note, de un vistazo, que esta caja
+   también se puede abrir y cerrar — antes sólo aparecía en mobile y en
+   desktop no había ninguna pista visual de que la cabecera respondía al
+   click. La rotación al plegar la hereda gratis de la regla genérica
+   ".caja-flotante.plegada .btn-plegar" (ver más arriba). */
 
 .seccion-head {
   display: flex;
@@ -1127,11 +1128,6 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   .btn-ojo, .btn-plegar { width: 30px; height: 30px; }
   .linea-main { padding: 7px 6px; }
   .pill { padding: 5px 11px; }
-  /* Botón para plegar/desplegar los filtros de Paradas sin apagar la
-     capa: en desktop el switch sigue siendo el único control (ver
-     comentario en #caja-paradas .caja-head, más arriba); acá se agrega
-     este segundo control independiente sólo para ahorrar espacio. */
-  .btn-plegar-paradas { display: grid; }
   /* "Paradas más cercanas" y el toast flotan arriba de la hoja inferior
      (no a una distancia fija del piso): --vt-sheet-alto lo mantiene
      actualizado el script con el alto real del panel en todo momento, así
@@ -1139,6 +1135,17 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
      colapsada. */
   #tarjeta-cercanas { bottom: calc(var(--vt-sheet-alto, 140px) + 14px); }
   #toast { bottom: calc(var(--vt-sheet-alto, 140px) + 14px); }
+  /* Las atribuciones (IGN/OSM/Google, abajo a la derecha) y la escala
+     (abajo a la izquierda) son controles propios de Leaflet, con
+     bottom:0 dentro de su contenedor: la hoja inferior las tapaba por
+     completo. Mismo mecanismo que las dos reglas de arriba — se las
+     empuja hacia arriba con el alto real y vivo de la hoja
+     (--vt-sheet-alto), así quedan visibles sea cual sea su estado. */
+  #visor-transporte .leaflet-bottom.leaflet-right,
+  #visor-transporte .leaflet-bottom.leaflet-left {
+    margin-bottom: calc(var(--vt-sheet-alto, 46px) + 4px);
+    transition: margin-bottom 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
