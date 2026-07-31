@@ -41,7 +41,7 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
      (colores de foco en el mapa): se mantienen acá para la barrita de
      las pills Ida/Vuelta. Si se cambian, actualizar en ambos lugares. */
   --color-ida:    #5BAD3C;
-  --color-vuelta: #7878F1;
+  --color-vuelta: #5A76F5;
   --tour-acento:  #d1293d;
   /* ═ Tokens liquid glass */
   --vt-glass-blur:        blur(20px) saturate(180%);
@@ -1883,7 +1883,7 @@ const lineaPorId = new Map(LINEAS_DATA.map((l) => [l.id, l]));
    "circular" o "único" (6A, 6B, 8H, 8AH, etc.): esas líneas conservan
    su color propio también estando enfocadas. */
 const COLOR_IDA = "#5BAD3C";   // verde césped
-const COLOR_VUELTA = "#7878F1"; // azul eléctrico
+const COLOR_VUELTA = "#5A76F5"; // azul eléctrico
 function colorFoco(ruta, linea) {
   if (ruta.tipo === "ida") return COLOR_IDA;
   if (ruta.tipo === "vuelta") return COLOR_VUELTA;
