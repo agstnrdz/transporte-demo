@@ -231,14 +231,14 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
    bordes redondeados contra los que el desplegable pueda cortarse. */
 .caja-body-buscador { overflow: visible; max-height: none; }
 
-/* La caja de Paradas no tiene, en desktop, botón de plegar propio: el
-   switch de su cabecera ES el único control (prende/apaga la capa y
-   expande/pliega la solapa), así que el resto de la cabecera no debería
-   insinuar que es clickeable. En mobile se suma un botón de plegar
-   independiente (.btn-plegar-paradas, oculto acá y mostrado sólo en el
-   media query de mobile) para poder ocultar los filtros sin apagar la
-   capa — ahí el espacio pesa más que en desktop. */
-#caja-paradas .caja-head { cursor: default; }
+/* La cabecera de Paradas se pliega/despliega igual que Líneas y Buscador
+   (toda la fila es clickeable, cursor: pointer heredado de .caja-head):
+   el switch sólo prende/apaga la capa, nunca abre o cierra la solapa de
+   filtros por sí mismo (ver el listener de chkParadas, más abajo). En
+   mobile se suma además un botón de plegar independiente
+   (.btn-plegar-paradas, oculto acá y mostrado sólo en el media query de
+   mobile) porque ahí el espacio pesa más que en desktop, pero no es
+   necesario para poder plegar/desplegar: la cabecera sola ya alcanza. */
 .btn-plegar-paradas { display: none; }
 
 .seccion-head {
@@ -1132,10 +1132,6 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
      comentario en #caja-paradas .caja-head, más arriba); acá se agrega
      este segundo control independiente sólo para ahorrar espacio. */
   .btn-plegar-paradas { display: grid; }
-  /* Acá sí es clickeable toda la cabecera (ver el listener de
-     cajaParadasHead en el <script>) — se restaura el cursor de "esto se
-     toca" que el desktop apaga a propósito en la regla de más arriba. */
-  #caja-paradas .caja-head { cursor: pointer; }
   /* "Paradas más cercanas" y el toast flotan arriba de la hoja inferior
      (no a una distancia fija del piso): --vt-sheet-alto lo mantiene
      actualizado el script con el alto real del panel en todo momento, así
@@ -2417,14 +2413,12 @@ btnPlegarParadas.addEventListener("click", () => {
   btnPlegarParadas.setAttribute("aria-expanded", String(!plegar));
 });
 
-/* En mobile, tocar cualquier parte de la cabecera de Paradas plegua/
-   despliega igual que Recorridos y Buscar línea (antes sólo respondía el
-   ícono chico de la derecha). En desktop se deja tal cual estaba: el
-   switch sigue siendo el único control (ver comentario en
-   "#caja-paradas .caja-head { cursor: default; }", en el CSS) — por eso
-   este listener se desentiende por completo si el viewport no es mobile.
-   En vez de duplicar la lógica de plegado, delega al click del botón que
-   ya existe (btnPlegarParadas): así ambos caminos quedan sincronizados
+/* Tocar cualquier parte de la cabecera de Paradas pliega/despliega la
+   solapa de filtros, igual que Recorridos y Buscar línea — en cualquier
+   viewport, no sólo mobile (antes el desktop dependía del switch para
+   esto; ya no, ver el listener de chkParadas más arriba). En vez de
+   duplicar la lógica de plegado, delega al click del botón que ya existe
+   en mobile (btnPlegarParadas): así ambos caminos quedan sincronizados
    por construcción, no por coincidencia. Se ignoran los clicks que ya
    vienen del switch (tiene su propio manejo arriba) y los que vienen del
    propio botón (si no, el .click() de abajo dispararía este mismo
@@ -2432,9 +2426,8 @@ btnPlegarParadas.addEventListener("click", () => {
    segunda vuelta sí matchea el guard y corta ahí). */
 const cajaParadasHead = cajaParadas.querySelector(".caja-head");
 cajaParadasHead.addEventListener("click", (e) => {
-  if (!window.matchMedia("(max-width: 640px)").matches) return;
   if (e.target.closest(".switch") || e.target.closest(".btn-plegar-paradas")) return;
-  btnPlegarParadas.click();
+  btnPlegarParadas.click(); // funciona igual aunque el botón esté oculto (display:none) en desktop
 });
 
 CONT.querySelectorAll(".filtro-fila").forEach((fila) => {
