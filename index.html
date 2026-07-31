@@ -1146,6 +1146,12 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
     margin-bottom: calc(var(--vt-sheet-alto, 46px) + 4px);
     transition: margin-bottom 0.28s cubic-bezier(0.22, 1, 0.36, 1);
   }
+  /* Letra más chica sólo en mobile: el texto de atribuciones es largo
+     (IGN + OSM + Google + fuente + procesamiento) y en pantallas
+     angostas pesa demasiado — ver la regla base en
+     "#visor-transporte .leaflet-control-attribution" (font-size: 11px),
+     más arriba. */
+  #visor-transporte .leaflet-control-attribution { font-size: 9px !important; }
 }
 
 @media (prefers-reduced-motion: reduce) {
