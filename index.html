@@ -712,7 +712,7 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
 }
 
 /* ══ Animaciones de mapa ══ */
-.linea-flujo { animation: vt-flujo 0.9s linear infinite; }
+.linea-flujo { animation: vt-flujo 1.8s linear infinite; }
 @keyframes vt-flujo {
   from { stroke-dashoffset: 18; }
   to   { stroke-dashoffset: 0; }
@@ -1613,7 +1613,7 @@ const faltantes = [];
 for (const id of IDS_LINEAS) {
   const gj = window["LINEA_" + id + "_DATA"];
   if (!gj || !gj.features || !gj.features.length) { faltantes.push(id); continue; }
-  const rutas = [];
+  const rutasPorSentido = new Map(); // sent -> ruta (features repetidos del mismo sentido se fusionan)
   let nombre = "";
   for (const ft of gj.features) {
     const p = ft.properties || {};
@@ -1631,15 +1631,26 @@ for (const id of IDS_LINEAS) {
     if ((CORRECCIONES_INVERTIR[id] || {})[sentOriginal]) {
       paths = paths.map((path) => path.slice().reverse());
     }
-    rutas.push({
-      id: id + "-" + (sent || "unico"),
-      sentido: def[0], tipo: def[1],
-      _orden: ORDEN_SENT[sent] != null ? ORDEN_SENT[sent] : 9,
-      paths,
-    });
+    /* Si dos features de la capa comparten el mismo sentido (dato sin
+       unificar en origen — p.ej. línea 5U con dos tramos de "vuelta"
+       sueltos, sin fusionar en QGIS), se acumulan en la misma ruta en
+       vez de crear un segundo botón/pill duplicado: ambos tramos se
+       siguen dibujando y animando, sólo comparten un único control. */
+    const existente = rutasPorSentido.get(sent);
+    if (existente) {
+      existente.paths.push(...paths);
+    } else {
+      rutasPorSentido.set(sent, {
+        id: id + "-" + (sent || "unico"),
+        sentido: def[0], tipo: def[1],
+        _orden: ORDEN_SENT[sent] != null ? ORDEN_SENT[sent] : 9,
+        paths,
+      });
+    }
     const nom = String(p.nombre || "").trim();
     if (nom && (!nombre || sent === "ida" || sent === "horario" || sent === "")) nombre = nom;
   }
+  const rutas = Array.from(rutasPorSentido.values());
   if (!rutas.length) { faltantes.push(id); continue; }
   rutas.sort((a, b) => a._orden - b._orden);
   const pal = PALETA[id] || ["#555555", "#aaaaaa"];
@@ -1922,7 +1933,7 @@ function armarAnimacion(id) {
   const items = rutasPorLinea.get(id).filter((it) => mapa.hasLayer(it.poly));
   for (const it of items) {
     const overlay = L.polyline(it.poly.getLatLngs(), {
-      pane: "foco", color: "#ffffff", weight: 2.4, opacity: 0.95,
+      pane: "foco", color: "#ffffff", weight: 1.6, opacity: 0.95,
       dashArray: "3 15", className: "linea-flujo", interactive: false,
       lineCap: "round",
     }).addTo(mapa);
@@ -2231,10 +2242,13 @@ const COLOR_PARADA = { light: "#3a3935", dark: "#e9e7df" };
 function radioParadas() {
   const z = mapa.getZoom();
   const base = z >= 16 ? 6.5 : z >= 14.5 ? 4.8 : z >= 13 ? 3.6 : 2.6;
+  if (!window.matchMedia("(max-width: 640px)").matches) return base;
   // En mobile los puntos cuestan más de tocar con el dedo que con el
   // mouse: se agranda un poco el radio sólo en ese viewport, sin tocar
-  // el tamaño en desktop.
-  return window.matchMedia("(max-width: 640px)").matches ? base + 2 : base;
+  // el tamaño en desktop. En el zoom más lejano (mapa recién iniciado,
+  // sin acercar) el +2 de siempre se veía demasiado grande; ahí se usa
+  // un empujón menor.
+  return z >= 13 ? base + 2 : base + 0.6;
 }
 
 /* ── Líneas que pasan cerca de una parada ────────────────────────
