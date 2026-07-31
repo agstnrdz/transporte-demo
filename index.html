@@ -37,6 +37,11 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   --ok:           #0ca30c;
   --marca:        #134768;
   --aviso:        #c27018;
+  /* Mismos valores que COLOR_IDA / COLOR_VUELTA en el <script> de abajo
+     (colores de foco en el mapa): se mantienen acá para la barrita de
+     las pills Ida/Vuelta. Si se cambian, actualizar en ambos lugares. */
+  --color-ida:    #5BAD3C;
+  --color-vuelta: #7878F1;
   --tour-acento:  #d1293d;
   /* ═ Tokens liquid glass */
   --vt-glass-blur:        blur(20px) saturate(180%);
@@ -515,6 +520,15 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   border-color: var(--activo-bg);
   opacity: 1;
 }
+
+/* Barrita de color pegada a cada pill Ida/Vuelta: mismo color que se usa
+   para pintar el recorrido al enfocar la línea (COLOR_IDA / COLOR_VUELTA
+   en el script), para identificar de un vistazo qué pill es cuál. Sólo
+   aparece en pills con data-tipo="ida"/"vuelta" — los recorridos
+   circulares/únicos (6A, 6B, 8H, 8AH, etc.) no llevan ese atributo y
+   quedan sin barrita. */
+.pill.sentido[data-tipo="ida"] { box-shadow: 0 5px 0 -1px var(--color-ida); }
+.pill.sentido[data-tipo="vuelta"] { box-shadow: 0 5px 0 -1px var(--color-vuelta); }
 
 /* "Ver horarios": mismo formato de pill que Ida/Vuelta, pero no es un
    toggle de filtro (no representa on/off de una capa) sino una acción
@@ -1151,7 +1165,7 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
      angostas pesa demasiado — ver la regla base en
      "#visor-transporte .leaflet-control-attribution" (font-size: 11px),
      más arriba. */
-  #visor-transporte .leaflet-control-attribution { font-size: 9px !important; }
+  #visor-transporte .leaflet-control-attribution { font-size: 7px !important; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1863,6 +1877,19 @@ const CASING = { light: "#ffffff", dark: "#0a0a0a" };
 const rutasPorLinea = new Map();
 const lineaPorId = new Map(LINEAS_DATA.map((l) => [l.id, l]));
 
+/* Colores de ida/vuelta al enfocar una línea: sólo para diferenciar
+   visualmente ambos sentidos del recorrido seleccionado (no tocan la
+   paleta por línea ni el punto animado). No aplica a recorridos
+   "circular" o "único" (6A, 6B, 8H, 8AH, etc.): esas líneas conservan
+   su color propio también estando enfocadas. */
+const COLOR_IDA = "#5BAD3C";   // verde césped
+const COLOR_VUELTA = "#7878F1"; // azul eléctrico
+function colorFoco(ruta, linea) {
+  if (ruta.tipo === "ida") return COLOR_IDA;
+  if (ruta.tipo === "vuelta") return COLOR_VUELTA;
+  return colorLinea(linea);
+}
+
 function tooltipLinea(linea, ruta) {
   const cChip = colorChip(linea);
   const fg = colorChipTexto(cChip);
@@ -1911,7 +1938,7 @@ function reestilarLinea(id) {
       it.poly.setStyle({ color: colorLinea(linea), weight: 3.4, opacity: 1 });
       it.casing.setStyle({ opacity: 0.85, weight: 8 });
     } else if (esFoco) {
-      it.poly.setStyle({ color: colorLinea(linea), weight: 5, opacity: 1 });
+      it.poly.setStyle({ color: colorFoco(it.ruta, linea), weight: 5, opacity: 1 });
       it.casing.setStyle({ opacity: 0.95, weight: 10 });
       it.poly.bringToFront();
     } else {
@@ -2025,12 +2052,15 @@ function enfocar(id) {
   /* Paradas: se prenden solas si estaban apagadas, para mostrar de una
      las que pertenecen a esta línea (paradasDeLinea, más arriba). Si el
      usuario ya las tenía prendidas a mano, se respetan tal cual — no se
-     fuerza nada, sólo se filtra cuál de las 963 se ve (aplicarFiltrosParadas). */
+     fuerza nada, sólo se filtra cuál de las 963 se ve (aplicarFiltrosParadas).
+     A propósito NO se toca cajaParadas ("plegada") acá: encender la capa
+     al enfocar una línea no debe abrir la solapa de filtros sola — eso
+     queda reservado para cuando el usuario toca el encabezado o el botón
+     de plegar, a mano. */
   if (!estado.paradasOn) {
     estado.paradasOn = true;
     estado.paradasAutoEncendida = true;
     chkParadas.checked = true;
-    cajaParadas.classList.toggle("plegada", false);
   } else {
     estado.paradasAutoEncendida = false;
   }
@@ -2115,7 +2145,7 @@ for (const linea of LINEAS_DATA) {
   const cChip = atenuar(linea.color);
   const fg = colorChipTexto(cChip);
   const pills = linea.rutas.map((r) =>
-    `<button class="pill sentido activo" data-ruta="${esc(r.id)}" aria-pressed="true" title="${esc(linea.nombre || "Línea " + linea.id)}">` +
+    `<button class="pill sentido activo" data-ruta="${esc(r.id)}" data-tipo="${esc(r.tipo)}" aria-pressed="true" title="${esc(linea.nombre || "Línea " + linea.id)}">` +
     `${FLECHAS[r.tipo] || "→"} ${esc(r.sentido)}</button>`
   ).join("");
   const tieneHorarios = HORARIOS_HABILITADO && !!(window.HORARIOS_DATA && window.HORARIOS_DATA[linea.id]);
