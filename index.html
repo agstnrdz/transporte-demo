@@ -4,9 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Transporte público | Comodoro Rivadavia</title>
-<!-- Ícono de pestaña: escudo institucional recortado del logo, sobre el
-     mismo azul de la cabecera (#134768) para que se vea nítido tanto en
-     pestañas claras como oscuras del navegador. -->
+<!-- Ícono de pestaña: escudo institucional -->
 <link rel="icon" type="image/x-icon" href="assets/img/favicon.ico">
 <link rel="icon" type="image/png" sizes="16x16" href="assets/img/favicon-16.png">
 <link rel="icon" type="image/png" sizes="32x32" href="assets/img/favicon-32.png">
@@ -20,12 +18,10 @@
 <link rel="preconnect" href="https://api.open-meteo.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;550;600;650;700;750;800&display=swap" rel="stylesheet">
 <style>
-/* Reset de página: sin margen/franja blanca alrededor del visor, y el
-   fondo del documento sigue al tema (se sincroniza desde aplicarTema()
-   en el script) para que no quede un borde blanco/negro descalzado. */
+/* Reset de página: sin margen */
 html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
 
-/* ═══ Visor de transporte público — tokens de tema (scoped al widget) ═══ */
+/* ═══ Visor de transporte público ═══ */
 #visor-transporte {
   --panel:        #fcfcfb;
   --ink-1:        #0b0b0b;
@@ -42,14 +38,7 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   --marca:        #134768;
   --aviso:        #c27018;
   --tour-acento:  #d1293d;
-  /* ═ Tokens "liquid glass" (prototipo index-borrador): sólo afectan
-     fondo/borde/blur de paneles y controles flotantes — ningún color de
-     texto, tamaño, layout ni z-index se toca, así que no condicionan
-     funcionalidad ni accesibilidad. --vt-glass-bg-strong es más opaco que
-     --vt-glass-bg a propósito: se usa en el panel/hoja inferior, donde hay
-     mucho texto para leer y un blur muy transparente perdería contraste
-     contra el satelital; --vt-glass-bg (más translúcido) es para los
-     controles chicos que flotan solos sobre el mapa. */
+  /* ═ Tokens liquid glass */
   --vt-glass-blur:        blur(20px) saturate(180%);
   --vt-glass-bg:          rgba(255, 255, 255, 0.62);
   --vt-glass-bg-strong:   rgba(255, 255, 255, 0.86);
@@ -78,17 +67,7 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   --sombra:       0 10px 30px rgba(0, 0, 0, 0.55);
   --mapa-fondo:   #141414;
   --geoloc:       #3987e5;
-  /* Vidrio en oscuro: mismo blur, pero el tinte es oscuro (no blanco) y el
-     "borde de arriba" que simula el filo del vidrio atrapando luz es un
-     blanco muy tenue en vez de casi opaco — si no, se ve como un borde
-     blanco duro pegado al panel, no como un reflejo. */
-  /* Subido un poco (26→46 de base, 0.58→0.63 de opacidad): a este nivel
-     de oscuridad, el ícono gris (--muted) de los botones de zoom/
-     ubicación/encuadre y el texto de Argenmap/Satelital cuando no está
-     activo perdían contraste contra el vidrio — un ajuste chico alcanza,
-     porque acá no hace falta mucho para volver a pasar el mínimo de
-     contraste cómodo. --vt-glass-bg-strong (el panel, con mucho texto)
-     no se toca: ese ya iba más opaco y no tenía el mismo problema. */
+  /* Vidrio en oscuro */
   --vt-glass-bg:          rgba(46, 46, 44, 0.63);
   --vt-glass-bg-strong:   rgba(24, 24, 23, 0.82);
   --vt-glass-borde-arriba: rgba(255, 255, 255, 0.22);
@@ -96,15 +75,10 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   --vt-glass-sombra:      0 8px 32px rgba(0, 0, 0, 0.5);
 }
 :where(#visor-transporte) * { box-sizing: border-box; }
-/* :where() anula el aporte de especificidad del ID: este reset scoped ya no
-   puede ganarle a reglas de un componente con dos clases (ej. .seg.activo,
-   .pill.activo), que antes perdían silenciosamente contra este selector. */
+/* :where() anula el aporte de especificidad del ID */
 :where(#visor-transporte) button { font: inherit; color: inherit; background: none; border: none; cursor: pointer; touch-action: manipulation; }
 :where(#visor-transporte) button:focus-visible { outline: 2px solid var(--geoloc); outline-offset: 2px; }
 :where(#visor-transporte) a { color: inherit; }
-
-/* pantalla completa: ya no hace falta anular borde/radio (no existen más);
-   el cuerpo ya ocupa el espacio disponible por sí solo (ver .vt-cuerpo). */
 
 /* ══ Cabecera institucional ══ */
 .vt-header {
@@ -126,12 +100,7 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   width: 34px; height: 34px;
   display: grid; place-items: center;
   border-radius: 9px;
-  /* Estos botones (tema y pantalla completa) están sobre la cabecera de
-     color sólido (--marca), no sobre el mapa: ahí atrás no hay nada
-     variado para que un blur "difumine" de verdad, así que el vidrio acá
-     se limita a lo que sí se nota sobre un color plano — un overlay
-     traslúcido claro + un borde más luminoso arriba, simulando el filo
-     del vidrio en vez de un vidrio esmerilado completo. */
+  /* Botones tema y pantalla completa */
   background: rgba(255,255,255,0.08);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
@@ -144,12 +113,7 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   transition: background 0.15s;
 }
 .vt-btn-header:hover { background: rgba(255,255,255,0.18); }
-/* Centrado a prueba del CSS del sitio anfitrión (WordPress/Elementor):
-   se posiciona por coordenadas propias, no por el layout heredado del
-   botón, así un reset externo de line-height/padding/width no lo corre.
-   OJO: acá no se toca "display", porque un display:none (abajo) siempre
-   debe poder ganar; forzarlo a "block" fue lo que la vez pasada hizo que
-   los dos íconos (sol y luna) quedaran superpuestos. */
+
 .vt-btn-header svg {
   position: absolute !important;
   top: 50% !important;
@@ -165,23 +129,11 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
 #visor-transporte[data-theme="dark"] .icono-luna { display: none !important; }
 #visor-transporte:not([data-theme="dark"]) .icono-sol { display: none !important; }
 
-/* ══ Cuerpo: mapa a ancho completo, ocupa todo el alto que sobra entre
-   cabecera y pie (integrado a la ventana, sin alto fijo de "tarjeta") ══ */
+/* ══ Cuerpo: mapa a ancho completo ══ */
 .vt-cuerpo { position: relative; flex: 1 1 auto; min-height: 0; background: var(--mapa-fondo); overscroll-behavior: contain; }
 #mapa { position: absolute; inset: 0; background: var(--mapa-fondo); z-index: 1; }
 
-/* ══ Panel lateral fijo: un solo panel pegado al borde derecho del visor,
-   con las 3 secciones (Recorridos, Paradas, Buscar línea) como "solapas"
-   plegables dentro del mismo bloque. Antes eran 3 cajas flotantes
-   independientes, cada una con su propio borde/sombra/radio y separadas
-   por un gap — se leían como 3 widgets sueltos (lenguaje cómodo para
-   alguien acostumbrado a capas de GIS, no tanto para el resto). Ahora
-   comparten un único borde y una única sombra (una sola "tarjeta"), y las
-   secciones se diferencian con una línea divisoria fina entre ellas en
-   vez de separación física. El alto sigue ajustándose al contenido (no es
-   un panel de alto fijo con hueco vacío abajo cuando todo está plegado):
-   si las solapas abiertas superan el alto disponible, el panel entero
-   scrollea internamente, igual que antes. */
+/* ══ Panel lateral fijo */
 #pila-flotante {
   position: absolute;
   top: 12px;
@@ -191,12 +143,7 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   max-height: calc(100% - 24px);
   display: flex;
   flex-direction: column;
-  /* Vidrio: fondo translúcido + blur del mapa detrás en vez de panel sólido.
-     --vt-glass-bg-strong (bastante opaco) porque acá adentro hay listas de
-     líneas y horarios para leer — un blur muy transparente se vuelve
-     ilegible apenas el satelital tiene contraste. El "borde de arriba" y el
-     brillo (inset) son lo que da la sensación de filo de vidrio iluminado;
-     el resto del borde sigue siendo --hair, tenue, como antes. */
+  /* Vidrio */
   background: var(--vt-glass-bg-strong);
   backdrop-filter: var(--vt-glass-blur);
   -webkit-backdrop-filter: var(--vt-glass-blur);
@@ -211,10 +158,7 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   overflow-x: hidden;
   scrollbar-width: auto;
 }
-/* Cada solapa es una sección del panel único (ya no una caja flotante con
-   chrome propio): sin borde/radio/sombra individual, sólo una línea fina
-   la separa de la siguiente. Se pliega de forma independiente — varias
-   solapas pueden estar abiertas a la vez. */
+/* Cada solapa es una sección del panel único */
 .caja-flotante {
   display: flex;
   flex-direction: column;
@@ -235,7 +179,7 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   transition: background 0.15s;
 }
 .caja-head h2 {
-  /* Subtítulo "Capas": mismo tamaño, color y fondo más oscuros, sin contorno */
+  /* Subtítulo Capas */
   margin: 0;
   font-size: 10px;
   font-weight: 750;
@@ -248,10 +192,7 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
 }
 .caja-head .stats { font-size: 11.5px; color: var(--ink-2); margin-left: auto; }
 /* Agrupa switch + botón de plegar (Paradas) como un solo bloque a la
-   derecha: con los dos sueltos como hijos directos de .caja-head (que es
-   flex + space-between), el switch quedaba centrado en vez de pegado al
-   borde — al agregar el botón de plegar pasaron a ser 3 items en vez de
-   2, y space-between reparte el del medio en el centro. */
+   derecha */
 .caja-head-controles { display: flex; align-items: center; gap: 8px; }
 .btn-plegar {
   width: 26px; height: 26px;
@@ -264,15 +205,10 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
 .caja-flotante.plegada .btn-plegar { transform: rotate(-90deg); }
 .caja-flotante.plegada .caja-body { display: none; }
 .caja-flotante.plegada .caja-head { border-bottom: none; }
-/* Solapa abierta: leve resalte en su cabecera para que sea obvio, de un
-   vistazo, cuál de las 3 secciones está expandida dentro del panel. */
+/* Solapa abierta: leve resalte en su cabecera para que sea obvio cuál de las 3 secciones está expandida dentro del panel. */
 .caja-flotante:not(.plegada) .caja-head { background: color-mix(in srgb, var(--ink-1) 4%, var(--panel)); }
 
-/* Encabezado "Recorridos" fijo: si hay varias solapas abiertas a la vez y
-   el panel entero scrollea, esta cabecera se queda siempre a la vista
-   arriba de todo en vez de desaparecer al scrollear — ayuda a ubicarse
-   dentro del panel. Fondo opaco obligatorio (sticky sobre contenido que
-   sigue scrolleando detrás). */
+/* Encabezado Recorridos fijo */
 .caja-head-fija {
   position: sticky;
   top: 0;
@@ -1618,16 +1554,12 @@ const ORDEN_SENT = { ida: 0, vuelta: 1, horario: 0, antihorario: 1, sur: 0, nort
    Clave = id de línea; valor = sentido tal cual viene en el dato
    original (antes de cualquier corrección). */
 const CORRECCIONES_SENTIDO = {
-  "1":  { ida: "vuelta", vuelta: "ida" }, // se intercambian las etiquetas ida/vuelta
   "4":  { ida: "vuelta", vuelta: "ida" },
   "13": { ida: "vuelta", vuelta: "ida" },
   "21": { ida: "vuelta", vuelta: "ida" },
 };
 const CORRECCIONES_INVERTIR = {
-  "1": { vuelta: true },  // el tramo "vuelta" original (pasa a llamarse "ida") corre al revés
   "5U": { "": true },   // sentido único, recorrido completo invertido
-  "6A": { sur: true },  // único sentido, recorrido completo invertido
-  "7": { ida: true },
   "17": { ida: true },
 };
 
@@ -1898,6 +1830,11 @@ const estado = {
   autoEncendida: null, // id de la línea que se prendió sola al enfocarla (no por el ojo); se apaga al desenfocar
   rutasApagadas: new Set(),
   paradasOn: false, // arranca apagado; PARADAS_HABILITADAS sólo controla si la caja existe
+  // true si la capa de paradas se prendió sola al enfocar una línea (no
+  // por el switch): mismo criterio que "autoEncendida" para líneas, un
+  // par de líneas más arriba — se apaga sola al desenfocar; si el usuario
+  // la prendió a mano, queda en false y desenfocar() no la toca.
+  paradasAutoEncendida: false,
   filtros: { refugio: "todas", cartel: "todas", poste: "todas" },
 };
 
@@ -2065,9 +2002,22 @@ function enfocar(id) {
   } else {
     estado.autoEncendida = null;
   }
+  /* Paradas: se prenden solas si estaban apagadas, para mostrar de una
+     las que pertenecen a esta línea (paradasDeLinea, más arriba). Si el
+     usuario ya las tenía prendidas a mano, se respetan tal cual — no se
+     fuerza nada, sólo se filtra cuál de las 963 se ve (aplicarFiltrosParadas). */
+  if (!estado.paradasOn) {
+    estado.paradasOn = true;
+    estado.paradasAutoEncendida = true;
+    chkParadas.checked = true;
+    cajaParadas.classList.toggle("plegada", false);
+  } else {
+    estado.paradasAutoEncendida = false;
+  }
   reestilarTodo();
   armarAnimacion(id);
   actualizarPanelFoco();
+  aplicarFiltrosParadas();
   const bounds = boundsDeLinea(id);
   if (bounds) mapa.flyToBounds(bounds, { padding: [46, 46], duration: 0.7 });
   if (window.matchMedia("(max-width: 640px)").matches) plegarCaja(true);
@@ -2081,8 +2031,19 @@ function desenfocar() {
   estado.enfocada = null;
   estado.rutasApagadas.clear();
   limpiarAnimacion();
+  /* Paradas: si se habían prendido solas al enfocar, se apagan de nuevo;
+     si el usuario las prendió (o apagó) a mano mientras había una línea
+     enfocada, esa elección manual ya puso paradasAutoEncendida en false
+     (ver el listener de chkParadas, más abajo) y acá no se la toca. */
+  if (estado.paradasAutoEncendida) {
+    estado.paradasOn = false;
+    estado.paradasAutoEncendida = false;
+    chkParadas.checked = false;
+    cajaParadas.classList.toggle("plegada", true);
+  }
   reestilarTodo();
   actualizarPanelFoco();
+  aplicarFiltrosParadas();
 }
 
 function boundsDeLinea(id) {
@@ -2300,6 +2261,37 @@ function lineasEnParada(p) {
   return resultado.map((r) => r.linea);
 }
 
+/* ── Paradas que pertenecen a una línea (inverso de lineasEnParada) ──
+   Mismo umbral (RADIO_PARADA_LINEA) y mismo método de distancia
+   (puntoMasCercanoEnRuta): una parada "es de" la línea enfocada si cae a
+   20m o menos de alguno de sus dos sentidos. Se usa para, al enfocar una
+   línea (ver enfocar()/aplicarFiltrosParadas(), más arriba en este mismo
+   script), mostrar sólo esas paradas en vez de las 963.
+   Se cachea por línea (Map, no vuelve a calcularse si ya se enfocó esa
+   línea antes en esta sesión): son ~200 mil comparaciones punto-segmento
+   por línea (963 paradas × ~200 puntos de trazado), rápido de sobra para
+   una sola vez, pero no hace falta repetirlo cada vez que se reenfoca la
+   misma línea. */
+const cacheParadasDeLinea = new Map();
+function paradasDeLinea(id) {
+  if (cacheParadasDeLinea.has(id)) return cacheParadasDeLinea.get(id);
+  const linea = lineaPorId.get(id);
+  const ids = new Set();
+  if (linea) {
+    for (const p of PARADAS_DATA) {
+      const punto = L.latLng(p.lat, p.lng);
+      let mejorDist = Infinity;
+      for (const ruta of linea.rutas) {
+        const c = puntoMasCercanoEnRuta(punto, ruta);
+        if (c && c.dist < mejorDist) mejorDist = c.dist;
+      }
+      if (mejorDist <= RADIO_PARADA_LINEA) ids.add(p.id);
+    }
+  }
+  cacheParadasDeLinea.set(id, ids);
+  return ids;
+}
+
 function popupParada(p) {
   const attr = (nombre, val) =>
     `<span class="pop-attr ${val ? "si" : ""}">${val ? "✓" : "✗"} ${nombre}</span>`;
@@ -2349,9 +2341,14 @@ function pasaFiltros(p) {
 function aplicarFiltrosParadas() {
   grupoParadas.clearLayers();
   let n = 0;
+  // Con una línea enfocada, sólo entran las paradas a ≤20m de su trazado
+  // (paradasDeLinea, definida junto a lineasEnParada más arriba) — se
+  // combina con los filtros de refugio/cartel/poste, no los reemplaza.
+  const deLaLinea = estado.enfocada ? paradasDeLinea(estado.enfocada) : null;
   if (estado.paradasOn) {
     const r = radioParadas();
     for (const p of PARADAS_DATA) {
+      if (deLaLinea && !deLaLinea.has(p.id)) continue;
       if (!pasaFiltros(p)) continue;
       const m = marcadoresParadas.get(p.id);
       m.setRadius(r);
@@ -2360,9 +2357,11 @@ function aplicarFiltrosParadas() {
     }
   }
   const cont = document.getElementById("conteo-paradas");
-  cont.innerHTML = estado.paradasOn
-    ? `Mostrando <strong>${n}</strong> de ${PARADAS_DATA.length} paradas`
-    : "Capa de paradas apagada";
+  cont.innerHTML = !estado.paradasOn
+    ? "Capa de paradas apagada"
+    : deLaLinea
+      ? `Mostrando <strong>${n}</strong> parada${n === 1 ? "" : "s"} de esta línea`
+      : `Mostrando <strong>${n}</strong> de ${PARADAS_DATA.length} paradas`;
 }
 
 function reestilarParadas() {
@@ -2378,6 +2377,10 @@ mapa.on("zoomend", () => {
 
 chkParadas.addEventListener("change", (e) => {
   estado.paradasOn = e.target.checked;
+  // Tocar el switch a mano es una decisión explícita: si había una línea
+  // enfocada que las prendió sola, deja de estar "sola" — así, al
+  // desenfocar, ya no se pisa lo que el usuario acaba de elegir acá.
+  estado.paradasAutoEncendida = false;
   cajaParadas.classList.toggle("plegada", !e.target.checked);
   aplicarFiltrosParadas();
 });
