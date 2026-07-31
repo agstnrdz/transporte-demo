@@ -1487,7 +1487,7 @@ const PARADAS_HABILITADAS = true;
 /* Interruptor del panel "Buscar línea" (origen/destino → línea sugerida):
    oculta por completo la caja flotante, sin borrar nada del código. Volver
    a "true" para reactivarla. */
-const BUSCADOR_LINEA_HABILITADO = true;
+const BUSCADOR_LINEA_HABILITADO = false;
 
 /* Interruptor del tutorial guiado (botón "?" + oferta automática en las
    primeras visitas): con esto en false no se crea el botón ni se ofrece
@@ -1505,7 +1505,7 @@ const TOUR_HABILITADO = true;
    botón en ninguna línea, aunque esa línea ya tenga datos cargados en
    horarios_data.js. Es de prueba, para ir cargando horarios.json de a
    poco sin exponerlo todavía; volver a "true" para reactivarlo. */
-const HORARIOS_HABILITADO = true;
+const HORARIOS_HABILITADO = false;
 
 /* Interruptor de los avisos/advertencias (botón "!" azul, apilado debajo
    del de ayuda + burbuja con el texto de cada aviso activo): con esto en
@@ -2230,7 +2230,11 @@ const COLOR_PARADA = { light: "#3a3935", dark: "#e9e7df" };
 
 function radioParadas() {
   const z = mapa.getZoom();
-  return z >= 16 ? 6.5 : z >= 14.5 ? 4.8 : z >= 13 ? 3.6 : 2.6;
+  const base = z >= 16 ? 6.5 : z >= 14.5 ? 4.8 : z >= 13 ? 3.6 : 2.6;
+  // En mobile los puntos cuestan más de tocar con el dedo que con el
+  // mouse: se agranda un poco el radio sólo en ese viewport, sin tocar
+  // el tamaño en desktop.
+  return window.matchMedia("(max-width: 640px)").matches ? base + 2 : base;
 }
 
 /* ── Líneas que pasan cerca de una parada ────────────────────────
@@ -2318,7 +2322,7 @@ function popupParada(p) {
 for (const p of PARADAS_DATA) {
   const m = L.circleMarker([p.lat, p.lng], {
     renderer: rendererParadas, pane: "paradas",
-    radius: 3, weight: 1.1,
+    radius: radioParadas(), weight: 1.1,
     color: CASING[temaActual() === "dark" ? "dark" : "light"],
     fillColor: COLOR_PARADA[temaActual()], fillOpacity: 0.92, opacity: 0.9,
   });
@@ -2381,7 +2385,10 @@ chkParadas.addEventListener("change", (e) => {
   // enfocada que las prendió sola, deja de estar "sola" — así, al
   // desenfocar, ya no se pisa lo que el usuario acaba de elegir acá.
   estado.paradasAutoEncendida = false;
-  cajaParadas.classList.toggle("plegada", !e.target.checked);
+  // A propósito NO se toca cajaParadas ("plegada") acá: encender/apagar
+  // el switch sólo prende o apaga la capa en el mapa. La solapa de
+  // filtros se abre únicamente si el usuario toca el encabezado o el
+  // botón de plegar (ver cajaParadasHead / btnPlegarParadas más abajo).
   aplicarFiltrosParadas();
 });
 
@@ -3345,17 +3352,8 @@ const pasosTour = [
     texto: "Tocá los ojos para activar varias líneas en simultáneo.",
   },
   {
-    target: () => document.getElementById("buscador-head"),
-    antes: () => plegarBuscador(false),
-    texto: "¿No sabés qué línea tomar? Elegí desde dónde salís y hasta dónde vas, y te sugerimos la línea más conveniente.",
-  },
-  {
     target: () => document.getElementById("btn-ubicarme"),
     texto: "Tocá acá para ver dónde estás y las paradas de colectivo más cercanas.",
-  },
-  {
-    target: () => document.getElementById("btn-encuadre"),
-    texto: "Este botón centra el mapa para ver toda la red. Arriba de estos botones podés cambiar a vista satelital, y arriba a la derecha, a modo oscuro.",
     ultimo: true,
   },
 ];
