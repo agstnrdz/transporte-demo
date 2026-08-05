@@ -1576,14 +1576,9 @@ const ORDEN_SENT = { ida: 0, vuelta: 1, horario: 0, antihorario: 1, sur: 0, nort
    quedó digitalizada en contra del sentido real de circulación.
    Clave = id de línea; valor = sentido tal cual viene en el dato
    original (antes de cualquier corrección). */
-const CORRECCIONES_SENTIDO = {
-  "4":  { ida: "vuelta", vuelta: "ida" },
-  "13": { ida: "vuelta", vuelta: "ida" },
-  "21": { ida: "vuelta", vuelta: "ida" },
-};
+const CORRECCIONES_SENTIDO = {};
 const CORRECCIONES_INVERTIR = {
   "5U": { "": true },   // sentido único, recorrido completo invertido
-  "17": { ida: true },
 };
 
 /* Cosido de tramos del MultiLineString: encadena fin→inicio por
