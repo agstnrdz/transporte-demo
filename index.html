@@ -964,13 +964,24 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   padding: 7px 9px;
   border-radius: 9px;
   display: flex;
-  justify-content: space-between;
-  gap: 8px;
-  align-items: baseline;
+  flex-direction: column;
+  gap: 5px;
 }
 #lista-cercanas li button:hover { background: var(--hover-wash); }
+.cercana-fila-top { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
 .cercana-nombre { font-size: 12px; font-weight: 550; }
 .cercana-dist { font-size: 11.5px; color: var(--geoloc); font-weight: 700; white-space: nowrap; }
+/* Chips de línea (sólo número, sin nombre) bajo cada parada cercana */
+.cercana-lineas { display: flex; flex-wrap: wrap; gap: 4px; }
+.cercana-chip {
+  display: inline-grid;
+  place-items: center;
+  min-width: 17px; height: 16px;
+  padding: 0 3px;
+  border-radius: 5px;
+  font-size: 9.5px;
+  font-weight: 800;
+}
 
 /* ══ Toast ══ */
 #toast {
@@ -2567,7 +2578,7 @@ function ubicarme() {
         ? PARADAS_DATA
             .map((p) => ({ p, d: aqui.distanceTo([p.lat, p.lng]) }))
             .sort((a, b) => a.d - b.d)
-            .slice(0, 5)
+            .slice(0, 3)
         : [];
       const ol = document.getElementById("lista-cercanas");
       ol.innerHTML = "";
@@ -2578,9 +2589,21 @@ function ubicarme() {
         geoMarcadores.push(anillo);
         const li = document.createElement("li");
         const btn = document.createElement("button");
+        // Chips de las líneas que pasan por esta parada: sólo el número/ícono
+        // (colorChip/colorChipTexto, igual que en el popup), sin el nombre de
+        // la línea — acá el espacio es más chico que en popupParada().
+        const lineasChip = lineasEnParada(p)
+          .map((l) => {
+            const bg = colorChip(l), fg = colorChipTexto(bg);
+            return `<span class="cercana-chip" style="background:${bg};color:${fg}">${esc(l.id)}</span>`;
+          })
+          .join("");
         btn.innerHTML =
-          `<span class="cercana-nombre">Parada ${esc(p.id)} · ${esc(p.calle || "s/n")}${p.esquina ? " esq. " + esc(p.esquina) : ""}</span>` +
-          `<span class="cercana-dist">${fmtDist(d)}</span>`;
+          `<span class="cercana-fila-top">` +
+            `<span class="cercana-nombre">Parada ${esc(p.id)} · ${esc(p.calle || "s/n")}${p.esquina ? " esq. " + esc(p.esquina) : ""}</span>` +
+            `<span class="cercana-dist">${fmtDist(d)}</span>` +
+          `</span>` +
+          (lineasChip ? `<span class="cercana-lineas">${lineasChip}</span>` : "");
         btn.addEventListener("click", () => {
           mapa.flyTo([p.lat, p.lng], Math.max(mapa.getZoom(), 16), { duration: 0.6 });
           const m = marcadoresParadas.get(p.id);
