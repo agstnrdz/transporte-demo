@@ -2601,6 +2601,13 @@ function ubicarme() {
       const ol = document.getElementById("lista-cercanas");
       ol.innerHTML = "";
       for (const { p, d } of cercanas) {
+        // Línea recta punteada, mismo color que el punto de ubicación y los
+        // anillos de las cercanas, entre "acá" y cada parada.
+        const trazo = L.polyline([aqui, [p.lat, p.lng]], {
+          color: geoColor(), weight: 2, opacity: 0.55, dashArray: "6 6",
+          interactive: false,
+        }).addTo(mapa);
+        geoMarcadores.push(trazo);
         const anillo = L.circleMarker([p.lat, p.lng], {
           radius: 9, color: geoColor(), weight: 2.5, fill: false, interactive: false,
         }).addTo(mapa);
