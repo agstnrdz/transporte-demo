@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/img/logotipo.png" alt="Dirección General de Modernización e Investigación Territorial" height="70">
+  <img src="assets/marca/logotipo.png" alt="Dirección General de Modernización e Investigación Territorial" height="70">
 </p>
 
 <h2 align="center">Transporte público</h2>

@@ -1450,7 +1450,7 @@ const CLIMA_LAT = -45.8659, CLIMA_LON = -67.4823; // Comodoro Rivadavia (centro,
 const CLIMA_REFRESCO_MS = 25 * 60 * 1000; // 25 min: el clima no cambia tan seguido como para pedirlo más rápido
 
 /* Códigos de clima WMO (los que devuelve Open-Meteo) agrupados en los
-   íconos disponibles en assets/clima/. Los códigos no mapeados caen
+   íconos disponibles en assets/iconos/clima/. Los códigos no mapeados caen
    en "nublado" por defecto. */
 const CLIMA_ICONOS = {
   0: ["sol", "Despejado"], 1: ["sol", "Mayormente despejado"],
@@ -1487,7 +1487,7 @@ async function actualizarClima() {
     const [icono, etiqueta] = iconoClima(actual.weathercode, actual.is_day === 0);
     const temp = Math.round(actual.temperature);
     burbuja.innerHTML =
-      `<img src="assets/clima/${icono}.svg" width="22" height="22" alt="">` +
+      `<img src="assets/iconos/clima/${icono}.svg" width="22" height="22" alt="">` +
       `<span>${temp}°</span>`;
     burbuja.title = `${etiqueta}, ${temp}°C en Comodoro Rivadavia`;
     burbuja.hidden = false;
