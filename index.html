@@ -221,31 +221,14 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   background: var(--panel);
 }
 
-/* Tope de alto por solapa (no sólo por el panel entero): si no, una sola
-   sección larga (ej. la lista de 23 líneas) se comería todo el panel y
-   dejaría a las otras dos solapas abiertas fuera de vista. Cada una
-   scrollea de forma independiente al llegar a este tope. */
+/* Tope de alto por solapa: cada una scrollea de forma independiente */
 .caja-body { overflow-y: auto; scrollbar-width: auto; padding: 4px 8px 10px; max-height: min(50vh, 420px); }
-/* Recorridos: sin padding arriba — el primer elemento de adentro es la
-   cabecera sticky "Líneas" (ver .seccion-head, más abajo). */
-#caja-capas .caja-body { padding-top: 0; } /* Hueco debajo de 'RECORRIDOS' */
-/* El cuerpo del buscador es corto (dos campos + resultado): no necesita
-   scroll ni tope propio, y así el desplegable de sugerencias no queda
-   recortado. Ya no hace falta una excepción aparte para #caja-buscador
-   (como antes): al no tener las solapas su propio border-radius, no hay
-   bordes redondeados contra los que el desplegable pueda cortarse. */
+/* Recorridos: sin padding arriba, el primer elemento ya es la cabecera sticky "Líneas" */
+#caja-capas .caja-body { padding-top: 0; }
+/* Buscador: sin scroll ni tope propio, para no recortar el desplegable de sugerencias */
 .caja-body-buscador { overflow: visible; max-height: none; }
 
-/* La cabecera de Paradas se pliega/despliega igual que Líneas y Buscador
-   (toda la fila es clickeable, cursor: pointer heredado de .caja-head):
-   el switch sólo prende/apaga la capa, nunca abre o cierra la solapa de
-   filtros por sí mismo (ver el listener de chkParadas, más abajo). El
-   chevron de .btn-plegar-paradas queda siempre visible (igual que en
-   Recorridos/Buscador) para que se note, de un vistazo, que esta caja
-   también se puede abrir y cerrar — antes sólo aparecía en mobile y en
-   desktop no había ninguna pista visual de que la cabecera respondía al
-   click. La rotación al plegar la hereda gratis de la regla genérica
-   ".caja-flotante.plegada .btn-plegar" (ver más arriba). */
+/* Cabecera de Paradas: se pliega/despliega igual que Líneas y Buscador */
 
 .seccion-head {
   display: flex;
@@ -380,10 +363,7 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
 .resultado-vacio { margin: 4px 2px 0; font-size: 11.5px; color: var(--muted); line-height: 1.4; }
 #mapa.cursor-elegir { cursor: crosshair; }
 
-/* ── Mapa base (segmentado: Argenmap / Satelital Google) — control
-   flotante arriba a la izquierda, junto a ubicación/encuadre, no dentro
-   del panel de Recorridos (así queda más a mano, no hay que abrir el
-   panel para cambiar de vista). ── */
+/* ── Mapa base (segmentado: Argenmap / Satelital Google), control flotante ── */
 .segmentado {
   display: flex;
   border: 1px solid var(--hair);
@@ -391,11 +371,7 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   overflow: hidden;
 }
 .segmentado.base {
-  /* Vidrio: mismo tratamiento que .ctrl-acciones (flota solo sobre el
-     mapa, sin mucho texto adentro) — --vt-glass-bg, más translúcido que
-     el del panel, porque el "track" del segmentado no necesita leerse
-     como una superficie opaca; el pill activo (.seg.activo, sólido negro/
-     blanco) sigue siendo el que de verdad hay que ver bien. */
+  /* Vidrio: fondo con blur */
   background: var(--vt-glass-bg);
   backdrop-filter: var(--vt-glass-blur);
   -webkit-backdrop-filter: var(--vt-glass-blur);
@@ -403,10 +379,7 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   border-top-color: var(--vt-glass-borde-arriba);
   margin-bottom: 0px; /* gap corto contra los botones de ubicación/encuadre, de abajo */
 }
-/* Más grande que el .seg genérico (que también usan los filtros de
-   Paradas, adentro del panel): acá afuera, flotando sobre el mapa, tiene
-   que leerse y tocarse bien de entrada, sin depender de la escala
-   compacta pensada para vivir dentro de un panel angosto. */
+/* Más grande que el .seg genérico: flota sobre el mapa, tiene que tocarse bien */
 .segmentado.base .seg {
   flex: 1;
   text-align: center;
@@ -521,20 +494,11 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   opacity: 1;
 }
 
-/* Barrita de color pegada a cada pill Ida/Vuelta: mismo color que se usa
-   para pintar el recorrido al enfocar la línea (COLOR_IDA / COLOR_VUELTA
-   en el script), para identificar de un vistazo qué pill es cuál. Sólo
-   aparece en pills con data-tipo="ida"/"vuelta" — los recorridos
-   circulares/únicos (6A, 6B, 8H, 8AH, etc.) no llevan ese atributo y
-   quedan sin barrita. */
+/* Barrita de color pegada a cada pill Ida/Vuelta (mismo color que el recorrido enfocado) */
 .pill.sentido[data-tipo="ida"] { box-shadow: 0 5px 0 -1px var(--color-ida); }
 .pill.sentido[data-tipo="vuelta"] { box-shadow: 0 5px 0 -1px var(--color-vuelta); }
 
-/* "Ver horarios": mismo formato de pill que Ida/Vuelta, pero no es un
-   toggle de filtro (no representa on/off de una capa) sino una acción
-   que abre/cierra el panel de abajo — arranca a opacidad plena y marca
-   "presionado" (relleno, igual look que .pill.activo) mientras el panel
-   de horarios está abierto. */
+/* "Ver horarios": pill que abre/cierra el panel de abajo, no un toggle de filtro */
 .pill-accion { opacity: 0.85; border-color: var(--ink-1); }
 .pill-accion:hover { opacity: 1; background: var(--hover-wash); }
 .pill-accion[aria-expanded="true"] {
@@ -544,9 +508,7 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   opacity: 1;
 }
 
-/* Panel de horarios de una línea: ocupa todo el ancho disponible en vez
-   de ser un ítem más del flex-wrap de pills (flex-basis 100% lo empuja a
-   su propia fila, debajo de Ida/Vuelta/Ver horarios). */
+/* Panel de horarios de una línea: ocupa todo el ancho, en su propia fila */
 .linea-horarios { flex: 1 1 100%; margin-top: 8px; }
 .horarios-cols { display: flex; gap: 12px; }
 .horarios-col { flex: 1; min-width: 0; }
@@ -621,33 +583,7 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
 }
 #conteo-paradas strong { color: var(--ink-1); }
 
-/* ══ Destello "liquid glass" al tocar (prototipo index-borrador) ══
-   Un brillo suave que aparece en el punto exacto donde se tocó/clickeó y
-   se expande difuminándose, imitando el reflejo de luz de iOS 26 al
-   tocar un control de vidrio. Es puramente decorativo y aditivo:
-   - No cambia tamaño, posición ni z-index de nada — sólo agrega un
-     ::before de brillo por encima del contenido real.
-   - No reemplaza ningún :hover/:active/.activo existente: conviven.
-   - El listener que lo dispara (más abajo en el <script>) sólo agrega y
-     saca una clase — nunca toca los listeners de click reales de cada
-     botón, así que la funcionalidad no se toca.
-   Selectores alcanzados: botones de zoom/ubicación/encuadre, Argenmap/
-   Satelital (y los .seg que ya existían adentro del panel, gratis, por
-   compartir la misma clase), tema/pantalla completa, y las cabeceras de
-   solapa del panel (Recorridos/Paradas/Buscar línea).
-
-   Por qué se veía "cuadrado" antes: un radial-gradient sin radio propio
-   usa por defecto "farthest-corner" — el círculo se dimensiona para
-   llegar a la esquina más lejana de la caja. En una caja ancha y baja
-   (el pill de Argenmap/Satelital, la cabecera de una solapa) esa esquina
-   queda lejos, así que el círculo real es enorme y lo único que entra
-   en la caja visible es su porción central, casi sin degradé — se lee
-   como un bloque parejo con un corte recto en el borde, no como un
-   brillo redondo. Ahora el radio lo calcula el script por elemento
-   (--vt-shine-radio, ver más abajo en el <script>) en vez de dejarlo
-   crecer solo, así el círculo se ve como círculo sea cual sea la forma
-   del botón/caja. De paso, la animación pasa de 850ms a 480ms (se sentía
-   lenta) con una curva de salida más rápida al principio. */
+/* ══ Destello "liquid glass" al tocar: brillo decorativo en el punto tocado ══ */
 .ctrl-acciones button, .vt-btn-header, .seg, .caja-head {
   position: relative;
   isolation: isolate; /* la mezcla del brillo (mix-blend-mode) no se filtra a hermanos */
@@ -682,9 +618,7 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   100% { opacity: 0;   transform: scale(1.35); }
 }
 @media (prefers-reduced-motion: reduce) {
-  /* Con movimiento reducido, el destello se apaga (queda todo lo demás
-     del vidrio: fondo, blur, bordes) — mismo criterio que ya usa el resto
-     del visor para esta media query. */
+  /* Movimiento reducido: sin destello */
   .ctrl-acciones button.vt-destello::before,
   .vt-btn-header.vt-destello::before,
   .seg.vt-destello::before,
@@ -694,22 +628,7 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   }
 }
 
-/* ══ Rebote gelatinoso al tocar (prototipo index-borrador) ══
-   Sólo en botones "de acción" discretos: zoom/ubicación/encuadre, tema,
-   pantalla completa, Argenmap/Satelital. A propósito NO incluye
-   .caja-head: esa es una fila entera del panel, y achicarla completa al
-   tocar se ve raro (deja huecos disparejos a los costados); las
-   cabeceras de solapa se quedan sólo con el destello de luz, de arriba.
-
-   El truco (el mismo lenguaje que ya usaba este visor para el rebote de
-   la hoja inferior al soltar un arrastre, ver #pila-flotante en mobile):
-   la transición "de ida" (:active, dedo/mouse abajo) es corta y sin
-   rebote — se siente el toque al instante. La transición "de vuelta"
-   (al soltar) usa una curva con overshoot (cubic-bezier con el segundo
-   valor > 1): pasa de largo por scale(1) antes de asentarse ahí, y eso
-   es lo que se lee como gelatinoso en vez de un click seco. No toca
-   ningún listener de click real: transform es puramente visual y no
-   mueve el punto donde cae el click. */
+/* ══ Rebote gelatinoso al tocar botones de acción ══ */
 .ctrl-acciones button, .vt-btn-header, .seg {
   transition: transform 0.42s cubic-bezier(0.34, 1.56, 0.64, 1),
               background 0.15s, color 0.15s;
@@ -759,18 +678,14 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   border-color: var(--muted);
 }
 
-/* Fila superior izquierda: columna de botones (zoom/ubicación/encuadre) +
-   burbuja de clima, una al lado de la otra — ver comentario en CtrlAcciones
-   (más abajo en el script) sobre por qué van en el mismo control. */
+/* Fila superior izquierda: columna de botones + burbuja de clima */
 .ctrl-fila-superior { display: flex; align-items: flex-start; gap: 8px; }
 
 /* botones de acción (ubicación / encuadre) */
 .ctrl-acciones {
   display: flex;
   flex-direction: column;
-  /* Vidrio: mismo criterio que .segmentado.base — flota solo sobre el
-     mapa, así que el blur tiene algo variado detrás para difuminar de
-     verdad (a diferencia de los botones de la cabecera, ver .vt-btn-header). */
+  /* Vidrio: fondo con blur */
   background: var(--vt-glass-bg);
   backdrop-filter: var(--vt-glass-blur);
   -webkit-backdrop-filter: var(--vt-glass-blur);
@@ -791,21 +706,14 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
 .ctrl-acciones button:hover { background: var(--hover-wash); color: var(--ink-1); }
 .ctrl-acciones button.deshabilitado { opacity: 0.35; pointer-events: none; }
 
-/* Burbuja de clima (ícono + temperatura), estilo "iOS Maps": ícono chico
-   + número grande dentro de una píldora. Oculta por defecto (arranca con
-   el atributo "hidden" puesto en el script) hasta que actualizarClima()
-   trae un dato válido — si falla el pedido, se queda oculta en vez de
-   mostrar un estado roto. El "[hidden]" explícito es necesario: sin él,
-   la regla display:flex de acá abajo le gana al display:none por defecto
-   del atributo hidden (misma correción que ya hace falta en otras cajas
-   de este visor cuando se les fija un display propio). */
+/* Burbuja de clima: ícono + temperatura, oculta hasta tener un dato válido */
 .burbuja-clima {
   display: flex;
   align-items: center;
   gap: 4px;
   padding: 4px 11px 4px 6px;
   border-radius: 999px;
-  /* Vidrio, igual que los demás controles flotantes sobre el mapa. */
+  /* Vidrio */
   background: var(--vt-glass-bg);
   backdrop-filter: var(--vt-glass-blur);
   -webkit-backdrop-filter: var(--vt-glass-blur);
@@ -820,9 +728,7 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
 .burbuja-clima[hidden] { display: none; }
 .burbuja-clima img { display: block; width: 22px; height: 22px; }
 
-/* botón de ayuda / tutorial: aparte de ctrl-acciones (no dentro de la misma
-   caja) y en rojo, a propósito, para que se note que es otra cosa: la
-   entrada manual al tutorial guiado, disponible siempre. */
+/* Botón de ayuda / tutorial */
 .ctrl-ayuda { margin-top: 8px !important; }
 .ctrl-ayuda button {
   width: 36px; height: 36px;
@@ -842,11 +748,7 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   50% { box-shadow: 0 2px 10px rgba(0,0,0,0.28), 0 0 0 8px color-mix(in srgb, var(--tour-acento) 35%, transparent); }
 }
 
-/* botón de avisos/advertencias: mismo lenguaje visual que el de ayuda
-   (círculo apilado por L.Control), pero azul (--geoloc, ya usado en el
-   botón de ubicación) para no confundirse con el rojo del tutorial —
-   y para dejar en claro que es otra cosa, con comportamiento
-   independiente (ver AVISOS_HABILITADO en el script). */
+/* Botón de avisos/advertencias */
 .ctrl-aviso { margin-top: 8px !important; }
 .ctrl-aviso button {
   width: 36px; height: 36px;
@@ -1024,13 +926,7 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
 }
 
 @media (max-width: 640px) {
-  /* Cabecera compacta: el logo es horizontal y achatado (~5.6:1), así que
-     a 50px de alto ocupa ~280px de ancho — en un celular eso aplasta el
-     título/subtítulo a una columna angosta. En vez de cortar el texto con
-     "…", se lo deja deslizar en loop (carrusel) para que se pueda leer
-     completo sin agrandar la cabecera. Truco sin JS: el span interno es
-     inline-block con padding-left:100% (arranca fuera, a la derecha) y
-     se anima con translateX(-100%) hasta salir por la izquierda. */
+  /* Cabecera compacta: título/subtítulo en carrusel para no cortarlos */
   .vt-header { padding: 8px 12px; gap: 8px; }
   .vt-header .logo { height: 24px; }
   .vt-header-texto { min-width: 0; }
@@ -1046,21 +942,7 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   /* Botón de pantalla completa: sólo se oculta en mobile (el de tema queda) */
   #btn-fs { display: none; }
   .vt-btn-header { width: 32px; height: 32px; }
-  /* ═══ Hoja inferior (bottom sheet), sólo en mobile ═══
-     Antes el panel flotaba arriba a la derecha con hasta 272px de ancho,
-     a la misma altura que los controles topleft del mapa (Argenmap/
-     Satelital, zoom, ubicación) — en pantallas angostas (~360-400px) el
-     borde izquierdo del panel invadía esos controles. Ahora se ancla
-     abajo, a todo el ancho: colapsado ocupa sólo el alto de la manija +
-     las 3 cabeceras, así el mapa (con sus controles) queda siempre libre
-     arriba. La manija (.vt-sheet-manija) la agrega el script sólo en
-     mobile — ver "Hoja inferior en mobile" en el <script>, más abajo.
-     "transition: transform" es para el rebote al soltar un arrastre:
-     mientras el dedo arrastra el panel el script apaga esta transición
-     (para que el panel siga al dedo 1 a 1, sin demora) y la reactiva al
-     soltar, así vuelve a su lugar con una animación con un poco de rebote
-     (overshoot) en vez de un frenado seco — se nota más "viva" al soltar
-     el dedo, sea cual sea el punto del panel del que se arrastró. */
+  /* ═══ Hoja inferior (bottom sheet), sólo en mobile ═══ */
   #pila-flotante {
     top: auto;
     bottom: 0;
@@ -1072,20 +954,12 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
     border-right: 1px solid var(--hair);
     border-bottom: none;
     border-radius: 16px 16px 0 0;
-    /* Misma idea que en desktop (sombra + highlight interno arriba), pero
-       con la sombra proyectada hacia arriba porque la hoja cuelga del
-       borde inferior de la pantalla. */
+    /* Sombra proyectada hacia arriba, la hoja cuelga del borde inferior */
     box-shadow: 0 -8px 28px rgba(11,11,11,0.18), inset 0 1px 0 var(--vt-glass-brillo);
     padding-bottom: env(safe-area-inset-bottom, 0px);
     transition: transform 0.32s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
-  /* Manija: barra (afordancia de "esto se arrastra") + una flecha real
-     que rota según el estado — mismo lenguaje visual que .btn-plegar de
-     cada solapa, para que se reconozca de un vistazo. Flecha hacia
-     arriba = "tocá para abrir Recorridos"; hacia abajo (con alguna
-     solapa abierta) = "tocá para cerrar". El estado lo sincroniza el
-     script con la clase .vt-sheet-abierto en #pila-flotante, así se
-     mantiene correcto sea cual sea la solapa que el usuario abra. */
+  /* Manija de la hoja: barra + flecha que rota según abierto/cerrado */
   .vt-sheet-manija {
     display: flex;
     flex-direction: column;
@@ -1109,10 +983,7 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   }
   #pila-flotante.vt-sheet-abierto .vt-sheet-manija svg { transform: rotate(0deg); } /* abierto: "cerrar" */
 
-  /* Apertura/cierre de cada solapa, animado: en desktop sigue siendo el
-     display:none instantáneo de la regla de más arriba (no se toca);
-     acá se anima max-height + opacity en vez de saltar de golpe, para
-     que al tocar o arrastrar la manija se note que el panel reacciona. */
+  /* Apertura/cierre de cada solapa, animado (max-height + opacity) */
   .caja-body {
     padding: 4px 8px 8px;
     transition: max-height 0.28s cubic-bezier(0.22, 1, 0.36, 1),
@@ -1128,21 +999,12 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
     padding-bottom: 0;
     pointer-events: none;
   }
-  /* El buscador usaba max-height:none a propósito (para no recortar el
-     desplegable de sugerencias) — acá necesita un valor concreto para
-     poder animarse; overflow sigue en "visible", así que el desplegable
-     igual no se corta si el contenido lo supera. */
+  /* Buscador: max-height concreto para poder animarlo (overflow visible) */
   .caja-body-buscador { max-height: 340px; }
 
-  /* Cabeceras y subtítulos más compactos: menos espacio muerto en un
-     panel que ahora compite por alto con el mapa. */
+  /* Cabeceras y subtítulos más compactos */
   .caja-head { padding: 6px 8px 6px 9px; }
-  /* Con la hoja cerrada (ninguna solapa de Recorridos/Buscador abierta),
-     lo único visible de las 3 cajas son estas 3 cabeceras + la manija —
-     achicarlas un poco más acá (sin tocar el tamaño en el resto de los
-     casos) deja más mapa libre en la franja colapsada. Se engancha a la
-     misma clase .vt-sheet-abierto que ya sincroniza la flecha de la
-     manija (ver "Hoja inferior en mobile" en el <script>). */
+  /* Hoja cerrada: cabeceras aún más chicas */
   #pila-flotante:not(.vt-sheet-abierto) .caja-head { padding: 4px 8px 4px 9px; }
   .caja-head h2, .seccion-head h3 { font-size: 9.5px; padding: 2px 7px; }
   .caja-head .stats { font-size: 10.5px; }
@@ -1153,59 +1015,30 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   .btn-ojo, .btn-plegar { width: 30px; height: 30px; }
   .linea-main { padding: 7px 6px; }
   .pill { padding: 5px 11px; }
-  /* "Paradas más cercanas" y el toast flotan arriba de la hoja inferior
-     (no a una distancia fija del piso): --vt-sheet-alto lo mantiene
-     actualizado el script con el alto real del panel en todo momento, así
-     nunca quedan tapados por la hoja ni dejan un hueco de más cuando está
-     colapsada. */
+  /* "Paradas más cercanas" y el toast flotan arriba de la hoja inferior */
   #tarjeta-cercanas { bottom: calc(var(--vt-sheet-alto, 140px) + 14px); }
   #toast { bottom: calc(var(--vt-sheet-alto, 140px) + 14px); }
-  /* Las atribuciones (IGN/OSM/Google, abajo a la derecha) y la escala
-     (abajo a la izquierda) son controles propios de Leaflet, con
-     bottom:0 dentro de su contenedor: la hoja inferior las tapaba por
-     completo. Mismo mecanismo que las dos reglas de arriba — se las
-     empuja hacia arriba con el alto real y vivo de la hoja
-     (--vt-sheet-alto), así quedan visibles sea cual sea su estado. */
+  /* Atribuciones y escala (controles de Leaflet) empujados sobre la hoja */
   #visor-transporte .leaflet-bottom.leaflet-right,
   #visor-transporte .leaflet-bottom.leaflet-left {
     margin-bottom: calc(var(--vt-sheet-alto, 46px) + 4px);
     transition: margin-bottom 0.28s cubic-bezier(0.22, 1, 0.36, 1);
   }
-  /* Letra más chica sólo en mobile: el texto de atribuciones es largo
-     (IGN + OSM + Google + fuente + procesamiento) y en pantallas
-     angostas pesa demasiado — ver la regla base en
-     "#visor-transporte .leaflet-control-attribution" (font-size: 11px),
-     más arriba. */
+  /* Letra más chica sólo en mobile */
   #visor-transporte .leaflet-control-attribution { font-size: 7px !important; }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .linea-flujo, .dot-viajero-halo, .geo-halo { animation: none; }
-  /* Con movimiento reducido, el carrusel se congela y se recorta con "…"
-     en vez de deslizar, para no perder la lectura del contenido. */
+  /* Movimiento reducido: carrusel congelado, recortado con "…" */
   .vt-header-texto .marquee-text { animation: none; display: inline; padding-left: 0; }
   .vt-header-texto h1, .vt-header-texto p { text-overflow: ellipsis; }
   .vt-tour-anillo { transition: none; }
-  /* Hoja inferior (mobile): sin rebote de arrastre, sin animación de
-     apertura/cierre de solapas y sin rotación de la flecha de la manija. */
+  /* Hoja inferior (mobile): sin rebote ni animaciones */
   #pila-flotante, .caja-body, .vt-sheet-manija svg { transition: none; }
 }
 
-/* ══ Tutorial guiado (primera visita) ══
-   No se intenta "levantar" el botón real por encima del velo con z-index:
-   varios de los controles reales viven dentro de contextos de apilamiento
-   propios (el mapa, los controles de Leaflet) y no pueden asomar por
-   encima de un hermano fuera de ese contexto. En cambio, el velo oscurece
-   todo por igual y un anillo decorativo (elemento aparte, no el botón
-   real) se dibuja encima marcando la posición — visualmente igual de claro
-   y sin pelearse con los z-index internos.
-   Los elementos (velo, anillo, modal, burbuja) se insertan como hijos de
-   #visor-transporte (variable CONT en el script), no de <body>: así heredan
-   la tipografía Inter y las variables de tema (--panel, --ink-1, etc.) del
-   visor. Esto no reintroduce el problema de apilamiento de arriba porque
-   #visor-transporte no tiene position/transform propios: sigue sin crear
-   su propio contexto de apilamiento, y position:fixed en sus hijos se
-   posiciona igual respecto de la ventana. */
+/* ══ Tutorial guiado (primera visita) ══ */
 .vt-tour-block {
   position: fixed;
   inset: 0;
@@ -1272,12 +1105,7 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   .vt-tour-modal, .vt-tour-burbuja { padding: 16px; }
 }
 
-/* ══ Burbuja de avisos/advertencias ══
-   Rectángulo chico con colita apuntando al botón "!" del que "sale"
-   (ver posicionarAvisoBurbuja en el script). Bloque de estilos aparte
-   del tutorial (.vt-tour-*): mismo lenguaje visual general del visor,
-   pero sin compartir clases ni z-index con el tour, para que uno se
-   pueda tocar sin afectar al otro. */
+/* ══ Burbuja de avisos/advertencias ══ */
 .vt-aviso-burbuja {
   position: fixed;
   z-index: 1400;
@@ -1289,9 +1117,7 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   box-shadow: var(--sombra);
   padding: 14px 32px 12px 14px;
 }
-/* Colita: cuadrado rotado 45°, mismo fondo/borde que la burbuja, la
-   posición horizontal (--cola-left) la fija el script según dónde haya
-   quedado la burbuja respecto del botón real. */
+/* Colita: cuadrado rotado 45°, posición la fija el script */
 .vt-aviso-burbuja::before {
   content: "";
   position: absolute;
@@ -1344,14 +1170,10 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   <div class="vt-cuerpo">
     <div id="mapa" role="application" aria-label="Mapa de líneas de colectivo"></div>
 
-    <!-- Panel lateral fijo (pegado al borde derecho): Recorridos, Paradas y
-         Buscar línea como solapas plegables dentro del mismo panel, cada
-         una se abre/cierra de forma independiente. -->
+    <!-- Panel lateral: solapas Recorridos, Paradas y Buscar línea -->
     <div id="pila-flotante">
 
-      <!-- Solapa de capas: líneas + paradas (el selector de mapa base
-           Argenmap/Satelital se movió afuera, arriba a la izquierda,
-           junto a los botones de ubicación/encuadre — ver CtrlBase). -->
+      <!-- Solapa de capas: líneas + paradas -->
       <div id="caja-capas" class="caja-flotante plegada">
         <div class="caja-head caja-head-fija" id="caja-head" role="button" aria-expanded="false" tabindex="0">
           <h2>Recorridos</h2>
@@ -1375,8 +1197,7 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
         </div>
       </div>
 
-      <!-- Paradas: filtros por refugio/cartel/poste. El switch prende/apaga
-           la capa en el mapa y a la vez expande/pliega esta caja. -->
+      <!-- Paradas: filtros por refugio/cartel/poste -->
       <div id="caja-paradas" class="caja-flotante plegada">
         <div class="caja-head">
           <h2>Paradas</h2>
@@ -1512,49 +1333,22 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
 (function () {
 "use strict";
 
-/* Interruptor temporal (requerimiento externo): oculta y desactiva por
-   completo la capa de paradas (panel de capas + "paradas cercanas" del
-   botón de ubicación), sin borrar nada del código. Para reactivarlas
-   en otra instancia, alcanza con volver esto a "true". */
+/* Interruptor: capa de paradas + "paradas cercanas" */
 const PARADAS_HABILITADAS = true;
 
-/* Interruptor del panel "Buscar línea" (origen/destino → línea sugerida):
-   oculta por completo la caja flotante, sin borrar nada del código. Volver
-   a "true" para reactivarla. */
+/* Interruptor: panel "Buscar línea" (origen/destino → línea sugerida) */
 const BUSCADOR_LINEA_HABILITADO = false;
 
-/* Interruptor del tutorial guiado (botón "?" + oferta automática en las
-   primeras visitas): con esto en false no se crea el botón ni se ofrece
-   el tour solo, sin borrar nada del código — mismo criterio que los dos
-   interruptores de arriba. OJO: varios pasos del tour (ver pasosTour, más
-   abajo) apuntan a "Buscar línea" y mencionan "paradas cercanas"; si se
-   reactiva el tour en una instancia con PARADAS_HABILITADAS o
-   BUSCADOR_LINEA_HABILITADO en false, esos pasos van a señalar algo que
-   no existe en el sitio — conviene revisar/editar esos pasos puntuales
-   antes de reactivarlo en ese caso. */
+/* Interruptor: tutorial guiado (botón "?" + oferta automática) */
 const TOUR_HABILITADO = true;
 
-/* Interruptor del botón "Ver horarios" (panel de horarios por línea, en
-   Recorridos → detalle de cada línea): con esto en false no se crea el
-   botón en ninguna línea, aunque esa línea ya tenga datos cargados en
-   horarios_data.js. Es de prueba, para ir cargando horarios.json de a
-   poco sin exponerlo todavía; volver a "true" para reactivarlo. */
+/* Interruptor: botón "Ver horarios" en el detalle de cada línea */
 const HORARIOS_HABILITADO = false;
 
-/* Interruptor de los avisos/advertencias (botón "!" azul, apilado debajo
-   del de ayuda + burbuja con el texto de cada aviso activo): con esto en
-   false no se crea el botón aunque avisos_data.js traiga avisos cargados.
-   Comportamiento totalmente aparte del tutorial guiado (no comparte
-   variables ni funciones con TOUR_HABILITADO) — se puede prender o apagar
-   cada uno sin afectar al otro. El botón tampoco se dibuja si el array de
-   avisos_data.js está vacío, aunque esto esté en true. */
+/* Interruptor: avisos/advertencias (botón "!") */
 const AVISOS_HABILITADO = true;
 
-/* ══════════════════════════════════════════════════════════════════
-   Armado de datos: lee los 23 window.LINEA_*_DATA (GeoJSON crudo)
-   y los convierte al formato interno del visor. Cada archivo es una
-   línea propia; NO se fusionan (6A, 6B, 8H y 8AH van separadas).
-   ══════════════════════════════════════════════════════════════════ */
+/* ══ Armado de datos: window.LINEA_*_DATA (GeoJSON) → formato interno ══ */
 const IDS_LINEAS = ["1","2","3","4","5","5U","6A","6B","7","8H","8AH","9",
                     "12","13","14","15","16","17","18","19","20","21","22"];
 
@@ -1583,18 +1377,13 @@ const SENTIDOS = {
 };
 const ORDEN_SENT = { ida: 0, vuelta: 1, horario: 0, antihorario: 1, sur: 0, norte: 1, "": 0 };
 
-/* Correcciones manuales de sentido: la geometría de estos recorridos
-   quedó digitalizada en contra del sentido real de circulación.
-   Clave = id de línea; valor = sentido tal cual viene en el dato
-   original (antes de cualquier corrección). */
+/* Correcciones manuales de sentido (geometría digitalizada al revés) */
 const CORRECCIONES_SENTIDO = {};
 const CORRECCIONES_INVERTIR = {
   "5U": { "": true },   // sentido único, recorrido completo invertido
 };
 
-/* Cosido de tramos del MultiLineString: encadena fin→inicio por
-   proximidad SIN invertir tramos (digitalizados en sentido de
-   circulación). Si el hueco supera GAP_MAX m, corta en otro path. */
+/* Cosido de tramos del MultiLineString: encadena fin→inicio por proximidad */
 const GAP_MAX = 150;
 function distM(a, b) { /* a,b = [lng,lat] */
   const kx = 111320 * Math.cos(-45.86 * Math.PI / 180);
@@ -1660,11 +1449,7 @@ for (const id of IDS_LINEAS) {
     if ((CORRECCIONES_INVERTIR[id] || {})[sentOriginal]) {
       paths = paths.map((path) => path.slice().reverse());
     }
-    /* Si dos features de la capa comparten el mismo sentido (dato sin
-       unificar en origen — p.ej. línea 5U con dos tramos de "vuelta"
-       sueltos, sin fusionar en QGIS), se acumulan en la misma ruta en
-       vez de crear un segundo botón/pill duplicado: ambos tramos se
-       siguen dibujando y animando, sólo comparten un único control. */
+    /* Features que comparten sentido se acumulan en la misma ruta */
     const existente = rutasPorSentido.get(sent);
     if (existente) {
       existente.paths.push(...paths);
@@ -1687,11 +1472,7 @@ for (const id of IDS_LINEAS) {
 }
 const PARADAS_DATA = Array.isArray(window.PARADAS_DATA) ? window.PARADAS_DATA : [];
 
-/* ── Índice de esquinas (para el autocompletar del buscador de línea) ───
-   Se arma a partir de las paradas relevadas, agrupando por "calle + esquina"
-   (varias paradas pueden compartir la misma esquina, una por mano). No
-   depende de que la capa de Paradas esté habilitada ni visible: el dato
-   se usa igual puertas adentro, aunque PARADAS_HABILITADAS sea false. */
+/* ── Índice de esquinas (autocompletar del buscador de línea) ── */
 function normalizarTxt(s) {
   return String(s || "").trim().toLowerCase()
     .normalize("NFD").replace(/[̀-ͯ]/g, ""); // sin acentos, para filtrar sin importar tildes
@@ -1714,8 +1495,7 @@ const ESQUINAS_DATA = (() => {
     if (!grupos.has(clave)) {
       grupos.set(clave, { etiqueta, lat: p.lat, lng: p.lng, n: 1 });
     } else {
-      /* promedio de coordenadas de las paradas que comparten esquina, para
-         centrar el punto sugerido entre ambas manos */
+      /* promedio de coordenadas de las paradas que comparten esquina */
       const g = grupos.get(clave);
       g.lat = (g.lat * g.n + p.lat) / (g.n + 1);
       g.lng = (g.lng * g.n + p.lng) / (g.n + 1);
@@ -1734,37 +1514,21 @@ if (!LINEAS_DATA.length) {
 
 const CONT = document.getElementById("visor-transporte");
 
-/* ── Destello "liquid glass" al tocar (prototipo index-borrador) ──
-   Delegado en CONT (no un listener por botón) para que alcance también a
-   los controles que Leaflet crea después (zoom/ubicación/encuadre,
-   Argenmap/Satelital) sin tener que engancharlo de nuevo en cada uno.
-   Sólo agrega/saca una clase — nunca toca ni reemplaza el listener de
-   click real de cada botón (esos siguen intactos, más abajo en este
-   mismo script), así que no hay riesgo de romper ninguna acción. */
+/* ── Destello "liquid glass" al tocar ── */
 const VT_DESTELLO_SELECTOR = ".ctrl-acciones button, .vt-btn-header, .seg, .caja-head";
 CONT.addEventListener("pointerdown", (ev) => {
   const el = ev.target.closest(VT_DESTELLO_SELECTOR);
   if (!el || el.classList.contains("deshabilitado")) return;
   const r = el.getBoundingClientRect();
-  // Punto de origen del destello = donde tocó el dedo/mouse, en % del
-  // propio botón (no píxeles fijos), así funciona igual sea cual sea el
-  // tamaño del control.
+  // Origen del destello: punto tocado, en % del botón
   const x = r.width ? ((ev.clientX - r.left) / r.width) * 100 : 50;
   const y = r.height ? ((ev.clientY - r.top) / r.height) * 100 : 50;
   el.style.setProperty("--vt-shine-x", x + "%");
   el.style.setProperty("--vt-shine-y", y + "%");
-  // Radio del círculo en píxeles reales, no en % de la caja: así se ve
-  // redondo tanto en un botón cuadrado de 34px (zoom, tema) como en una
-  // caja ancha y baja (el pill "Argenmap", la cabecera de una solapa) —
-  // antes, sin esto, el navegador dimensionaba el círculo por su cuenta
-  // hasta la esquina más lejana, y en una caja ancha eso lo hacía gigante
-  // y se veía recortado en un bloque. Un poco más grande que la mitad del
-  // lado más corto, para que el brillo alcance a asomar por los bordes.
+  // Radio del círculo en píxeles reales, para que se vea redondo en cualquier caja
   const radio = Math.max(r.width, r.height) * 0.55;
   el.style.setProperty("--vt-shine-radio", radio + "px");
-  // Si se toca de nuevo antes de que termine la animación anterior, se
-  // reinicia en vez de quedar pisada: se saca la clase, se fuerza un
-  // reflow y se vuelve a poner.
+  // Reiniciar la animación si se toca de nuevo antes de que termine
   el.classList.remove("vt-destello");
   void el.offsetWidth;
   el.classList.add("vt-destello");
@@ -1781,8 +1545,7 @@ function temaActual() {
 function aplicarTema(tema) {
   if (tema === "dark") CONT.setAttribute("data-theme", "dark");
   else CONT.removeAttribute("data-theme");
-  /* el fondo de html/body sigue al tema para que no quede una franja
-     blanca (o negra) descalzada alrededor del visor a pantalla completa */
+  /* fondo de html/body sigue al tema (evita franja descalzada en pantalla completa) */
   document.body.style.background = tema === "dark" ? "#1a1a19" : "#fcfcfb";
   try { localStorage.setItem(TEMA_KEY, tema); } catch (e) { /* puede estar bloqueado */ }
 }
@@ -1825,11 +1588,7 @@ function toast(msg, ms = 4000) {
 const ATTR = "Instituto Geográfico Nacional + OpenStreetMap. Google Satelital. Fuente: Dirección General de Transporte (recorridos 2026). Procesamiento: Modernización e Investigación Territorial. Errores topológicos y de precisión están siendo corregidos.";
 const mapa = L.map("mapa", { zoomControl: false, attributionControl: true });
 mapa.attributionControl.setPrefix(false);
-/* Sin el control de zoom por defecto de Leaflet (abajo a la derecha): ahí
-   quedaba tapado por el panel lateral. Los botones +/- viven ahora en
-   CtrlAcciones, arriba a la izquierda, junto a ubicación/encuadre (ver
-   más abajo en el script) — el zoom con rueda/pellizco/teclado sigue
-   andando igual, esto sólo saca el control visual de en medio. */
+/* Sin control de zoom por defecto de Leaflet: los botones +/- viven en CtrlAcciones */
 L.control.scale({ imperial: false, position: "bottomleft" }).addTo(mapa);
 
 const capaArgenmapClaro = L.tileLayer(
@@ -1870,11 +1629,7 @@ const estado = {
   autoEncendida: null, // id de la línea que se prendió sola al enfocarla (no por el ojo); se apaga al desenfocar
   rutasApagadas: new Set(),
   paradasOn: false, // arranca apagado; PARADAS_HABILITADAS sólo controla si la caja existe
-  // true si la capa de paradas se prendió sola al enfocar una línea (no
-  // por el switch): mismo criterio que "autoEncendida" para líneas, un
-  // par de líneas más arriba — se apaga sola al desenfocar; si el usuario
-  // la prendió a mano, queda en false y desenfocar() no la toca.
-  paradasAutoEncendida: false,
+  paradasAutoEncendida: false, // true si la capa de paradas se prendió sola al enfocar una línea
   filtros: { refugio: "todas", cartel: "todas", poste: "todas" },
 };
 
@@ -1883,11 +1638,7 @@ const CASING = { light: "#ffffff", dark: "#0a0a0a" };
 const rutasPorLinea = new Map();
 const lineaPorId = new Map(LINEAS_DATA.map((l) => [l.id, l]));
 
-/* Colores de ida/vuelta al enfocar una línea: sólo para diferenciar
-   visualmente ambos sentidos del recorrido seleccionado (no tocan la
-   paleta por línea ni el punto animado). No aplica a recorridos
-   "circular" o "único" (6A, 6B, 8H, 8AH, etc.): esas líneas conservan
-   su color propio también estando enfocadas. */
+/* Colores de ida/vuelta al enfocar una línea (no aplica a circular/único) */
 const COLOR_IDA = "#5BAD3C";   // verde césped
 const COLOR_VUELTA = "#5A76F5"; // azul eléctrico
 function colorFoco(ruta, linea) {
@@ -1981,14 +1732,7 @@ function armarAnimacion(id) {
     }).addTo(mapa);
     anim.overlays.push(overlay);
 
-    /* Un solo punto viajero por ruta, sobre su tramo continuo más largo.
-       Algunos recorridos vienen digitalizados en varios fragmentos separados
-       por huecos grandes (ver coser() / GAP_MAX) — la línea 5U es el caso
-       más extremo, con 8 fragmentos sueltos. Animar un punto por fragmento
-       hacía que esas líneas mostraran varios puntos a la vez, en vez de los
-       2 (ida/vuelta) esperados. El trazado punteado de fondo (arriba) sigue
-       dibujándose sobre todos los tramos; sólo el punto que se mueve queda
-       acotado al tramo más largo, que es el más representativo del recorrido. */
+    /* Un solo punto viajero por ruta, sobre su tramo continuo más largo */
     let mejorPts = null, mejorAcum = null, mejorTotal = -1;
     for (const path of it.ruta.paths) {
       const pts = path.map(([la, ln]) => L.latLng(la, ln));
@@ -2006,8 +1750,7 @@ function armarAnimacion(id) {
         pane: "foco", radius: 5.5, color: "#ffffff", weight: 2,
         fillColor: colorLinea(linea), fillOpacity: 1, interactive: false,
       }).addTo(mapa);
-      /* velocidad del recorrido animado: duración proporcional al largo del
-         tramo, entre 26 y 70 segundos (más lenta todavía que el ajuste anterior). */
+      /* velocidad del recorrido animado: duración proporcional al largo del tramo */
       const dur = Math.min(70000, Math.max(26000, mejorTotal / 0.24));
       anim.dots.push({ pts: mejorPts, acum: mejorAcum, total: mejorTotal, dur, dot, halo, idx: 1, offset: Math.random() * 0.35 });
     }
@@ -2041,8 +1784,7 @@ function alternarFoco(id) {
 }
 
 function enfocar(id) {
-  /* si la línea enfocada anterior se había prendido sola (no por el ojo),
-     se apaga al cambiar el foco: sólo queda encendida una capa "de paso" a la vez */
+  /* si la línea enfocada anterior se había prendido sola, se apaga al cambiar el foco */
   if (estado.autoEncendida && estado.autoEncendida !== id) {
     estado.visibles.delete(estado.autoEncendida);
     estado.autoEncendida = null;
@@ -2055,14 +1797,7 @@ function enfocar(id) {
   } else {
     estado.autoEncendida = null;
   }
-  /* Paradas: se prenden solas si estaban apagadas, para mostrar de una
-     las que pertenecen a esta línea (paradasDeLinea, más arriba). Si el
-     usuario ya las tenía prendidas a mano, se respetan tal cual — no se
-     fuerza nada, sólo se filtra cuál de las 963 se ve (aplicarFiltrosParadas).
-     A propósito NO se toca cajaParadas ("plegada") acá: encender la capa
-     al enfocar una línea no debe abrir la solapa de filtros sola — eso
-     queda reservado para cuando el usuario toca el encabezado o el botón
-     de plegar, a mano. */
+  /* Paradas: se prenden solas si estaban apagadas, para mostrar las de esta línea */
   if (!estado.paradasOn) {
     estado.paradasOn = true;
     estado.paradasAutoEncendida = true;
@@ -2087,10 +1822,7 @@ function desenfocar() {
   estado.enfocada = null;
   estado.rutasApagadas.clear();
   limpiarAnimacion();
-  /* Paradas: si se habían prendido solas al enfocar, se apagan de nuevo;
-     si el usuario las prendió (o apagó) a mano mientras había una línea
-     enfocada, esa elección manual ya puso paradasAutoEncendida en false
-     (ver el listener de chkParadas, más abajo) y acá no se la toca. */
+  /* Paradas: si se habían prendido solas al enfocar, se apagan de nuevo */
   if (estado.paradasAutoEncendida) {
     estado.paradasOn = false;
     estado.paradasAutoEncendida = false;
@@ -2122,12 +1854,7 @@ const FLECHAS = { ida: "→", vuelta: "←", circular: "↻", unico: "→" };
    (colores, tooltips, correcciones, datos fuente). */
 const CHIP_LABEL = { "8H": "8", "8AH": "8" };
 
-/* ── Horarios por línea (panel "Recorridos" → detalle de cada línea) ──
-   HORARIOS_DATA viene de horarios_data.js (mismo patrón que PARADAS_DATA
-   y LINEA_X_DATA: window.HORARIOS_DATA cargado por <script src>, no por
-   fetch, para que funcione igual abriendo el archivo directamente por
-   file:// que serviéndolo por http(s)). Se arma bajo demanda (recién al
-   tocar "Ver horarios" la primera vez), no de entrada por las 23 líneas. */
+/* ── Horarios por línea (panel "Recorridos" → detalle de cada línea), armado bajo demanda ── */
 function filaHorario(h) {
   return `<li><span class="horarios-hora">${esc(h.horario)}</span>` +
          `<span class="horarios-frec">${esc(h.frecuencia || "")}</span></li>`;
@@ -2268,14 +1995,10 @@ L.DomEvent.disableClickPropagation(caja);
 L.DomEvent.disableScrollPropagation(caja);
 
 /* ── Paradas ──────────────────────────────────────────────────── */
-/* Caja "Paradas" oculta por completo mientras PARADAS_HABILITADAS sea false
-   (ver interruptor al inicio del script) — mismo criterio que "Buscar línea". */
 const cajaParadas = document.getElementById("caja-paradas");
 const chkParadas = document.getElementById("chk-paradas");
 cajaParadas.style.display = PARADAS_HABILITADAS ? "" : "none";
-/* el interruptor arranca apagado y la caja plegada aunque el panel esté
-   habilitado — el usuario lo prende manualmente si quiere ver paradas */
-chkParadas.checked = false;
+chkParadas.checked = false; // el switch arranca apagado, el usuario lo prende a mano
 cajaParadas.classList.toggle("plegada", true);
 L.DomEvent.disableClickPropagation(cajaParadas);
 L.DomEvent.disableScrollPropagation(cajaParadas);
@@ -2288,24 +2011,11 @@ function radioParadas() {
   const z = mapa.getZoom();
   const base = z >= 16 ? 6.5 : z >= 14.5 ? 4.8 : z >= 13 ? 3.6 : 2.6;
   if (!window.matchMedia("(max-width: 640px)").matches) return base;
-  // En mobile los puntos cuestan más de tocar con el dedo que con el
-  // mouse: se agranda un poco el radio sólo en ese viewport, sin tocar
-  // el tamaño en desktop. En el zoom más lejano (mapa recién iniciado,
-  // sin acercar) el +2 de siempre se veía demasiado grande; ahí se usa
-  // un empujón menor.
+  // En mobile se agranda el radio para que sea más fácil tocar los puntos
   return z >= 13 ? base + 2 : base + 0.6;
 }
 
-/* ── Líneas que pasan cerca de una parada ────────────────────────
-   Las paradas no tienen un campo que las vincule a una línea (mismo gap
-   de datos que motivó el cálculo geométrico del buscador de línea, más
-   abajo). Acá se reutiliza esa misma pieza —puntoMasCercanoEnRuta,
-   definida más adelante en este script pero disponible desde ya por ser
-   una function declaration dentro de la misma IIFE— para medir la
-   distancia mínima de la parada a cada trazado. Se consideran "de esta
-   parada" las líneas cuyo recorrido pasa a RADIO_PARADA_LINEA metros o
-   menos: umbral fijado a criterio propio del relevamiento, dejado como
-   constante nombrada para poder afinarlo sin tocar la lógica. */
+/* ── Líneas que pasan cerca de una parada ── */
 const RADIO_PARADA_LINEA = 20; // metros
 
 function lineasEnParada(p) {
@@ -2324,17 +2034,7 @@ function lineasEnParada(p) {
   return resultado.map((r) => r.linea);
 }
 
-/* ── Paradas que pertenecen a una línea (inverso de lineasEnParada) ──
-   Mismo umbral (RADIO_PARADA_LINEA) y mismo método de distancia
-   (puntoMasCercanoEnRuta): una parada "es de" la línea enfocada si cae a
-   20m o menos de alguno de sus dos sentidos. Se usa para, al enfocar una
-   línea (ver enfocar()/aplicarFiltrosParadas(), más arriba en este mismo
-   script), mostrar sólo esas paradas en vez de las 963.
-   Se cachea por línea (Map, no vuelve a calcularse si ya se enfocó esa
-   línea antes en esta sesión): son ~200 mil comparaciones punto-segmento
-   por línea (963 paradas × ~200 puntos de trazado), rápido de sobra para
-   una sola vez, pero no hace falta repetirlo cada vez que se reenfoca la
-   misma línea. */
+/* ── Paradas que pertenecen a una línea (inverso de lineasEnParada), cacheada por línea ── */
 const cacheParadasDeLinea = new Map();
 function paradasDeLinea(id) {
   if (cacheParadasDeLinea.has(id)) return cacheParadasDeLinea.get(id);
@@ -2404,9 +2104,7 @@ function pasaFiltros(p) {
 function aplicarFiltrosParadas() {
   grupoParadas.clearLayers();
   let n = 0;
-  // Con una línea enfocada, sólo entran las paradas a ≤20m de su trazado
-  // (paradasDeLinea, definida junto a lineasEnParada más arriba) — se
-  // combina con los filtros de refugio/cartel/poste, no los reemplaza.
+  // Con una línea enfocada, sólo entran las paradas de su trazado
   const deLaLinea = estado.enfocada ? paradasDeLinea(estado.enfocada) : null;
   if (estado.paradasOn) {
     const r = radioParadas();
@@ -2440,21 +2138,12 @@ mapa.on("zoomend", () => {
 
 chkParadas.addEventListener("change", (e) => {
   estado.paradasOn = e.target.checked;
-  // Tocar el switch a mano es una decisión explícita: si había una línea
-  // enfocada que las prendió sola, deja de estar "sola" — así, al
-  // desenfocar, ya no se pisa lo que el usuario acaba de elegir acá.
+  // decisión explícita del usuario: ya no se apagan solas al desenfocar
   estado.paradasAutoEncendida = false;
-  // A propósito NO se toca cajaParadas ("plegada") acá: encender/apagar
-  // el switch sólo prende o apaga la capa en el mapa. La solapa de
-  // filtros se abre únicamente si el usuario toca el encabezado o el
-  // botón de plegar (ver cajaParadasHead / btnPlegarParadas más abajo).
   aplicarFiltrosParadas();
 });
 
-/* Botón de plegar independiente (sólo visible en mobile, ver CSS): pliega
-   u oculta los filtros SIN tocar el switch ni la capa en el mapa — el
-   switch de arriba sigue siendo, aparte, el que prende/apaga los datos.
-   Sólo actualiza la clase "plegada"; no toca estado.paradasOn. */
+/* Botón de plegar (mobile): pliega los filtros sin tocar el switch ni la capa */
 const btnPlegarParadas = document.getElementById("btn-plegar-paradas");
 btnPlegarParadas.addEventListener("click", () => {
   const plegar = !cajaParadas.classList.contains("plegada");
@@ -2462,17 +2151,7 @@ btnPlegarParadas.addEventListener("click", () => {
   btnPlegarParadas.setAttribute("aria-expanded", String(!plegar));
 });
 
-/* Tocar cualquier parte de la cabecera de Paradas pliega/despliega la
-   solapa de filtros, igual que Recorridos y Buscar línea — en cualquier
-   viewport, no sólo mobile (antes el desktop dependía del switch para
-   esto; ya no, ver el listener de chkParadas más arriba). En vez de
-   duplicar la lógica de plegado, delega al click del botón que ya existe
-   en mobile (btnPlegarParadas): así ambos caminos quedan sincronizados
-   por construcción, no por coincidencia. Se ignoran los clicks que ya
-   vienen del switch (tiene su propio manejo arriba) y los que vienen del
-   propio botón (si no, el .click() de abajo dispararía este mismo
-   listener otra vez al burbujear, aunque sin loop infinito porque esa
-   segunda vuelta sí matchea el guard y corta ahí). */
+/* Tocar la cabecera de Paradas pliega/despliega la solapa de filtros, en cualquier viewport */
 const cajaParadasHead = cajaParadas.querySelector(".caja-head");
 cajaParadasHead.addEventListener("click", (e) => {
   if (e.target.closest(".switch") || e.target.closest(".btn-plegar-paradas")) return;
@@ -2491,11 +2170,6 @@ CONT.querySelectorAll(".filtro-fila").forEach((fila) => {
 });
 
 /* ── Mapa base: botón Argenmap / Satelital ────────────────────── */
-/* Control flotante arriba a la izquierda (mismo mecanismo que
-   CtrlAcciones/CtrlAyuda, más abajo en el script), en vez de vivir
-   dentro del panel de Recorridos: así queda a mano sin tener que abrir
-   el panel para cambiar de vista. Se crea acá, antes de engancharle los
-   listeners, para que los botones ya existan en el DOM en este punto. */
 const CtrlBase = L.Control.extend({
   options: { position: "topleft" },
   onAdd() {
@@ -2541,9 +2215,7 @@ document.addEventListener("fullscreenchange", () => {
 
 /* ── Geolocalización ──────────────────────────────────────────── */
 function geoColor() { return temaActual() === "dark" ? "#3987e5" : "#2a78d6"; }
-// Gris de las paradas del buffer que no entran en el top de "más cercanas"
-// (mismo valor que --muted, igual en claro y oscuro).
-const COLOR_BUFFER_PARADA = "#898781";
+const COLOR_BUFFER_PARADA = "#898781"; // gris de las paradas del buffer, fuera del top de cercanas
 let geoMarcadores = [];
 function limpiarGeo() {
   geoMarcadores.forEach((m) => mapa.removeLayer(m));
@@ -2577,11 +2249,7 @@ function ubicarme() {
       }).bindTooltip("Estás acá", { direction: "top", className: "tt-parada", offset: [0, -6] }).addTo(mapa);
       geoMarcadores.push(precision, halo, punto);
 
-      // Todas las paradas ordenadas por distancia. Las primeras 4 son las
-      // "más cercanas" (listado + anillo celeste); el resto de las que caen
-      // dentro del buffer de precisión del GPS (mismo radio que el círculo
-      // "precision" de arriba) se marcan en gris transparentado, sólo para
-      // referencia visual, sin entrar al listado.
+      // Paradas ordenadas por distancia: las 4 primeras son "cercanas", el resto dentro del buffer va en gris
       const todas = PARADAS_HABILITADAS
         ? PARADAS_DATA
             .map((p) => ({ p, d: aqui.distanceTo([p.lat, p.lng]) }))
@@ -2601,8 +2269,7 @@ function ubicarme() {
       const ol = document.getElementById("lista-cercanas");
       ol.innerHTML = "";
       for (const { p, d } of cercanas) {
-        // Línea recta punteada, mismo color que el punto de ubicación y los
-        // anillos de las cercanas, entre "acá" y cada parada.
+        // Línea recta punteada entre "acá" y cada parada cercana
         const trazo = L.polyline([aqui, [p.lat, p.lng]], {
           color: geoColor(), weight: 2, opacity: 0.55, dashArray: "6 6",
           interactive: false,
@@ -2614,9 +2281,7 @@ function ubicarme() {
         geoMarcadores.push(anillo);
         const li = document.createElement("li");
         const btn = document.createElement("button");
-        // Chips de las líneas que pasan por esta parada: sólo el número/ícono
-        // (colorChip/colorChipTexto, igual que en el popup), sin el nombre de
-        // la línea — acá el espacio es más chico que en popupParada().
+        // Chips de las líneas que pasan por esta parada: sólo número/ícono, sin nombre
         const lineasChip = lineasEnParada(p)
           .map((l) => {
             const bg = colorChip(l), fg = colorChipTexto(bg);
@@ -2655,20 +2320,11 @@ function ubicarme() {
 }
 document.getElementById("btn-cerrar-cercanas").addEventListener("click", limpiarGeo);
 
-/* ── Buscador de línea sugerida (prototipo) ───────────────────────────
-   Origen + destino (por esquina relevada o tocando el mapa) → mejor línea.
-   Como las paradas no tienen un campo que las vincule a una línea, la
-   sugerencia se calcula geométricamente: para cada línea/sentido, se busca
-   el punto más cercano del trazado a cada extremo, y se exige que el
-   destino quede "más adelante" que el origen sobre esa ruta (mismo tramo
-   continuo, en el sentido de circulación). Es un cálculo aproximado —no
-   contempla combinaciones de líneas ni horarios— pensado como prototipo. */
+/* ── Buscador de línea sugerida (prototipo): origen + destino → mejor línea ── */
 const CAMINATA_MAX = 900;   // metros — más allá de esto no sugerimos caminar (antes 550: en zonas con menos cobertura de líneas no encontraba ninguna)
 const RECORRIDO_MIN = 250;  // metros — evita sugerencias donde origen y destino casi se superponen sobre la ruta
 
-/* Punto más cercano de una ruta a un punto dado, junto con su posición
-   acumulada (arc-length) dentro del mismo "path" continuo de esa ruta —
-   necesaria para comparar si el destino queda más adelante que el origen. */
+/* Punto más cercano de una ruta a un punto dado, con su posición acumulada (arc-length) */
 function puntoMasCercanoEnRuta(punto, ruta) {
   let mejor = null;
   ruta.paths.forEach((path, pathIdx) => {
@@ -2714,8 +2370,7 @@ function buscarLineaSugerida(origen, destino) {
   return candidatas.slice(0, 3); // hasta 3 opciones, ordenadas de menor a mayor caminata total
 }
 
-/* Etiqueta amigable de un punto tocado directamente en el mapa: si cae
-   cerca de una esquina relevada, usa ese nombre; si no, muestra coordenadas. */
+/* Etiqueta de un punto tocado en el mapa: esquina relevada cercana o coordenadas */
 function etiquetaAproximada(lat, lng) {
   const p = L.latLng(lat, lng);
   let mejor = null;
@@ -2744,16 +2399,7 @@ function marcarPuntoBuscador(campo, lat, lng, etiqueta) {
   if (campo === "origen") marcadorOrigenBuscador = m; else marcadorDestinoBuscador = m;
 }
 
-/* ── Respaldo: nomenclador nacional (API Georef, apis.datos.gob.ar) ──────
-   El listado de esquinas relevadas (ESQUINAS_DATA) es instantáneo y anda
-   sin conexión, pero sólo cubre lo que releva la propia Municipalidad.
-   Como RESPALDO —no como dependencia dura— cuando ese listado no alcanza
-   se consulta el nomenclador nacional (gratuito, sin API key, CC-BY 4.0)
-   para intersecciones que no estén en nuestro relevamiento. Si la consulta
-   falla por lo que sea (sin red, CORS bloqueado, timeout, servicio caído)
-   se descarta en silencio: el buscador sigue funcionando sólo con el
-   listado local, nunca se rompe por esto.
-   Interruptor rápido para desactivar si el servicio da problemas. */
+/* ── Respaldo: nomenclador nacional (API Georef) para esquinas fuera del relevamiento local ── */
 const GEOREF_HABILITADO = true;
 const GEOREF_URL = "https://apis.datos.gob.ar/georef/api/direcciones";
 const GEOREF_TIMEOUT_MS = 5000;
@@ -2773,10 +2419,7 @@ function etiquetaDesdeGeoref(d) {
   return tituloCase(base);
 }
 
-/* OJO con el departamento: la ciudad de Comodoro Rivadavia administrativamente
-   pertenece al departamento "Escalante" (no existe un departamento llamado
-   "Comodoro Rivadavia" en el nomenclador). Se filtra además por localidad
-   censal para no mezclar resultados con Rada Tilly, que comparte departamento. */
+/* Comodoro Rivadavia pertenece al departamento "Escalante" en el nomenclador */
 async function consultarGeoref(texto) {
   const clave = normalizarTxt(texto);
   if (georefCache.has(clave)) return georefCache.get(clave);
@@ -2814,8 +2457,7 @@ const sugerenciasDestino = document.getElementById("sugerencias-destino");
 const btnBuscarLinea = document.getElementById("btn-buscar-linea");
 const resultadoBuscador = document.getElementById("resultado-buscador");
 const btnLimpiarBuscador = document.getElementById("btn-limpiar-buscador");
-/* resalta "Limpiar" en naranja tenue mientras haya un resultado visible,
-   para que quede claro que ese botón sirve para reiniciar la búsqueda */
+/* resalta "Limpiar" mientras haya un resultado visible */
 function mostrarCajaResultado() {
   resultadoBuscador.hidden = false;
   btnLimpiarBuscador.classList.add("resaltado");
@@ -2875,9 +2517,7 @@ function armarAutocompletarBuscador(campo, input, lista) {
     filtradas = ESQUINAS_DATA.filter((e) => normalizarTxt(e.etiqueta).includes(q)).slice(0, 8);
     activo = -1;
     render();
-    /* Respaldo Georef: sólo si el relevamiento propio no alcanza y el texto
-       ya parece una intersección de dos calles (al menos dos palabras), y
-       con debounce para no disparar una consulta por cada tecla. */
+    /* Respaldo Georef: sólo si el relevamiento propio no alcanza, con debounce */
     const esPosibleInterseccion = valor.trim().split(/\s+/).length >= 2;
     if (GEOREF_HABILITADO && filtradas.length < 4 && esPosibleInterseccion) {
       const miToken = georefToken;
@@ -3016,8 +2656,6 @@ document.getElementById("btn-limpiar-buscador").addEventListener("click", () => 
 
 /* ── Caja del buscador: plegado (mismo patrón que la caja de capas) ──── */
 const cajaBuscador = document.getElementById("caja-buscador");
-/* Panel oculto por completo mientras BUSCADOR_LINEA_HABILITADO sea false
-   (ver interruptor al inicio del script) — mismo criterio que "Paradas". */
 cajaBuscador.style.display = BUSCADOR_LINEA_HABILITADO ? "" : "none";
 const buscadorHead = document.getElementById("buscador-head");
 function plegarBuscador(plegar) {
@@ -3031,23 +2669,7 @@ buscadorHead.addEventListener("keydown", (e) => {
 L.DomEvent.disableClickPropagation(cajaBuscador);
 L.DomEvent.disableScrollPropagation(cajaBuscador);
 
-/* ── Hoja inferior en mobile: manija de arrastre ──────────────────────
-   Sólo se crea si el viewport arranca en mobile (mismo breakpoint de
-   640px que ya usa enfocarLinea() más arriba para auto-plegar Recorridos
-   al elegir una línea). Un tap alterna entre "abrir Recorridos" y "cerrar
-   lo que esté abierto"; un swipe vertical sobre la manija hace lo mismo,
-   con el panel seguiendo al dedo en vivo (translateY) y un rebote suave
-   al soltar — antes el gesto no tenía ningún feedback visual hasta soltar
-   el dedo, así que no se notaba que había algo para arrastrar. No toca la
-   caja de Paradas: su propio switch ya es el control de su plegado (ver
-   comentario en #caja-paradas .caja-head) — Paradas tiene, aparte, su
-   propio botón de plegar en mobile (btn-plegar-paradas, más arriba).
-   Además, un ResizeObserver mantiene --vt-sheet-alto (en #visor-transporte)
-   con el alto real del panel, para que "paradas cercanas" y el toast
-   floten siempre arriba de la hoja (ver reglas en el media query de
-   arriba) sin importar cuántas solapas estén abiertas. Esto corre
-   siempre (no sólo en mobile): en desktop no tiene efecto porque el CSS
-   de escritorio no usa esa variable. */
+/* ── Hoja inferior en mobile: manija de arrastre ── */
 const panelSheet = document.getElementById("pila-flotante");
 function actualizarAltoSheet() {
   CONT.style.setProperty("--vt-sheet-alto", panelSheet.getBoundingClientRect().height + "px");
@@ -3072,13 +2694,7 @@ if (window.matchMedia("(max-width: 640px)").matches) {
     else { plegarCaja(false); }
   };
 
-  /* Sincroniza la flecha de la manija (rotada o no) con el estado real de
-     Recorridos/Buscador, sin importar cómo se hayan plegado o desplegado
-     (tocando la manija, con swipe, tocando la cabecera de cada solapa
-     directamente, o el auto-plegado de enfocarLinea() al elegir una
-     línea). Un MutationObserver evita tener que tocar plegarCaja()/
-     plegarBuscador() (definidas mucho más arriba) para avisar del cambio:
-     sólo observa, no interviene. */
+  /* Sincroniza la flecha de la manija con el estado real de Recorridos/Buscador */
   const sincronizarManija = () => {
     panelSheet.classList.toggle("vt-sheet-abierto", haySolapaAbierta());
     manija.setAttribute("aria-expanded", String(haySolapaAbierta()));
@@ -3092,28 +2708,7 @@ if (window.matchMedia("(max-width: 640px)").matches) {
     if (e.key === "Enter" || e.key === " ") { e.preventDefault(); alternarSheet(); }
   });
 
-  /* Arrastre en vivo: mientras el dedo se mueve, el panel lo sigue de
-     cerca (con algo de "resistencia" y un tope, tipo rubber-band) — se
-     apaga la transición de #pila-flotante para que no haya demora
-     persiguiendo el dedo. Al soltar, se saca el transform inline y se
-     reactiva la transición CSS (ahora con rebote — ver #pila-flotante),
-     así el panel "rebota" de vuelta a su lugar mientras
-     plegarCaja()/plegarBuscador() deciden el estado final según el umbral.
-
-     Se agarra de todo el panel (#pila-flotante), no sólo de la manija:
-     los listeners van en fase de CAPTURA (capture: true) a propósito,
-     porque cada una de las 3 cajas (caja, cajaParadas, cajaBuscador) ya
-     tiene L.DomEvent.disableClickPropagation(), que corta la propagación
-     de touchstart en fase de burbuja para que no le llegue al mapa de
-     Leaflet — eso mismo cortaría el arrastre acá si escucháramos en
-     burbuja (nunca llegaría desde adentro de una cabecera hasta
-     #pila-flotante). En captura, en cambio, el evento pasa por acá antes
-     de llegar a esas cajas, así que el corte de más abajo no afecta.
-     Único límite: si el toque arranca dentro de un .caja-body abierto
-     (la lista de líneas, el buscador, los filtros de paradas) no se
-     inicia el arrastre del panel, para no pelearse con el scroll interno
-     ni con el tap de sus botones/checks/pills — arriba de eso (manija,
-     las 3 cabeceras, o cualquier zona vacía del panel) sí arrastra. */
+  /* Arrastre en vivo del panel (rubber-band), listeners en fase de captura */
   let arranqueY = null;
   const TOPE_ARRIBA = -60, TOPE_ABAJO = 160, RESISTENCIA = 0.82, UMBRAL = 30;
 
@@ -3143,18 +2738,7 @@ if (window.matchMedia("(max-width: 640px)").matches) {
   L.DomEvent.disableScrollPropagation(manija);
 }
 
-/* ── Botones de acción sobre el mapa (zoom / ubicación / encuadre) ──
-   El zoom +/- vive acá adentro (mismos botones, mismo estilo que
-   ubicación/encuadre) en vez del control de zoom separado de Leaflet,
-   que quedaba tapado por el panel lateral, abajo a la derecha.
-
-   Envueltos junto con la burbuja de clima (más abajo) en una sola fila
-   flex (.ctrl-fila-superior): Leaflet apila los controles de "topleft"
-   uno debajo del otro, así que la única forma de que la burbuja quede
-   siempre alineada A LA DERECHA de esta columna de botones —sin importar
-   el ancho exacto de cada una en distintos anchos de pantalla o con el
-   selector Argenmap/Satelital de arriba— es que ambas sean hijas del
-   mismo control, no dos controles separados. ── */
+/* ── Botones de acción sobre el mapa (zoom / ubicación / encuadre) + burbuja de clima ── */
 const CtrlAcciones = L.Control.extend({
   options: { position: "topleft" },
   onAdd() {
@@ -3184,8 +2768,7 @@ mapa.addControl(new CtrlAcciones());
 
 document.getElementById("btn-zoom-in").addEventListener("click", () => mapa.zoomIn());
 document.getElementById("btn-zoom-out").addEventListener("click", () => mapa.zoomOut());
-/* Atenuados en el tope/piso de zoom, igual que hacía el control de
-   Leaflet por defecto (leaflet-disabled) — se revisa en cada zoomend. */
+/* Atenuados en el tope/piso de zoom, se revisa en cada zoomend */
 function actualizarBotonesZoom() {
   const z = mapa.getZoom();
   document.getElementById("btn-zoom-in").classList.toggle("deshabilitado", z >= mapa.getMaxZoom());
@@ -3194,16 +2777,7 @@ function actualizarBotonesZoom() {
 mapa.on("zoomend", actualizarBotonesZoom);
 actualizarBotonesZoom();
 
-/* ── Burbuja de clima (estilo "iOS Maps"): ícono + temperatura ────────
-   Coordenada fija del centro de Comodoro Rivadavia (no geolocalización
-   del usuario: el clima que tiene sentido mostrar acá es el de la ciudad
-   del servicio, no el de quien esté mirando el mapa — y de paso evita el
-   problema ya conocido de geolocalización bloqueada al abrir por file://).
-   Fuente: Open-Meteo (api.open-meteo.com), gratuita, sin API key y con
-   CORS habilitado para consumirse directo desde el navegador — mismo
-   criterio que el nomenclador nacional (Georef) usado como respaldo del
-   buscador de línea, más abajo. Si el pedido falla (sin conexión, API
-   caída), la burbuja se queda oculta en vez de mostrar un estado roto. */
+/* ── Burbuja de clima: ícono + temperatura, coordenada fija de la ciudad (no geolocalización) ── */
 const CLIMA_LAT = -45.8659, CLIMA_LON = -67.4823; // Comodoro Rivadavia (centro, aprox.)
 const CLIMA_REFRESCO_MS = 25 * 60 * 1000; // 25 min: el clima no cambia tan seguido como para pedirlo más rápido
 
@@ -3256,11 +2830,7 @@ async function actualizarClima() {
 actualizarClima();
 setInterval(actualizarClima, CLIMA_REFRESCO_MS);
 
-/* ── Botón de ayuda / tutorial: rojo, apilado debajo de ubicación y
-     encuadre (mismo mecanismo de L.Control, así Leaflet lo apila solo).
-     Sólo se crea si TOUR_HABILITADO (ver interruptor al inicio del
-     script) — igual que Paradas y Buscar línea, no se borra nada del
-     código, sólo no se muestra el botón ni se agrega su listener. ── */
+/* ── Botón de ayuda / tutorial ── */
 if (TOUR_HABILITADO) {
   const CtrlAyuda = L.Control.extend({
     options: { position: "topleft" },
@@ -3279,14 +2849,7 @@ if (TOUR_HABILITADO) {
   });
 }
 
-/* ── Botón de avisos/advertencias: azul, apilado con L.Control igual que
-     el de ayuda (si el tour está apagado, Leaflet lo apila con lo que
-     haya arriba, así que no depende de que exista el botón "?"). Sólo se
-     crea si AVISOS_HABILITADO y si avisos_data.js trae al menos un aviso
-     — ver el interruptor al inicio del script. Nada de esto toca ni
-     depende de las variables/funciones del tour (elBlock, elAnillo,
-     elBurbuja, cerrarTour, etc.): es un bloque aparte a propósito, para
-     poder prender o apagar uno sin afectar al otro. ── */
+/* ── Botón de avisos/advertencias ── */
 const AVISOS_ACTIVOS = (window.AVISOS_DATA || []).filter((t) => typeof t === "string" && t.trim());
 if (AVISOS_HABILITADO && AVISOS_ACTIVOS.length) {
   const AVISOS_DESCARTADOS_KEY = "vt_avisos_descartados";
@@ -3314,8 +2877,7 @@ if (AVISOS_HABILITADO && AVISOS_ACTIVOS.length) {
     const left = Math.max(margen, Math.min(r.left, vw - bw - margen));
     elAvisoBurbuja.style.top = `${r.bottom + margen}px`;
     elAvisoBurbuja.style.left = `${left}px`;
-    // colita alineada con el centro del botón, salvo que la burbuja se
-    // haya tenido que correr para no salirse de la pantalla
+    // colita alineada con el centro del botón, sin salirse de la pantalla
     const colaLeft = Math.max(12, Math.min(r.left + r.width / 2 - left - 6, bw - 24));
     elAvisoBurbuja.style.setProperty("--cola-left", `${colaLeft}px`);
   }
@@ -3353,9 +2915,7 @@ if (AVISOS_HABILITADO && AVISOS_ACTIVOS.length) {
     else abrirAvisoBurbuja();
   });
 
-  // Aparición automática a los 10s de entrar, salvo que ya se haya
-  // descartado en esta sesión (sessionStorage: dura hasta cerrar la
-  // pestaña, a diferencia del localStorage que usa el tour).
+  // Aparición automática a los 10s, salvo que ya se haya descartado en esta sesión
   let avisosYaDescartados = false;
   try { avisosYaDescartados = sessionStorage.getItem(AVISOS_DESCARTADOS_KEY) === "1"; } catch (e) { /* puede estar bloqueado */ }
   if (!avisosYaDescartados) {
@@ -3420,12 +2980,7 @@ if (faltantes.length) {
   toast(`Atención: no se pudieron cargar ${faltantes.length} líneas (${faltantes.join(", ")}).`, 8000);
 }
 
-/* ══ Tutorial guiado ══════════════════════════════════════════════
-   Burbujas de ayuda para quien recién llega al visor (pensado para
-   público no necesariamente familiarizado con mapas web). Opt-in
-   explícito al entrar, avance manual paso a paso, siempre se puede
-   saltear o volver a verlo después desde el botón "?" rojo. Como el
-   sitio es estático (sin backend), el estado vive en localStorage. */
+/* ══ Tutorial guiado: burbujas de ayuda paso a paso, estado en localStorage ══ */
 const TOUR_COMPLETADO_KEY = "vt_tour_completado";
 const TOUR_OFRECIDAS_KEY = "vt_tour_ofrecidas";
 const TOUR_MAX_OFRECIDAS = 2; // se ofrece solo en las primeras 2 visitas; después, solo vía el botón "?"
@@ -3498,8 +3053,7 @@ function cerrarTour() {
   if (elAnillo) { elAnillo.remove(); elAnillo = null; }
   if (elBlock) { elBlock.remove(); elBlock = null; }
   if (onResizeTour) { window.removeEventListener("resize", onResizeTour); onResizeTour = null; }
-  /* al salir del tutorial (completo o no) los paneles quedan cerrados,
-     igual que como los encuentra alguien que recién llega al sitio */
+  /* al salir del tutorial los paneles quedan cerrados */
   plegarCaja(true);
   plegarBuscador(true);
   pasoActual = -1;
@@ -3551,19 +3105,7 @@ function mostrarPaso(i) {
     });
   };
 
-  /* Si este paso despliega una solapa justo antes (paso.antes: plegarCaja
-     o plegarBuscador en false), hay que esperar a que termine esa
-     animación de apertura (transición de .caja-body, agregada para la
-     hoja inferior de mobile) antes de medir la posición del target con
-     getBoundingClientRect(). Midiendo un solo frame después (como antes)
-     el panel todavía está creciendo — en mobile, al estar la hoja
-     anclada abajo, "Recorridos" seguía subiendo en pantalla durante toda
-     la animación, y el anillo quedaba fijo donde el header estaba recién
-     empezada esa animación: bastante más abajo de su posición final,
-     terminando sobre alguna línea de la lista (ej. "6A") en vez de sobre
-     el título "Recorridos". Con el movimiento reducido activado no hay
-     transición que esperar (ver @media prefers-reduced-motion), así que
-     se salta la demora. */
+  /* Si el paso despliega una solapa, esperar la animación antes de medir el target */
   const conAnimacion = !!paso.antes && !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   if (conAnimacion) setTimeout(() => requestAnimationFrame(colocar), 300);
   else requestAnimationFrame(colocar);
@@ -3605,8 +3147,7 @@ document.addEventListener("keydown", (e) => {
   if (e.key === "Escape" && elBlock) cerrarTour();
 });
 
-/* Oferta automática en las primeras visitas, si no se completó antes —
-   sólo si TOUR_HABILITADO (ver interruptor al inicio del script). */
+/* Oferta automática en las primeras visitas, si no se completó antes */
 if (TOUR_HABILITADO) {
   (function ofrecerTourSiCorresponde() {
     let completado = false, ofrecidas = 0;
