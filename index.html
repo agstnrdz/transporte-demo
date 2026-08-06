@@ -952,7 +952,7 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 8px 6px 14px;
+  padding: 10px 8px 2px 14px;
 }
 .tarjeta-head h3 { margin: 0; font-size: 13px; font-weight: 750; }
 .tarjeta-head button { width: 28px; height: 28px; font-size: 13px; border-radius: 8px; }
@@ -2541,6 +2541,9 @@ document.addEventListener("fullscreenchange", () => {
 
 /* ── Geolocalización ──────────────────────────────────────────── */
 function geoColor() { return temaActual() === "dark" ? "#3987e5" : "#2a78d6"; }
+// Gris de las paradas del buffer que no entran en el top de "más cercanas"
+// (mismo valor que --muted, igual en claro y oscuro).
+const COLOR_BUFFER_PARADA = "#898781";
 let geoMarcadores = [];
 function limpiarGeo() {
   geoMarcadores.forEach((m) => mapa.removeLayer(m));
@@ -2574,12 +2577,27 @@ function ubicarme() {
       }).bindTooltip("Estás acá", { direction: "top", className: "tt-parada", offset: [0, -6] }).addTo(mapa);
       geoMarcadores.push(precision, halo, punto);
 
-      const cercanas = PARADAS_HABILITADAS
+      // Todas las paradas ordenadas por distancia. Las primeras 4 son las
+      // "más cercanas" (listado + anillo celeste); el resto de las que caen
+      // dentro del buffer de precisión del GPS (mismo radio que el círculo
+      // "precision" de arriba) se marcan en gris transparentado, sólo para
+      // referencia visual, sin entrar al listado.
+      const todas = PARADAS_HABILITADAS
         ? PARADAS_DATA
             .map((p) => ({ p, d: aqui.distanceTo([p.lat, p.lng]) }))
             .sort((a, b) => a.d - b.d)
-            .slice(0, 3)
         : [];
+      const cercanas = todas.slice(0, 4);
+      const radioBuffer = Math.min(accuracy, 400);
+      const bufferExtra = todas.slice(cercanas.length).filter(({ d }) => d <= radioBuffer);
+      for (const { p } of bufferExtra) {
+        const anilloBuffer = L.circleMarker([p.lat, p.lng], {
+          radius: 8, color: COLOR_BUFFER_PARADA, weight: 1.5,
+          fill: true, fillColor: COLOR_BUFFER_PARADA, fillOpacity: 0.18, opacity: 0.4,
+          interactive: false,
+        }).addTo(mapa);
+        geoMarcadores.push(anilloBuffer);
+      }
       const ol = document.getElementById("lista-cercanas");
       ol.innerHTML = "";
       for (const { p, d } of cercanas) {
