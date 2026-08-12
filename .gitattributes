@@ -14,5 +14,5 @@
 # Archivos de datos generados a partir de fuentes geográficas.
 # Se excluyen de la estadística de lenguajes y se colapsan en los diffs,
 # para que el historial refleje el código y no la geometría regenerada.
-layers_transporte/*.js    linguist-generated=true
-layers_transporte/*.json  linguist-generated=true
+data/*.js    linguist-generated=true
+data/*.json  linguist-generated=true
