@@ -1,26 +1,21 @@
 (function () {
 "use strict";
 
-/* Interruptor: capa de paradas + "paradas cercanas" */
 const PARADAS_HABILITADAS = true;
 
-/* Interruptor: panel "Buscar línea" (origen/destino → línea sugerida) */
 const BUSCADOR_LINEA_HABILITADO = false;
 
-/* Interruptor: tutorial guiado (botón "?" + oferta automática) */
 const TOUR_HABILITADO = true;
 
-/* Interruptor: botón "Ver horarios" en el detalle de cada línea */
 const HORARIOS_HABILITADO = false;
 
-/* Interruptor: avisos/advertencias (botón "!") */
 const AVISOS_HABILITADO = true;
 
-/* ══ Armado de datos: window.LINEA_*_DATA (GeoJSON) → formato interno ══ */
+/* ══ window.LINEA_*_DATA (GeoJSON) ══ */
 const IDS_LINEAS = ["1","2","3","4","5","5U","6A","6B","7","8H","8AH","9",
                     "12","13","14","15","16","17","18","19","20","21","22"];
 
-/* Paleta (color claro / color modo oscuro) por línea */
+/* Paleta  */
 const PALETA = {
   "1":  ["#d62728", "#ff6b6b"], "2":  ["#1f77b4", "#5aa9e6"],
   "3":  ["#2ca02c", "#5fd068"], "4":  ["#9467bd", "#b78fe0"],
@@ -45,7 +40,7 @@ const SENTIDOS = {
 };
 const ORDEN_SENT = { ida: 0, vuelta: 1, horario: 0, antihorario: 1, sur: 0, norte: 1, "": 0 };
 
-/* Correcciones manuales de sentido (geometría digitalizada al revés) */
+/* Correcciones manuales de sentido */
 const CORRECCIONES_SENTIDO = {};
 const CORRECCIONES_INVERTIR = {
   "5U": { "": true },   // sentido único, recorrido completo invertido
