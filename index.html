@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Transporte público | Comodoro Rivadavia</title>
-<!-- Ícono de pestaña: escudo institucional -->
+<!-- Ícono de pestaña -->
 <link rel="icon" type="image/x-icon" href="assets/favicon/favicon.ico">
 <link rel="icon" type="image/png" sizes="16x16" href="assets/favicon/favicon-16.png">
 <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon/favicon-32.png">
@@ -18,12 +18,20 @@
 <link rel="preconnect" href="https://api.open-meteo.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;550;600;650;700;750;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/visor.css">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-S1CMYWNZZS"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-S1CMYWNZZS');
+</script>
 </head>
 <body>
 
 <div class="visor-geo" id="visor-transporte">
 
-  <!-- Cabecera del visor: título + descripción + logo + tema + pantalla completa -->
+  <!-- Cabecera -->
   <div class="vt-header">
     <div class="vt-header-texto">
       <h1><span class="marquee-text">Mapa interactivo de transporte</span></h1>
@@ -46,10 +54,10 @@
   <div class="vt-cuerpo">
     <div id="mapa" role="application" aria-label="Mapa de líneas de colectivo"></div>
 
-    <!-- Panel lateral: solapas Recorridos, Paradas y Buscar línea -->
+    <!-- Panel lateral -->
     <div id="pila-flotante">
 
-      <!-- Solapa de capas: líneas + paradas -->
+      <!-- Solapa de capas -->
       <div id="caja-capas" class="caja-flotante plegada">
         <div class="caja-head caja-head-fija" id="caja-head" role="button" aria-expanded="false" tabindex="0">
           <h2>Recorridos</h2>
@@ -116,7 +124,7 @@
         </div>
       </div>
 
-      <!-- Buscador de línea sugerida (prototipo): origen/destino → mejor línea -->
+      <!-- Buscador de línea -->
       <div id="caja-buscador" class="caja-flotante plegada">
         <div class="caja-head" id="buscador-head" role="button" aria-expanded="false" tabindex="0">
           <h2>Buscar línea</h2>
@@ -162,7 +170,7 @@
 
     </div>
 
-    <!-- tarjeta de paradas cercanas -->
+    <!-- Tarjeta de paradas cercanas -->
     <div id="tarjeta-cercanas" hidden>
       <div class="tarjeta-head">
         <h3>Paradas más cercanas</h3>
@@ -178,33 +186,33 @@
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<!-- Datos: los 23 archivos de líneas + paradas, directo del repositorio (sin consolidar) -->
-<script src="layers_transporte/linea_1_data.js"></script>
-<script src="layers_transporte/linea_2_data.js"></script>
-<script src="layers_transporte/linea_3_data.js"></script>
-<script src="layers_transporte/linea_4_data.js"></script>
-<script src="layers_transporte/linea_5_data.js"></script>
-<script src="layers_transporte/linea_5U_data.js"></script>
-<script src="layers_transporte/linea_6A_data.js"></script>
-<script src="layers_transporte/linea_6B_data.js"></script>
-<script src="layers_transporte/linea_7_data.js"></script>
-<script src="layers_transporte/linea_8H_data.js"></script>
-<script src="layers_transporte/linea_8AH_data.js"></script>
-<script src="layers_transporte/linea_9_data.js"></script>
-<script src="layers_transporte/linea_12_data.js"></script>
-<script src="layers_transporte/linea_13_data.js"></script>
-<script src="layers_transporte/linea_14_data.js"></script>
-<script src="layers_transporte/linea_15_data.js"></script>
-<script src="layers_transporte/linea_16_data.js"></script>
-<script src="layers_transporte/linea_17_data.js"></script>
-<script src="layers_transporte/linea_18_data.js"></script>
-<script src="layers_transporte/linea_19_data.js"></script>
-<script src="layers_transporte/linea_20_data.js"></script>
-<script src="layers_transporte/linea_21_data.js"></script>
-<script src="layers_transporte/linea_22_data.js"></script>
-<script src="layers_transporte/paradas_data.js"></script>
-<script src="layers_transporte/horarios_data.js"></script>
-<script src="layers_transporte/avisos_data.js"></script>
+<!-- Data -->
+<script src="data/linea_1_data.js"></script>
+<script src="data/linea_2_data.js"></script>
+<script src="data/linea_3_data.js"></script>
+<script src="data/linea_4_data.js"></script>
+<script src="data/linea_5_data.js"></script>
+<script src="data/linea_5U_data.js"></script>
+<script src="data/linea_6A_data.js"></script>
+<script src="data/linea_6B_data.js"></script>
+<script src="data/linea_7_data.js"></script>
+<script src="data/linea_8H_data.js"></script>
+<script src="data/linea_8AH_data.js"></script>
+<script src="data/linea_9_data.js"></script>
+<script src="data/linea_12_data.js"></script>
+<script src="data/linea_13_data.js"></script>
+<script src="data/linea_14_data.js"></script>
+<script src="data/linea_15_data.js"></script>
+<script src="data/linea_16_data.js"></script>
+<script src="data/linea_17_data.js"></script>
+<script src="data/linea_18_data.js"></script>
+<script src="data/linea_19_data.js"></script>
+<script src="data/linea_20_data.js"></script>
+<script src="data/linea_21_data.js"></script>
+<script src="data/linea_22_data.js"></script>
+<script src="data/paradas_data.js"></script>
+<script src="data/horarios_data.js"></script>
+<script src="data/avisos_data.js"></script>
 <script src="js/visor.js"></script>
 </body>
 </html>
