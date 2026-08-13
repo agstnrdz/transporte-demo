@@ -1440,9 +1440,9 @@ function actualizarBotonesZoom() {
 mapa.on("zoomend", actualizarBotonesZoom);
 actualizarBotonesZoom();
 
-/* ── Burbuja de clima: ícono + temperatura, coordenada fija de la ciudad (no geolocalización) ── */
-const CLIMA_LAT = -45.8659, CLIMA_LON = -67.4823; // Comodoro Rivadavia (centro, aprox.)
-const CLIMA_REFRESCO_MS = 25 * 60 * 1000; // 25 min: el clima no cambia tan seguido como para pedirlo más rápido
+/* ── Burbuja de clima: ícono + temperatura, coordenada fija ── */
+const CLIMA_LAT = -45.8659, CLIMA_LON = -67.4823; // Centrado Comodoro Rivadavia
+const CLIMA_REFRESCO_MS = 25 * 60 * 1000; // 25 min: el clima no cambia tan seguido
 
 /* Códigos de clima WMO (los que devuelve Open-Meteo) agrupados en los
    íconos disponibles en assets/iconos/clima/. Los códigos no mapeados caen
@@ -1578,7 +1578,7 @@ if (AVISOS_HABILITADO && AVISOS_ACTIVOS.length) {
     else abrirAvisoBurbuja();
   });
 
-  // Aparición automática a los 10s, salvo que ya se haya descartado en esta sesión
+  // Aviso: aparición automática a los 10s, salvo que ya se haya descartado en esta sesión
   let avisosYaDescartados = false;
   try { avisosYaDescartados = sessionStorage.getItem(AVISOS_DESCARTADOS_KEY) === "1"; } catch (e) { /* puede estar bloqueado */ }
   if (!avisosYaDescartados) {
@@ -1587,7 +1587,7 @@ if (AVISOS_HABILITADO && AVISOS_ACTIVOS.length) {
       const btn = document.getElementById("btn-avisos");
       btn.classList.add("vt-aviso-pulso");
       setTimeout(() => btn.classList.remove("vt-aviso-pulso"), 2200);
-    }, 10000);
+    }, 30000);
   }
 }
 
