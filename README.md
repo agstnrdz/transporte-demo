@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <a href="https://comodoro-mit.github.io/transporte/"><strong>Ver la aplicación en vivo »</strong></a>
+  <a href="https://transporte.comodoro.gov.ar"><strong>Ver la aplicación en vivo »</strong></a>
 </p>
 
 <p align="center">
