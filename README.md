@@ -40,7 +40,7 @@ Este visor permite consultar de forma interactiva las 23 líneas de colectivo ur
 - **Paradas:** relevamiento propio (2023).
 - **Cartografía base:** Instituto Geográfico Nacional (Argenmap) y Google Satelital.
 - **Nomenclador de calles (respaldo del buscador de línea):** API Georef, Jefatura de Gabinete de Ministros de la Nación ([datos.gob.ar](https://datos.gob.ar)).
-- **Clima actual:** [Open-Meteo](https://open-meteo.com/) (API pública, sin necesidad de clave).
+- **Clima actual:** [Open-Meteo](https://open-meteo.com/) (API pública).
 
 ### Uso de Argenmap
 
