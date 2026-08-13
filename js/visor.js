@@ -248,7 +248,7 @@ function toast(msg, ms = 4000) {
 }
 
 /* ── Mapa base ────────────────────────────────────────────────── */
-const ATTR = "Instituto Geográfico Nacional + OpenStreetMap. Google Satelital. Fuente: Dirección General de Transporte (recorridos 2026). Procesamiento: Modernización e Investigación Territorial. Errores topológicos y de precisión están siendo corregidos.";
+const ATTR = "Instituto Geográfico Nacional + OpenStreetMap. Google Satelital. Fuente: Dirección General de Transporte (recorridos 2026). Procesamiento: Modernización e Investigación Territorial.";
 const mapa = L.map("mapa", { zoomControl: false, attributionControl: true });
 mapa.attributionControl.setPrefix(false);
 /* Sin control de zoom por defecto de Leaflet: los botones +/- viven en CtrlAcciones */
