@@ -248,7 +248,11 @@ function toast(msg, ms = 4000) {
 }
 
 /* ── Mapa base ────────────────────────────────────────────────── */
-const ATTR = "Instituto Geográfico Nacional + OpenStreetMap. Google Satelital. Fuente: Dirección General de Transporte (recorridos 2026). Procesamiento: Modernización e Investigación Territorial.";
+/* Atribuciones: la parte de datos propios es común a todas las bases; la parte
+   cartográfica cambia según qué mapa base esté encendido (Argenmap / satelital). */
+const ATTR_DATOS = "Fuente: Dirección General de Transporte (recorridos 2026). Procesamiento: Modernización e Investigación Territorial.";
+const ATTR_ARGENMAP = "Instituto Geográfico Nacional + OpenStreetMap. " + ATTR_DATOS;
+const ATTR_SATELITE = 'Imagen satelital &copy; <a href="https://www.esri.com/" target="_blank" rel="noopener noreferrer">Esri</a> &mdash; Esri, Vantor, Earthstar Geographics y la comunidad de usuarios GIS. ' + ATTR_DATOS;
 const mapa = L.map("mapa", { zoomControl: false, attributionControl: true });
 mapa.attributionControl.setPrefix(false);
 /* Sin control de zoom por defecto de Leaflet: los botones +/- viven en CtrlAcciones */
@@ -256,15 +260,19 @@ L.control.scale({ imperial: false, position: "bottomleft" }).addTo(mapa);
 
 const capaArgenmapClaro = L.tileLayer(
   "https://wms.ign.gob.ar/geoserver/gwc/service/tms/1.0.0/capabaseargenmap@EPSG:3857@png/{z}/{x}/{-y}.png",
-  { maxZoom: 19, maxNativeZoom: 18, attribution: ATTR });
+  { maxZoom: 19, maxNativeZoom: 18, attribution: ATTR_ARGENMAP });
 const capaArgenmapOscuro = L.tileLayer(
   "https://wms.ign.gob.ar/geoserver/gwc/service/tms/1.0.0/argenmap_oscuro@EPSG:3857@png/{z}/{x}/{-y}.png",
-  { maxZoom: 19, maxNativeZoom: 18, attribution: ATTR});
+  { maxZoom: 19, maxNativeZoom: 18, attribution: ATTR_ARGENMAP });
+/* Esri World Imagery: servicio público de teselas, uso libre citando la fuente.
+   Ojo con el orden de la plantilla: acá es /{z}/{y}/{x} (fila antes que columna),
+   al revés que en los TMS de Argenmap. Cobertura verificada sobre Comodoro hasta
+   z20, que es el máximo que habilita el visor. */
 const capaSatelite = L.tileLayer(
-  "https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}",
-  { maxZoom: 20, attribution: "Imágenes © Google | " + ATTR });
+  "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+  { maxZoom: 20, attribution: ATTR_SATELITE });
 
-let baseActiva = "mapa"; // 'mapa' (Argenmap) | 'satelite' (Google)
+let baseActiva = "mapa"; // 'mapa' (Argenmap) | 'satelite' (Esri World Imagery)
 function capaBase() {
   if (baseActiva === "satelite") return capaSatelite;
   return temaActual() === "dark" ? capaArgenmapOscuro : capaArgenmapClaro;
@@ -841,7 +849,7 @@ const CtrlBase = L.Control.extend({
     div.setAttribute("aria-label", "Mapa base");
     div.innerHTML =
       `<button class="seg activo" id="btn-base-mapa" title="Mapa base Argenmap (IGN)">Argenmap</button>` +
-      `<button class="seg" id="btn-base-sat" title="Imagen satelital de Google">Satelital</button>`;
+      `<button class="seg" id="btn-base-sat" title="Imagen satelital (Esri World Imagery)">Satelital</button>`;
     L.DomEvent.disableClickPropagation(div);
     return div;
   },
