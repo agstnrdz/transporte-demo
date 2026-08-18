@@ -29,7 +29,7 @@ Este visor permite consultar de forma interactiva las 23 líneas de colectivo ur
 - Paradas geolocalizadas, con filtros por refugio, cartel y poste, y las líneas que pasan a menos de 5 metros al tocarlas.
 - Ubicación del usuario y listado de paradas más cercanas.
 - Buscador de línea sugerida por origen y destino (esquina relevada o punto marcado en el mapa), con hasta 3 opciones ordenadas por distancia a pie.
-- Mapa base Argenmap (IGN) o imagen satelital.
+- Mapa base Argenmap (IGN) o imagen satelital (Esri World Imagery).
 - Clima actual de la ciudad, en una burbuja sobre el mapa.
 - Modo claro / oscuro.
 - Diseño responsivo, optimizado para uso en dispositivos móviles.
@@ -38,7 +38,8 @@ Este visor permite consultar de forma interactiva las 23 líneas de colectivo ur
 
 - **Recorridos de líneas:** Dirección General de Transporte (2026).
 - **Paradas:** relevamiento propio (2023).
-- **Cartografía base:** Instituto Geográfico Nacional (Argenmap) y Google Satelital.
+- **Cartografía base:** Instituto Geográfico Nacional (Argenmap).
+- **Imagen satelital:** [Esri World Imagery](https://www.arcgis.com/home/item.html?id=10df2279f9684e4a9f6a7f08febac2a9) — Esri, Vantor, Earthstar Geographics y la comunidad de usuarios GIS.
 - **Nomenclador de calles (respaldo del buscador de línea):** API Georef, Jefatura de Gabinete de Ministros de la Nación ([datos.gob.ar](https://datos.gob.ar)).
 - **Clima actual:** [Open-Meteo](https://open-meteo.com/) (API pública).
 
