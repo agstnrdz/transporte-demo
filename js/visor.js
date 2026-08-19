@@ -1857,8 +1857,8 @@ function iniciarModoMantenimiento() {
         `</svg>` +
       `</span>` +
       `<h2 class="vt-mant-titulo">Visor fuera de línea</h2>` +
-      `<p class="vt-mant-mensaje">El visor de transporte está temporalmente fuera de línea por actualización de datos. Reapertura a confirmar.</p>` +
-      `<p class="vt-mant-pie">Dirección General de Modernización e Investigación Territorial</p>` +
+      `<p class="vt-mant-mensaje">El visor de transporte está temporalmente fuera de servicio por actualización de datos. Reapertura a confirmar.</p>` +
+      `<p class="vt-mant-pie">Dirección General de Modernización e <br>Investigación Territorial</p>` +
     `</div>`;
   cuerpo.appendChild(overlay);
 

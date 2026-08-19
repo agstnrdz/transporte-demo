@@ -1,6 +1,5 @@
 html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
 
-/* Visor de transporte público */
 #visor-transporte {
   --panel:        #fcfcfb;
   --ink-1:        #0b0b0b;
@@ -16,20 +15,20 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   --ok:           #0ca30c;
   --marca:        #134768;
   --aviso:        #c27018;
-  /* Espejo de COLOR_IDA / COLOR_VUELTA en js/visor.js: cambiar en ambos lugares. */
+
   --color-ida:    #5BAD3C;
   --color-vuelta: #5A76F5;
   --tour-acento:  #d1293d;
-  /* Tokens liquid glass */
+
   --vt-glass-blur:        blur(20px) saturate(180%);
   --vt-glass-bg:          rgba(255, 255, 255, 0.62);
-  --vt-glass-bg-strong:   rgba(255, 255, 255, 0.86);
+  --vt-glass-bg-strong:   rgba(230, 225, 225, 0.521);
   --vt-glass-borde-arriba: rgba(255, 255, 255, 0.85);
   --vt-glass-brillo:      rgba(255, 255, 255, 0.55);
   --vt-glass-sombra:      0 8px 32px rgba(11, 11, 11, 0.16);
-  /* Velo del modo mantenimiento (ver .vt-mant-overlay al final del archivo) */
-  --vt-mant-velo:         rgba(252, 252, 251, 0.52);
-  --vt-mant-velo-opaco:   rgba(252, 252, 251, 0.94);
+
+  --vt-mant-velo:         rgba(252, 252, 251, 0.075);
+  --vt-mant-velo-opaco:   rgba(252, 252, 251, 0.082);
   width: 100%;
   height: 100vh;
   height: 100dvh;
@@ -61,13 +60,11 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   --vt-mant-velo-opaco:   rgba(20, 20, 19, 0.94);
 }
 :where(#visor-transporte) * { box-sizing: border-box; }
-/* Los resets base van en :where() para que el ID no le gane a los estilos de
-   componentes que sólo usan clases (.seg.activo, .pill.activo, etc.). */
+
 :where(#visor-transporte) button { font: inherit; color: inherit; background: none; border: none; cursor: pointer; touch-action: manipulation; }
 :where(#visor-transporte) button:focus-visible { outline: 2px solid var(--geoloc); outline-offset: 2px; }
 :where(#visor-transporte) a { color: inherit; }
 
-/* Cabecera institucional */
 .vt-header {
   display: flex;
   align-items: center;
@@ -115,11 +112,9 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
 #visor-transporte[data-theme="dark"] .icono-luna { display: none !important; }
 #visor-transporte:not([data-theme="dark"]) .icono-sol { display: none !important; }
 
-/* Cuerpo: mapa a ancho completo */
 .vt-cuerpo { position: relative; flex: 1 1 auto; min-height: 0; background: var(--mapa-fondo); overscroll-behavior: contain; }
 #mapa { position: absolute; inset: 0; background: var(--mapa-fondo); z-index: 1; }
 
-/* Panel lateral fijo */
 #pila-flotante {
   position: absolute;
   top: 12px;
@@ -217,7 +212,6 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   border-radius: 6px;
   background: color-mix(in srgb, var(--ink-1) 16%, var(--panel));
 }
-/* Texto de ayuda del buscador */
 .ayuda { margin: 2px 2px 6px; font-size: 13px; line-height: 1.4; color: var(--muted); }
 
 .mini-acciones { display: flex; gap: 6px; }
@@ -235,7 +229,6 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
 .btn-limpiar.resaltado { background: color-mix(in srgb, var(--aviso) 24%, var(--panel)); color: var(--ink-1); }
 .btn-limpiar.resaltado:hover { background: color-mix(in srgb, var(--aviso) 36%, var(--panel)); }
 
-/* Buscador de línea sugerida (origen/destino → línea) */
 .campo-viaje { margin-bottom: 8px; }
 .campo-viaje-label {
   display: block;
@@ -328,7 +321,6 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
 .resultado-vacio { margin: 4px 2px 0; font-size: 11.5px; color: var(--muted); line-height: 1.4; }
 #mapa.cursor-elegir { cursor: crosshair; }
 
-/* Mapa base: control flotante Argenmap / Satelital */
 .segmentado {
   display: flex;
   border: 1px solid var(--hair);
@@ -361,7 +353,6 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
 .seg:hover { background: var(--hover-wash); color: var(--ink-1); }
 .seg.activo { background: #111111; color: #ffffff; }
 
-/* Lista de líneas */
 #lista-lineas { list-style: none; margin: 0; padding: 0; }
 .linea-row { border-radius: 10px; margin-bottom: 1px; transition: background 0.15s; }
 .linea-row:hover { background: var(--hover-wash); }
@@ -406,8 +397,7 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   transition: opacity 0.15s, background 0.15s, color 0.15s;
   flex-shrink: 0;
 }
-/* Centrado por coordenadas propias: un reset del sitio anfitrión (WordPress /
-   Elementor) rompe el centrado por grid. Mismo motivo que .vt-btn-header svg. */
+
 .btn-ojo svg {
   position: absolute !important;
   top: 50% !important;
@@ -581,7 +571,6 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   }
 }
 
-/* Rebote gelatinoso al tocar botones de acción */
 .ctrl-acciones button, .vt-btn-header, .seg {
   transition: transform 0.42s cubic-bezier(0.34, 1.56, 0.64, 1),
               background 0.15s, color 0.15s;
@@ -598,7 +587,6 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   }
 }
 
-/* Animaciones de mapa */
 .linea-flujo { animation: vt-flujo 1.8s linear infinite; }
 @keyframes vt-flujo {
   from { stroke-dashoffset: 18; }
@@ -1121,13 +1109,13 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
 }
 .vt-mant-titulo {
   margin: 0 0 12px;
-  font-size: 22px;
-  font-weight: 800;
+  font-size: 26px;
+  font-weight: 600;
   line-height: 1.25;
 }
 .vt-mant-mensaje {
   margin: 0;
-  font-size: 17.5px;
+  font-size: 18px;
   line-height: 1.55;
   color: var(--ink-2);
   text-wrap: balance;
@@ -1136,8 +1124,8 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   margin: 20px 0 0;
   padding-top: 16px;
   border-top: 1px solid var(--hair);
-  font-size: 12.5px;
-  font-weight: 600;
+  font-size: 16px;
+  font-weight: 500;
   line-height: 1.4;
   color: var(--muted);
 }
