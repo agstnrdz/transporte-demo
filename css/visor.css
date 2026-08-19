@@ -1,7 +1,6 @@
-/* Reset de página: sin margen */
 html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
 
-/* ═══ Visor de transporte público ═══ */
+/* Visor de transporte público */
 #visor-transporte {
   --panel:        #fcfcfb;
   --ink-1:        #0b0b0b;
@@ -17,19 +16,20 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   --ok:           #0ca30c;
   --marca:        #134768;
   --aviso:        #c27018;
-  /* Mismos valores que COLOR_IDA / COLOR_VUELTA en el <script> de abajo
-     (colores de foco en el mapa): se mantienen acá para la barrita de
-     las pills Ida/Vuelta. Si se cambian, actualizar en ambos lugares. */
+  /* Espejo de COLOR_IDA / COLOR_VUELTA en js/visor.js: cambiar en ambos lugares. */
   --color-ida:    #5BAD3C;
   --color-vuelta: #5A76F5;
   --tour-acento:  #d1293d;
-  /* ═ Tokens liquid glass */
+  /* Tokens liquid glass */
   --vt-glass-blur:        blur(20px) saturate(180%);
   --vt-glass-bg:          rgba(255, 255, 255, 0.62);
   --vt-glass-bg-strong:   rgba(255, 255, 255, 0.86);
   --vt-glass-borde-arriba: rgba(255, 255, 255, 0.85);
   --vt-glass-brillo:      rgba(255, 255, 255, 0.55);
   --vt-glass-sombra:      0 8px 32px rgba(11, 11, 11, 0.16);
+  /* Velo del modo mantenimiento (ver .vt-mant-overlay al final del archivo) */
+  --vt-mant-velo:         rgba(252, 252, 251, 0.52);
+  --vt-mant-velo-opaco:   rgba(252, 252, 251, 0.94);
   width: 100%;
   height: 100vh;
   height: 100dvh;
@@ -52,20 +52,22 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   --sombra:       0 10px 30px rgba(0, 0, 0, 0.55);
   --mapa-fondo:   #141414;
   --geoloc:       #3987e5;
-  /* Vidrio en oscuro */
   --vt-glass-bg:          rgba(46, 46, 44, 0.63);
   --vt-glass-bg-strong:   rgba(24, 24, 23, 0.82);
   --vt-glass-borde-arriba: rgba(255, 255, 255, 0.22);
   --vt-glass-brillo:      rgba(255, 255, 255, 0.16);
   --vt-glass-sombra:      0 8px 32px rgba(0, 0, 0, 0.5);
+  --vt-mant-velo:         rgba(20, 20, 19, 0.54);
+  --vt-mant-velo-opaco:   rgba(20, 20, 19, 0.94);
 }
 :where(#visor-transporte) * { box-sizing: border-box; }
-/* :where() anula el aporte de especificidad del ID */
+/* Los resets base van en :where() para que el ID no le gane a los estilos de
+   componentes que sólo usan clases (.seg.activo, .pill.activo, etc.). */
 :where(#visor-transporte) button { font: inherit; color: inherit; background: none; border: none; cursor: pointer; touch-action: manipulation; }
 :where(#visor-transporte) button:focus-visible { outline: 2px solid var(--geoloc); outline-offset: 2px; }
 :where(#visor-transporte) a { color: inherit; }
 
-/* ══ Cabecera institucional ══ */
+/* Cabecera institucional */
 .vt-header {
   display: flex;
   align-items: center;
@@ -85,7 +87,6 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   width: 34px; height: 34px;
   display: grid; place-items: center;
   border-radius: 9px;
-  /* Botones tema y pantalla completa */
   background: rgba(255,255,255,0.08);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
@@ -114,11 +115,11 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
 #visor-transporte[data-theme="dark"] .icono-luna { display: none !important; }
 #visor-transporte:not([data-theme="dark"]) .icono-sol { display: none !important; }
 
-/* ══ Cuerpo: mapa a ancho completo ══ */
+/* Cuerpo: mapa a ancho completo */
 .vt-cuerpo { position: relative; flex: 1 1 auto; min-height: 0; background: var(--mapa-fondo); overscroll-behavior: contain; }
 #mapa { position: absolute; inset: 0; background: var(--mapa-fondo); z-index: 1; }
 
-/* ══ Panel lateral fijo */
+/* Panel lateral fijo */
 #pila-flotante {
   position: absolute;
   top: 12px;
@@ -128,22 +129,17 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   max-height: calc(100% - 24px);
   display: flex;
   flex-direction: column;
-  /* Vidrio */
   background: var(--vt-glass-bg-strong);
   backdrop-filter: var(--vt-glass-blur);
   -webkit-backdrop-filter: var(--vt-glass-blur);
   border: 1px solid var(--hair);
   border-top-color: var(--vt-glass-borde-arriba);
-  border-right: none; /* no se ve: el panel queda al ras del límite derecho del sitio */
-  border-radius: 12px 0 0 12px; /* redondeado sólo del lado que no toca el borde */
-  box-shadow: var(--vt-glass-sombra), inset 0 1px 0 var(--vt-glass-brillo);
+  border-right: none;  border-radius: 12px 0 0 12px;  box-shadow: var(--vt-glass-sombra), inset 0 1px 0 var(--vt-glass-brillo);
   z-index: 1200;
-  overflow-y: auto; /* si las solapas abiertas superan el alto disponible,
-     scrollea el panel entero para poder llegar a las de más abajo */
+  overflow-y: auto;
   overflow-x: hidden;
   scrollbar-width: auto;
 }
-/* Cada solapa es una sección del panel único */
 .caja-flotante {
   display: flex;
   flex-direction: column;
@@ -164,7 +160,6 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   transition: background 0.15s;
 }
 .caja-head h2 {
-  /* Subtítulo Capas */
   margin: 0;
   font-size: 10px;
   font-weight: 750;
@@ -176,8 +171,6 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   background: color-mix(in srgb, var(--ink-1) 16%, var(--panel));
 }
 .caja-head .stats { font-size: 11.5px; color: var(--ink-2); margin-left: auto; }
-/* Agrupa switch + botón de plegar (Paradas) como un solo bloque a la
-   derecha */
 .caja-head-controles { display: flex; align-items: center; gap: 8px; }
 .btn-plegar {
   width: 26px; height: 26px;
@@ -190,10 +183,8 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
 .caja-flotante.plegada .btn-plegar { transform: rotate(-90deg); }
 .caja-flotante.plegada .caja-body { display: none; }
 .caja-flotante.plegada .caja-head { border-bottom: none; }
-/* Solapa abierta: leve resalte en su cabecera para que sea obvio cuál de las 3 secciones está expandida dentro del panel. */
 .caja-flotante:not(.plegada) .caja-head { background: color-mix(in srgb, var(--ink-1) 4%, var(--panel)); }
 
-/* Encabezado Recorridos fijo */
 .caja-head-fija {
   position: sticky;
   top: 0;
@@ -201,14 +192,9 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   background: var(--panel);
 }
 
-/* Tope de alto por solapa: cada una scrollea de forma independiente */
 .caja-body { overflow-y: auto; scrollbar-width: auto; padding: 4px 8px 10px; max-height: min(50vh, 420px); }
-/* Recorridos: sin padding arriba, el primer elemento ya es la cabecera sticky "Líneas" */
 #caja-capas .caja-body { padding-top: 0; }
-/* Buscador: sin scroll ni tope propio, para no recortar el desplegable de sugerencias */
 .caja-body-buscador { overflow: visible; max-height: none; }
-
-/* Cabecera de Paradas: se pliega/despliega igual que Líneas y Buscador */
 
 .seccion-head {
   display: flex;
@@ -221,7 +207,6 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   z-index: 5;
 }
 .seccion-head h3 {
-  /* Subtítulo "Líneas" / "Paradas": mismo tamaño, color y fondo más oscuros */
   margin: 0;
   font-size: 10px;
   font-weight: 700;
@@ -232,11 +217,11 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   border-radius: 6px;
   background: color-mix(in srgb, var(--ink-1) 16%, var(--panel));
 }
-/* ── Texto de ayuda en el buscador de líneas ── */
+/* Texto de ayuda del buscador */
 .ayuda { margin: 2px 2px 6px; font-size: 13px; line-height: 1.4; color: var(--muted); }
 
 .mini-acciones { display: flex; gap: 6px; }
-.btn-mini { /* ── Botón de 'Limpiar' ── */
+.btn-mini {
   font-size: 12px;
   font-weight: 650;
   letter-spacing: 0.02em;
@@ -250,9 +235,9 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
 .btn-limpiar.resaltado { background: color-mix(in srgb, var(--aviso) 24%, var(--panel)); color: var(--ink-1); }
 .btn-limpiar.resaltado:hover { background: color-mix(in srgb, var(--aviso) 36%, var(--panel)); }
 
-/* ── Buscador de línea sugerida (prototipo: origen/destino → línea) ── */
+/* Buscador de línea sugerida (origen/destino → línea) */
 .campo-viaje { margin-bottom: 8px; }
-.campo-viaje-label { /* ── Botón 'DESDE' y 'HASTA' ── */
+.campo-viaje-label {
   display: block;
   font-size: 11px;
   font-weight: 650;
@@ -263,7 +248,7 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
 }
 .campo-viaje-fila { display: flex; gap: 6px; align-items: stretch; }
 .autocompletar { position: relative; flex: 1; min-width: 0; }
-.autocompletar input { /* ── Texto de ejemplo en el input ── */
+.autocompletar input {
   width: 100%;
   font: inherit;
   font-size: 12px;
@@ -304,7 +289,7 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
 }
 .btn-elegir-mapa:hover { background: var(--hover-wash); color: var(--ink-1); }
 .btn-elegir-mapa.activo { background: var(--activo-bg); color: var(--activo-fg); border-color: var(--activo-bg); }
-.btn-buscar-primario { /* ── botón de 'Buscar línea' ── */
+.btn-buscar-primario {
   display: block;
   width: 100%;
   margin-top: 4px;
@@ -343,7 +328,7 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
 .resultado-vacio { margin: 4px 2px 0; font-size: 11.5px; color: var(--muted); line-height: 1.4; }
 #mapa.cursor-elegir { cursor: crosshair; }
 
-/* ── Mapa base (segmentado: Argenmap / Satelital Esri), control flotante ── */
+/* Mapa base: control flotante Argenmap / Satelital */
 .segmentado {
   display: flex;
   border: 1px solid var(--hair);
@@ -351,15 +336,12 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   overflow: hidden;
 }
 .segmentado.base {
-  /* Vidrio: fondo con blur */
   background: var(--vt-glass-bg);
   backdrop-filter: var(--vt-glass-blur);
   -webkit-backdrop-filter: var(--vt-glass-blur);
   box-shadow: 0 4px 16px rgba(11,11,11,0.18), inset 0 1px 0 var(--vt-glass-brillo);
   border-top-color: var(--vt-glass-borde-arriba);
-  margin-bottom: 0px; /* gap corto contra los botones de ubicación/encuadre, de abajo */
-}
-/* Más grande que el .seg genérico: flota sobre el mapa, tiene que tocarse bien */
+  margin-bottom: 0px;}
 .segmentado.base .seg {
   flex: 1;
   text-align: center;
@@ -377,16 +359,13 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
 }
 .seg:last-child { border-right: none; }
 .seg:hover { background: var(--hover-wash); color: var(--ink-1); }
-/* Encendido = pintado negro/casi negro sólido, en ambos temas (Argenmap/Satelital y filtros de Paradas) */
 .seg.activo { background: #111111; color: #ffffff; }
 
-/* ── Lista de líneas ── */
+/* Lista de líneas */
 #lista-lineas { list-style: none; margin: 0; padding: 0; }
 .linea-row { border-radius: 10px; margin-bottom: 1px; transition: background 0.15s; }
 .linea-row:hover { background: var(--hover-wash); }
 .linea-row.enfocada { background: var(--hover-wash); box-shadow: inset 0 0 0 1.5px var(--ink-1); }
-/* Ni el chip de color ni el nombre se atenúan cuando la línea está
-   apagada (arrancan y se mantienen "encendidos" visualmente). */
 
 .linea-main {
   display: flex;
@@ -427,9 +406,8 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   transition: opacity 0.15s, background 0.15s, color 0.15s;
   flex-shrink: 0;
 }
-/* Centrado a prueba del CSS del sitio anfitrión (mismo motivo que el botón
-   de tema): el svg se posiciona por coordenadas propias en vez de confiar
-   en el centrado por grid, que un reset externo (WordPress/Elementor) rompe. */
+/* Centrado por coordenadas propias: un reset del sitio anfitrión (WordPress /
+   Elementor) rompe el centrado por grid. Mismo motivo que .vt-btn-header svg. */
 .btn-ojo svg {
   position: absolute !important;
   top: 50% !important;
@@ -474,11 +452,9 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   opacity: 1;
 }
 
-/* Barrita de color pegada a cada pill Ida/Vuelta (mismo color que el recorrido enfocado) */
 .pill.sentido[data-tipo="ida"] { box-shadow: 0 5px 0 -1px var(--color-ida); }
 .pill.sentido[data-tipo="vuelta"] { box-shadow: 0 5px 0 -1px var(--color-vuelta); }
 
-/* "Ver horarios": pill que abre/cierra el panel de abajo, no un toggle de filtro */
 .pill-accion { opacity: 0.85; border-color: var(--ink-1); }
 .pill-accion:hover { opacity: 1; background: var(--hover-wash); }
 .pill-accion[aria-expanded="true"] {
@@ -488,7 +464,6 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   opacity: 1;
 }
 
-/* Panel de horarios de una línea: ocupa todo el ancho, en su propia fila */
 .linea-horarios { flex: 1 1 100%; margin-top: 8px; }
 .horarios-cols { display: flex; gap: 12px; }
 .horarios-col { flex: 1; min-width: 0; }
@@ -520,7 +495,7 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
 .horarios-frec { color: var(--ink-2); white-space: nowrap; }
 .horarios-vacio { margin: 4px 0 0; font-size: 11px; color: var(--muted); }
 
-/* ── Switch ── */
+/* Switch */
 .switch { position: relative; display: inline-block; }
 .switch input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
 .switch-track {
@@ -545,7 +520,7 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
 .switch input:checked + .switch-track::after { transform: translateX(15px); }
 .switch input:focus-visible + .switch-track { outline: 2px solid var(--geoloc); outline-offset: 2px; }
 
-/* ── Filtros de paradas ── */
+/* Filtros de paradas */
 .filtro-fila {
   display: flex;
   align-items: center;
@@ -563,12 +538,11 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
 }
 #conteo-paradas strong { color: var(--ink-1); }
 
-/* ══ Destello "liquid glass" al tocar: brillo decorativo en el punto tocado ══ */
+/* Destello "liquid glass" al tocar */
 .ctrl-acciones button, .vt-btn-header, .seg, .caja-head {
   position: relative;
-  isolation: isolate; /* la mezcla del brillo (mix-blend-mode) no se filtra a hermanos */
-  overflow: hidden; /* recorta el brillo a los límites del propio botón/caja */
-}
+  isolation: isolate; /* contiene el mix-blend-mode del brillo */
+  overflow: hidden;}
 .ctrl-acciones button::before,
 .vt-btn-header::before,
 .seg::before,
@@ -598,7 +572,6 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   100% { opacity: 0;   transform: scale(1.35); }
 }
 @media (prefers-reduced-motion: reduce) {
-  /* Movimiento reducido: sin destello */
   .ctrl-acciones button.vt-destello::before,
   .vt-btn-header.vt-destello::before,
   .seg.vt-destello::before,
@@ -608,7 +581,7 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   }
 }
 
-/* ══ Rebote gelatinoso al tocar botones de acción ══ */
+/* Rebote gelatinoso al tocar botones de acción */
 .ctrl-acciones button, .vt-btn-header, .seg {
   transition: transform 0.42s cubic-bezier(0.34, 1.56, 0.64, 1),
               background 0.15s, color 0.15s;
@@ -625,7 +598,7 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   }
 }
 
-/* ══ Animaciones de mapa ══ */
+/* Animaciones de mapa */
 .linea-flujo { animation: vt-flujo 1.8s linear infinite; }
 @keyframes vt-flujo {
   from { stroke-dashoffset: 18; }
@@ -639,7 +612,6 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
 }
 .geo-halo { animation: vt-pulso 2s ease-out infinite; }
 
-/* controles Leaflet tematizados */
 #visor-transporte .leaflet-bar a, #visor-transporte .leaflet-bar a:hover {
   background: var(--panel);
   color: var(--ink-1);
@@ -658,14 +630,11 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   border-color: var(--muted);
 }
 
-/* Fila superior izquierda: columna de botones + burbuja de clima */
 .ctrl-fila-superior { display: flex; align-items: flex-start; gap: 8px; }
 
-/* botones de acción (ubicación / encuadre) */
 .ctrl-acciones {
   display: flex;
   flex-direction: column;
-  /* Vidrio: fondo con blur */
   background: var(--vt-glass-bg);
   backdrop-filter: var(--vt-glass-blur);
   -webkit-backdrop-filter: var(--vt-glass-blur);
@@ -686,14 +655,12 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
 .ctrl-acciones button:hover { background: var(--hover-wash); color: var(--ink-1); }
 .ctrl-acciones button.deshabilitado { opacity: 0.35; pointer-events: none; }
 
-/* Burbuja de clima: ícono + temperatura, oculta hasta tener un dato válido */
 .burbuja-clima {
   display: flex;
   align-items: center;
   gap: 4px;
   padding: 4px 11px 4px 6px;
   border-radius: 999px;
-  /* Vidrio */
   background: var(--vt-glass-bg);
   backdrop-filter: var(--vt-glass-blur);
   -webkit-backdrop-filter: var(--vt-glass-blur);
@@ -708,7 +675,6 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
 .burbuja-clima[hidden] { display: none; }
 .burbuja-clima img { display: block; width: 22px; height: 22px; }
 
-/* Botón de ayuda / tutorial */
 .ctrl-ayuda { margin-top: 8px !important; }
 .ctrl-ayuda button {
   width: 36px; height: 36px;
@@ -728,7 +694,6 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   50% { box-shadow: 0 2px 10px rgba(0,0,0,0.28), 0 0 0 8px color-mix(in srgb, var(--tour-acento) 35%, transparent); }
 }
 
-/* Botón de avisos/advertencias */
 .ctrl-aviso { margin-top: 8px !important; }
 .ctrl-aviso button {
   width: 36px; height: 36px;
@@ -748,7 +713,6 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   50% { box-shadow: 0 2px 10px rgba(0,0,0,0.28), 0 0 0 8px color-mix(in srgb, var(--geoloc) 35%, transparent); }
 }
 
-/* tooltips y popups */
 #visor-transporte .leaflet-tooltip.tt-linea, #visor-transporte .leaflet-tooltip.tt-parada {
   background: var(--panel);
   color: var(--ink-1);
@@ -794,7 +758,7 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   color: var(--muted);
 }
 .pop-attr.si { color: var(--ok); border-color: color-mix(in srgb, var(--ok) 45%, transparent); }
-/* ── Líneas cercanas dentro del popup de una parada ── */
+/* Líneas cercanas dentro del popup de una parada */
 .pop-lineas { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--hair); }
 .pop-lineas-titulo {
   margin: 0 0 6px;
@@ -816,7 +780,7 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
 }
 #visor-transporte .leaflet-container a.leaflet-popup-close-button { color: var(--muted); }
 
-/* ══ Tarjeta de cercanas ══ */
+/* Tarjeta de cercanas */
 #tarjeta-cercanas {
   position: absolute;
   left: 12px;
@@ -853,7 +817,6 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
 .cercana-fila-top { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
 .cercana-nombre { font-size: 12px; font-weight: 550; }
 .cercana-dist { font-size: 11.5px; color: var(--geoloc); font-weight: 700; white-space: nowrap; }
-/* Chips de línea (sólo número, sin nombre) bajo cada parada cercana */
 .cercana-lineas { display: flex; flex-wrap: wrap; gap: 4px; }
 .cercana-chip {
   display: inline-grid;
@@ -865,7 +828,7 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   font-weight: 800;
 }
 
-/* ══ Toast ══ */
+/* Toast */
 #toast {
   position: absolute;
   bottom: 26px;
@@ -883,7 +846,7 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   text-align: center;
 }
 
-/* ══ Pie de créditos: una sola línea, letra pequeña ══ */
+/* Pie de créditos */
 .vt-footer {
   padding: 8px 18px 9px;
   border-top: 1px solid var(--hair);
@@ -906,7 +869,6 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
 }
 
 @media (max-width: 640px) {
-  /* Cabecera compacta: título/subtítulo en carrusel para no cortarlos */
   .vt-header { padding: 8px 12px; gap: 8px; }
   .vt-header .logo { height: 24px; }
   .vt-header-texto { min-width: 0; }
@@ -919,10 +881,9 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
     animation: vt-carrusel 16s linear infinite;
   }
   .vt-header-texto p .marquee-text { animation-duration: 20s; animation-delay: 1.2s; }
-  /* Botón de pantalla completa: sólo se oculta en mobile (el de tema queda) */
   #btn-fs { display: none; }
   .vt-btn-header { width: 32px; height: 32px; }
-  /* ═══ Hoja inferior (bottom sheet), sólo en mobile ═══ */
+  /* Hoja inferior (bottom sheet), sólo en mobile */
   #pila-flotante {
     top: auto;
     bottom: 0;
@@ -934,12 +895,10 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
     border-right: 1px solid var(--hair);
     border-bottom: none;
     border-radius: 16px 16px 0 0;
-    /* Sombra proyectada hacia arriba, la hoja cuelga del borde inferior */
     box-shadow: 0 -8px 28px rgba(11,11,11,0.18), inset 0 1px 0 var(--vt-glass-brillo);
     padding-bottom: env(safe-area-inset-bottom, 0px);
     transition: transform 0.32s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
-  /* Manija de la hoja: barra + flecha que rota según abierto/cerrado */
   .vt-sheet-manija {
     display: flex;
     flex-direction: column;
@@ -959,11 +918,8 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   .vt-sheet-manija svg {
     color: var(--muted);
     transition: transform 0.2s ease;
-    transform: rotate(180deg); /* colapsado: flecha hacia arriba, "abrir" */
-  }
-  #pila-flotante.vt-sheet-abierto .vt-sheet-manija svg { transform: rotate(0deg); } /* abierto: "cerrar" */
-
-  /* Apertura/cierre de cada solapa, animado (max-height + opacity) */
+    transform: rotate(180deg);  }
+  #pila-flotante.vt-sheet-abierto .vt-sheet-manija svg { transform: rotate(0deg); }
   .caja-body {
     padding: 4px 8px 8px;
     transition: max-height 0.28s cubic-bezier(0.22, 1, 0.36, 1),
@@ -979,12 +935,9 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
     padding-bottom: 0;
     pointer-events: none;
   }
-  /* Buscador: max-height concreto para poder animarlo (overflow visible) */
   .caja-body-buscador { max-height: 340px; }
 
-  /* Cabeceras y subtítulos más compactos */
   .caja-head { padding: 6px 8px 6px 9px; }
-  /* Hoja cerrada: cabeceras aún más chicas */
   #pila-flotante:not(.vt-sheet-abierto) .caja-head { padding: 4px 8px 4px 9px; }
   .caja-head h2, .seccion-head h3 { font-size: 9.5px; padding: 2px 7px; }
   .caja-head .stats { font-size: 10.5px; }
@@ -995,30 +948,25 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   .btn-ojo, .btn-plegar { width: 30px; height: 30px; }
   .linea-main { padding: 7px 6px; }
   .pill { padding: 5px 11px; }
-  /* "Paradas más cercanas" y el toast flotan arriba de la hoja inferior */
   #tarjeta-cercanas { bottom: calc(var(--vt-sheet-alto, 140px) + 14px); }
   #toast { bottom: calc(var(--vt-sheet-alto, 140px) + 14px); }
-  /* Atribuciones y escala (controles de Leaflet) empujados sobre la hoja */
   #visor-transporte .leaflet-bottom.leaflet-right,
   #visor-transporte .leaflet-bottom.leaflet-left {
     margin-bottom: calc(var(--vt-sheet-alto, 46px) + 4px);
     transition: margin-bottom 0.28s cubic-bezier(0.22, 1, 0.36, 1);
   }
-  /* Letra más chica sólo en mobile */
   #visor-transporte .leaflet-control-attribution { font-size: 7px !important; }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .linea-flujo, .dot-viajero-halo, .geo-halo { animation: none; }
-  /* Movimiento reducido: carrusel congelado, recortado con "…" */
   .vt-header-texto .marquee-text { animation: none; display: inline; padding-left: 0; }
   .vt-header-texto h1, .vt-header-texto p { text-overflow: ellipsis; }
   .vt-tour-anillo { transition: none; }
-  /* Hoja inferior (mobile): sin rebote ni animaciones */
   #pila-flotante, .caja-body, .vt-sheet-manija svg { transition: none; }
 }
 
-/* ══ Tutorial guiado (primera visita) ══ */
+/* Tutorial guiado (primera visita) */
 .vt-tour-block {
   position: fixed;
   inset: 0;
@@ -1085,7 +1033,7 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   .vt-tour-modal, .vt-tour-burbuja { padding: 16px; }
 }
 
-/* ══ Burbuja de avisos/advertencias ══ */
+/* Burbuja de avisos/advertencias */
 .vt-aviso-burbuja {
   position: fixed;
   z-index: 1400;
@@ -1097,7 +1045,6 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   box-shadow: var(--sombra);
   padding: 14px 32px 12px 14px;
 }
-/* Colita: cuadrado rotado 45°, posición la fija el script */
 .vt-aviso-burbuja::before {
   content: "";
   position: absolute;
@@ -1121,3 +1068,93 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   color: var(--muted);
 }
 .vt-aviso-cerrar:hover { background: var(--hover-wash); color: var(--ink-1); }
+
+/* Modo mantenimiento
+   Sólo se aplica con MODO_MANTENIMIENTO activo en js/visor.js, que agrega
+   .vt-mantenimiento e inyecta .vt-mant-overlay dentro de .vt-cuerpo. */
+.vt-mant-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 5000;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: var(--vt-mant-velo);
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  /* Bloqueo real de la interacción con el mapa, no sólo visual. */
+  pointer-events: auto;
+  touch-action: none;
+  overscroll-behavior: contain;
+  cursor: default;
+  animation: vt-mant-entrada 0.35s ease both;
+}
+/* Sin soporte de backdrop-filter, el velo se opaca en vez de dejar ver el mapa. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .vt-mant-overlay { background: var(--vt-mant-velo-opaco); }
+}
+@keyframes vt-mant-entrada {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.vt-mant-cartel {
+  width: min(460px, 100%);
+  text-align: center;
+  padding: 32px 28px;
+  border-radius: 20px;
+  color: var(--ink-1);
+  background: var(--vt-glass-bg-strong);
+  backdrop-filter: var(--vt-glass-blur);
+  -webkit-backdrop-filter: var(--vt-glass-blur);
+  border: 1px solid var(--vt-glass-borde-arriba);
+  box-shadow: var(--vt-glass-sombra), inset 0 1px 0 var(--vt-glass-brillo);
+}
+.vt-mant-icono {
+  display: grid;
+  place-items: center;
+  width: 52px; height: 52px;
+  margin: 0 auto 18px;
+  border-radius: 50%;
+  background: var(--marca);
+  color: #fff;
+}
+.vt-mant-titulo {
+  margin: 0 0 12px;
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 1.25;
+}
+.vt-mant-mensaje {
+  margin: 0;
+  font-size: 17.5px;
+  line-height: 1.55;
+  color: var(--ink-2);
+  text-wrap: balance;
+}
+.vt-mant-pie {
+  margin: 20px 0 0;
+  padding-top: 16px;
+  border-top: 1px solid var(--hair);
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--muted);
+}
+
+#visor-transporte.vt-mantenimiento #mapa,
+#visor-transporte.vt-mantenimiento .leaflet-container { cursor: default; }
+#visor-transporte.vt-mantenimiento .leaflet-container { outline: none; }
+
+@media (max-width: 640px) {
+  .vt-mant-overlay { padding: 16px; }
+  .vt-mant-cartel { padding: 24px 20px; border-radius: 18px; }
+  .vt-mant-icono { width: 46px; height: 46px; margin-bottom: 14px; }
+  .vt-mant-titulo { font-size: 19px; }
+  .vt-mant-mensaje { font-size: 15.5px; }
+  .vt-mant-pie { margin-top: 16px; padding-top: 13px; font-size: 11.5px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vt-mant-overlay { animation: none; }
+}
