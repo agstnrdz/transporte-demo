@@ -11,11 +11,17 @@ const HORARIOS_HABILITADO = false;
 
 const AVISOS_HABILITADO = true;
 
-/* ══ window.LINEA_*_DATA (GeoJSON) ══ */
+const MODO_MANTENIMIENTO = true;
+
+if (MODO_MANTENIMIENTO) {
+  iniciarModoMantenimiento();
+  return;
+}
+
 const IDS_LINEAS = ["1","2","3","4","5","5U","6A","6B","7","8H","8AH","9",
                     "12","13","14","15","16","17","18","19","20","21","22"];
 
-/* Paleta  */
+/* Paleta */
 const PALETA = {
   "1":  ["#d62728", "#ff6b6b"], "2":  ["#1f77b4", "#5aa9e6"],
   "3":  ["#2ca02c", "#5fd068"], "4":  ["#9467bd", "#b78fe0"],
@@ -40,15 +46,13 @@ const SENTIDOS = {
 };
 const ORDEN_SENT = { ida: 0, vuelta: 1, horario: 0, antihorario: 1, sur: 0, norte: 1, "": 0 };
 
-/* Correcciones manuales de sentido */
 const CORRECCIONES_SENTIDO = {};
 const CORRECCIONES_INVERTIR = {
-  "5U": { "": true },   // sentido único, recorrido completo invertido
+  "5U": { "": true },
 };
 
-/* Cosido de tramos del MultiLineString: encadena fin→inicio por proximidad */
 const GAP_MAX = 150;
-function distM(a, b) { /* a,b = [lng,lat] */
+function distM(a, b) {
   const kx = 111320 * Math.cos(-45.86 * Math.PI / 180);
   return Math.hypot((a[0] - b[0]) * kx, (a[1] - b[1]) * 111320);
 }
@@ -94,7 +98,7 @@ const faltantes = [];
 for (const id of IDS_LINEAS) {
   const gj = window["LINEA_" + id + "_DATA"];
   if (!gj || !gj.features || !gj.features.length) { faltantes.push(id); continue; }
-  const rutasPorSentido = new Map(); // sent -> ruta (features repetidos del mismo sentido se fusionan)
+  const rutasPorSentido = new Map();
   let nombre = "";
   for (const ft of gj.features) {
     const p = ft.properties || {};
@@ -107,12 +111,11 @@ for (const id of IDS_LINEAS) {
     const parts = (g.type === "MultiLineString" ? g.coordinates : [g.coordinates])
       .filter((t) => t && t.length >= 2);
     if (!parts.length) continue;
-    /* GeoJSON [lng,lat(,z)] → Leaflet [lat,lng] */
+    /* GeoJSON [lng,lat] → Leaflet [lat,lng] */
     let paths = coser(parts).map((path) => path.map((pt) => [pt[1], pt[0]]));
     if ((CORRECCIONES_INVERTIR[id] || {})[sentOriginal]) {
       paths = paths.map((path) => path.slice().reverse());
     }
-    /* Features que comparten sentido se acumulan en la misma ruta */
     const existente = rutasPorSentido.get(sent);
     if (existente) {
       existente.paths.push(...paths);
@@ -135,12 +138,10 @@ for (const id of IDS_LINEAS) {
 }
 const PARADAS_DATA = Array.isArray(window.PARADAS_DATA) ? window.PARADAS_DATA : [];
 
-/* ── Índice de esquinas (autocompletar del buscador de línea) ── */
 function normalizarTxt(s) {
   return String(s || "").trim().toLowerCase()
-    .normalize("NFD").replace(/[̀-ͯ]/g, ""); // sin acentos, para filtrar sin importar tildes
+    .normalize("NFD").replace(/[̀-ͯ]/g, "");
 }
-/* placeholders del relevamiento para "no identificada" (no son nombres reales) */
 function esPlaceholder(s) {
   const n = normalizarTxt(s);
   return !n || n === "-" || n === "calle sin nombre";
@@ -152,13 +153,12 @@ const ESQUINAS_DATA = (() => {
     const esquina = String(p.esquina || "").trim();
     const calleValida = calle && !esPlaceholder(calle);
     const esquinaValida = esquina && !esPlaceholder(esquina);
-    if (!calleValida && !esquinaValida) continue; // no hay nada útil relevado en esta parada
+    if (!calleValida && !esquinaValida) continue;
     const etiqueta = calleValida ? (esquinaValida ? `${calle} y ${esquina}` : calle) : esquina;
     const clave = normalizarTxt(etiqueta);
     if (!grupos.has(clave)) {
       grupos.set(clave, { etiqueta, lat: p.lat, lng: p.lng, n: 1 });
     } else {
-      /* promedio de coordenadas de las paradas que comparten esquina */
       const g = grupos.get(clave);
       g.lat = (g.lat * g.n + p.lat) / (g.n + 1);
       g.lng = (g.lng * g.n + p.lng) / (g.n + 1);
@@ -177,21 +177,17 @@ if (!LINEAS_DATA.length) {
 
 const CONT = document.getElementById("visor-transporte");
 
-/* ── Destello "liquid glass" al tocar ── */
 const VT_DESTELLO_SELECTOR = ".ctrl-acciones button, .vt-btn-header, .seg, .caja-head";
 CONT.addEventListener("pointerdown", (ev) => {
   const el = ev.target.closest(VT_DESTELLO_SELECTOR);
   if (!el || el.classList.contains("deshabilitado")) return;
   const r = el.getBoundingClientRect();
-  // Origen del destello: punto tocado, en % del botón
   const x = r.width ? ((ev.clientX - r.left) / r.width) * 100 : 50;
   const y = r.height ? ((ev.clientY - r.top) / r.height) * 100 : 50;
   el.style.setProperty("--vt-shine-x", x + "%");
   el.style.setProperty("--vt-shine-y", y + "%");
-  // Radio del círculo en píxeles reales, para que se vea redondo en cualquier caja
   const radio = Math.max(r.width, r.height) * 0.55;
   el.style.setProperty("--vt-shine-radio", radio + "px");
-  // Reiniciar la animación si se toca de nuevo antes de que termine
   el.classList.remove("vt-destello");
   void el.offsetWidth;
   el.classList.add("vt-destello");
@@ -200,7 +196,7 @@ CONT.addEventListener("animationend", (ev) => {
   if (ev.animationName === "vt-destello") ev.target.classList.remove("vt-destello");
 });
 
-/* ── Tema (claro por defecto) ─────────────────────────────────── */
+/* Tema */
 const TEMA_KEY = "transporte-tema";
 function temaActual() {
   return CONT.getAttribute("data-theme") === "dark" ? "dark" : "light";
@@ -208,9 +204,8 @@ function temaActual() {
 function aplicarTema(tema) {
   if (tema === "dark") CONT.setAttribute("data-theme", "dark");
   else CONT.removeAttribute("data-theme");
-  /* fondo de html/body sigue al tema (evita franja descalzada en pantalla completa) */
   document.body.style.background = tema === "dark" ? "#1a1a19" : "#fcfcfb";
-  try { localStorage.setItem(TEMA_KEY, tema); } catch (e) { /* puede estar bloqueado */ }
+  try { localStorage.setItem(TEMA_KEY, tema); } catch (e) { /* noop */ }
 }
 (function initTema() {
   let guardado = null;
@@ -218,7 +213,7 @@ function aplicarTema(tema) {
   aplicarTema(guardado === "dark" ? "dark" : "light");
 })();
 
-/* ── Utilidades ───────────────────────────────────────────────── */
+/* Utilidades */
 function colorChipTexto(hex) {
   const n = parseInt(hex.slice(1), 16);
   const lin = (c) => { c /= 255; return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4); };
@@ -226,8 +221,6 @@ function colorChipTexto(hex) {
   return L > 0.36 ? "#0b0b0b" : "#ffffff";
 }
 function colorLinea(linea) { return temaActual() === "dark" ? linea.colorDark : linea.color; }
-/* Versión atenuada (mezclada con blanco) sólo para el ícono/chip del número
-   de línea — el color real de la línea en el mapa no cambia. */
 function atenuar(hex, t = 0.28) {
   const n = parseInt(hex.slice(1), 16);
   const mezcla = (c) => Math.round(c * (1 - t) + 255 * t);
@@ -247,15 +240,13 @@ function toast(msg, ms = 4000) {
   toastTimer = setTimeout(() => { el.hidden = true; }, ms);
 }
 
-/* ── Mapa base ────────────────────────────────────────────────── */
-/* Atribuciones: la parte de datos propios es común a todas las bases; la parte
-   cartográfica cambia según qué mapa base esté encendido (Argenmap / satelital). */
+/* Mapa base */
+/* La atribución cartográfica cambia con la capa activa; ATTR_DATOS es común */
 const ATTR_DATOS = "Fuente: Dirección General de Transporte (recorridos 2026). Procesamiento: Modernización e Investigación Territorial.";
 const ATTR_ARGENMAP = "Instituto Geográfico Nacional + OpenStreetMap. " + ATTR_DATOS;
 const ATTR_SATELITE = 'Imagen satelital &copy; <a href="https://www.esri.com/" target="_blank" rel="noopener noreferrer">Esri</a> &mdash; Esri, Vantor, Earthstar Geographics y la comunidad de usuarios GIS. ' + ATTR_DATOS;
 const mapa = L.map("mapa", { zoomControl: false, attributionControl: true });
 mapa.attributionControl.setPrefix(false);
-/* Sin control de zoom por defecto de Leaflet: los botones +/- viven en CtrlAcciones */
 L.control.scale({ imperial: false, position: "bottomleft" }).addTo(mapa);
 
 const capaArgenmapClaro = L.tileLayer(
@@ -264,15 +255,12 @@ const capaArgenmapClaro = L.tileLayer(
 const capaArgenmapOscuro = L.tileLayer(
   "https://wms.ign.gob.ar/geoserver/gwc/service/tms/1.0.0/argenmap_oscuro@EPSG:3857@png/{z}/{x}/{-y}.png",
   { maxZoom: 19, maxNativeZoom: 18, attribution: ATTR_ARGENMAP });
-/* Esri World Imagery: servicio público de teselas, uso libre citando la fuente.
-   Ojo con el orden de la plantilla: acá es /{z}/{y}/{x} (fila antes que columna),
-   al revés que en los TMS de Argenmap. Cobertura verificada sobre Comodoro hasta
-   z20, que es el máximo que habilita el visor. */
+/* Esri usa /{z}/{y}/{x} (fila antes que columna), al revés que los TMS de Argenmap */
 const capaSatelite = L.tileLayer(
   "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
   { maxZoom: 20, attribution: ATTR_SATELITE });
 
-let baseActiva = "mapa"; // 'mapa' (Argenmap) | 'satelite' (Esri World Imagery)
+let baseActiva = "mapa";
 function capaBase() {
   if (baseActiva === "satelite") return capaSatelite;
   return temaActual() === "dark" ? capaArgenmapOscuro : capaArgenmapClaro;
@@ -293,25 +281,24 @@ mapa.createPane("paradas").style.zIndex = 395;
 mapa.createPane("foco").style.zIndex = 397;
 const rendererParadas = L.canvas({ pane: "paradas", padding: 0.4 });
 
-/* ── Estado ───────────────────────────────────────────────────── */
 const estado = {
-  visibles: new Set(), // arranca con todas las líneas apagadas; el usuario elige cuáles prender
+  visibles: new Set(),
   enfocada: null,
-  autoEncendida: null, // id de la línea que se prendió sola al enfocarla (no por el ojo); se apaga al desenfocar
+  autoEncendida: null,
   rutasApagadas: new Set(),
-  paradasOn: false, // arranca apagado; PARADAS_HABILITADAS sólo controla si la caja existe
-  paradasAutoEncendida: false, // true si la capa de paradas se prendió sola al enfocar una línea
+  paradasOn: false,
+  paradasAutoEncendida: false,
   filtros: { refugio: "todas", cartel: "todas", poste: "todas" },
 };
 
-/* ── Capas de líneas ──────────────────────────────────────────── */
+/* Capas de líneas */
 const CASING = { light: "#ffffff", dark: "#0a0a0a" };
 const rutasPorLinea = new Map();
 const lineaPorId = new Map(LINEAS_DATA.map((l) => [l.id, l]));
 
-/* Colores de ida/vuelta al enfocar una línea (no aplica a circular/único) */
-const COLOR_IDA = "#5BAD3C";   // verde césped
-const COLOR_VUELTA = "#5A76F5"; // azul eléctrico
+/* Espejo de --color-ida / --color-vuelta en css/visor.css: cambiar en ambos lugares */
+const COLOR_IDA = "#5BAD3C";
+const COLOR_VUELTA = "#5A76F5";
 function colorFoco(ruta, linea) {
   if (ruta.tipo === "ida") return COLOR_IDA;
   if (ruta.tipo === "vuelta") return COLOR_VUELTA;
@@ -379,7 +366,7 @@ function reestilarTodo() {
   for (const l of LINEAS_DATA) reestilarLinea(l.id);
 }
 
-/* ── Animación de sentido (foco) ──────────────────────────────── */
+/* Animación de sentido (foco) */
 const anim = { overlays: [], dots: [], raf: null, t0: 0 };
 
 function limpiarAnimacion() {
@@ -403,7 +390,6 @@ function armarAnimacion(id) {
     }).addTo(mapa);
     anim.overlays.push(overlay);
 
-    /* Un solo punto viajero por ruta, sobre su tramo continuo más largo */
     let mejorPts = null, mejorAcum = null, mejorTotal = -1;
     for (const path of it.ruta.paths) {
       const pts = path.map(([la, ln]) => L.latLng(la, ln));
@@ -421,7 +407,6 @@ function armarAnimacion(id) {
         pane: "foco", radius: 5.5, color: "#ffffff", weight: 2,
         fillColor: colorLinea(linea), fillOpacity: 1, interactive: false,
       }).addTo(mapa);
-      /* velocidad del recorrido animado: duración proporcional al largo del tramo */
       const dur = Math.min(70000, Math.max(26000, mejorTotal / 0.24));
       anim.dots.push({ pts: mejorPts, acum: mejorAcum, total: mejorTotal, dur, dot, halo, idx: 1, offset: Math.random() * 0.35 });
     }
@@ -448,14 +433,13 @@ function pasoAnimacion(now) {
   anim.raf = requestAnimationFrame(pasoAnimacion);
 }
 
-/* ── Foco de línea ────────────────────────────────────────────── */
+/* Foco de línea */
 function alternarFoco(id) {
   if (estado.enfocada === id) desenfocar();
   else enfocar(id);
 }
 
 function enfocar(id) {
-  /* si la línea enfocada anterior se había prendido sola, se apaga al cambiar el foco */
   if (estado.autoEncendida && estado.autoEncendida !== id) {
     estado.visibles.delete(estado.autoEncendida);
     estado.autoEncendida = null;
@@ -468,7 +452,6 @@ function enfocar(id) {
   } else {
     estado.autoEncendida = null;
   }
-  /* Paradas: se prenden solas si estaban apagadas, para mostrar las de esta línea */
   if (!estado.paradasOn) {
     estado.paradasOn = true;
     estado.paradasAutoEncendida = true;
@@ -493,7 +476,6 @@ function desenfocar() {
   estado.enfocada = null;
   estado.rutasApagadas.clear();
   limpiarAnimacion();
-  /* Paradas: si se habían prendido solas al enfocar, se apagan de nuevo */
   if (estado.paradasAutoEncendida) {
     estado.paradasOn = false;
     estado.paradasAutoEncendida = false;
@@ -514,18 +496,16 @@ function boundsDeLinea(id) {
   return b;
 }
 
-/* ── Solapa: lista de líneas ──────────────────────────────────── */
+/* Solapa: lista de líneas */
 const listaLineas = document.getElementById("lista-lineas");
 const filasPorId = new Map();
 
 const ICONO_OJO = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>';
 const FLECHAS = { ida: "→", vuelta: "←", circular: "↻", unico: "→" };
-/* Etiqueta del chip: solo cambia lo que se ve en el panel (por temas de
-   visualización); linea.id sigue siendo "8H"/"8AH" para todo lo demás
-   (colores, tooltips, correcciones, datos fuente). */
+/* Sólo cambia la etiqueta visible en el panel; linea.id sigue siendo el real */
 const CHIP_LABEL = { "8H": "8", "8AH": "8" };
 
-/* ── Horarios por línea (panel "Recorridos" → detalle de cada línea), armado bajo demanda ── */
+/* Horarios por línea (panel "Recorridos" → detalle de cada línea), armado bajo demanda */
 function filaHorario(h) {
   return `<li><span class="horarios-hora">${esc(h.horario)}</span>` +
          `<span class="horarios-frec">${esc(h.frecuencia || "")}</span></li>`;
@@ -605,10 +585,8 @@ for (const linea of LINEAS_DATA) {
       const yaEnSolitario = otras.length > 0 && !estado.rutasApagadas.has(rid) &&
         otras.every((r) => estado.rutasApagadas.has(r.id));
       if (yaEnSolitario) {
-        /* ya estaba aislado este sentido: tocar de nuevo restaura todos */
         otras.forEach((r) => estado.rutasApagadas.delete(r.id));
       } else {
-        /* aislar este sentido: se apagan los demás y queda sólo el tocado */
         estado.rutasApagadas.delete(rid);
         otras.forEach((r) => estado.rutasApagadas.add(r.id));
       }
@@ -631,7 +609,6 @@ function actualizarPanelFoco() {
       li.querySelectorAll(".pill.sentido").forEach((b) => { b.classList.add("activo"); b.setAttribute("aria-pressed", "true"); });
     }
   }
-  /* la fila enfocada visible dentro del scroll de la caja */
   if (estado.enfocada) {
     const li = filasPorId.get(estado.enfocada);
     if (li) li.scrollIntoView({ block: "nearest" });
@@ -640,7 +617,7 @@ function actualizarPanelFoco() {
 
 document.getElementById("btn-todas").addEventListener("click", () => {
   LINEAS_DATA.forEach((l) => estado.visibles.add(l.id));
-  estado.autoEncendida = null; // ya no son "de paso": quedan encendidas aunque cambie el foco
+  estado.autoEncendida = null;
   reestilarTodo();
   actualizarPanelFoco();
 });
@@ -651,7 +628,7 @@ document.getElementById("btn-ninguna").addEventListener("click", () => {
   actualizarPanelFoco();
 });
 
-/* ── Caja: plegado ────────────────────────────────────────────── */
+/* Caja: plegado */
 const caja = document.getElementById("caja-capas");
 const cajaHead = document.getElementById("caja-head");
 function plegarCaja(plegar) {
@@ -665,11 +642,11 @@ cajaHead.addEventListener("keydown", (e) => {
 L.DomEvent.disableClickPropagation(caja);
 L.DomEvent.disableScrollPropagation(caja);
 
-/* ── Paradas ──────────────────────────────────────────────────── */
+/* Paradas */
 const cajaParadas = document.getElementById("caja-paradas");
 const chkParadas = document.getElementById("chk-paradas");
 cajaParadas.style.display = PARADAS_HABILITADAS ? "" : "none";
-chkParadas.checked = false; // el switch arranca apagado, el usuario lo prende a mano
+chkParadas.checked = false;
 cajaParadas.classList.toggle("plegada", true);
 L.DomEvent.disableClickPropagation(cajaParadas);
 L.DomEvent.disableScrollPropagation(cajaParadas);
@@ -682,11 +659,10 @@ function radioParadas() {
   const z = mapa.getZoom();
   const base = z >= 16 ? 6.5 : z >= 14.5 ? 4.8 : z >= 13 ? 3.6 : 2.6;
   if (!window.matchMedia("(max-width: 640px)").matches) return base;
-  // En mobile se agranda el radio para que sea más fácil tocar los puntos
   return z >= 13 ? base + 2 : base + 0.6;
 }
 
-/* ── Líneas que pasan cerca de una parada ── */
+/* Líneas que pasan cerca de una parada */
 const RADIO_PARADA_LINEA = 20; // metros
 
 function lineasEnParada(p) {
@@ -698,14 +674,13 @@ function lineasEnParada(p) {
       const c = puntoMasCercanoEnRuta(punto, ruta);
       if (c && c.dist < mejorDist) mejorDist = c.dist;
     }
-    // ida y vuelta de la misma línea sólo cuentan una vez, con la mejor distancia
     if (mejorDist <= RADIO_PARADA_LINEA) resultado.push({ linea, dist: mejorDist });
   }
   resultado.sort((a, b) => a.dist - b.dist);
   return resultado.map((r) => r.linea);
 }
 
-/* ── Paradas que pertenecen a una línea (inverso de lineasEnParada), cacheada por línea ── */
+/* Paradas que pertenecen a una línea (inverso de lineasEnParada), cacheada por línea */
 const cacheParadasDeLinea = new Map();
 function paradasDeLinea(id) {
   if (cacheParadasDeLinea.has(id)) return cacheParadasDeLinea.get(id);
@@ -775,7 +750,6 @@ function pasaFiltros(p) {
 function aplicarFiltrosParadas() {
   grupoParadas.clearLayers();
   let n = 0;
-  // Con una línea enfocada, sólo entran las paradas de su trazado
   const deLaLinea = estado.enfocada ? paradasDeLinea(estado.enfocada) : null;
   if (estado.paradasOn) {
     const r = radioParadas();
@@ -809,12 +783,11 @@ mapa.on("zoomend", () => {
 
 chkParadas.addEventListener("change", (e) => {
   estado.paradasOn = e.target.checked;
-  // decisión explícita del usuario: ya no se apagan solas al desenfocar
+  // decisión de producto: no se apagan solas al desenfocar
   estado.paradasAutoEncendida = false;
   aplicarFiltrosParadas();
 });
 
-/* Botón de plegar (mobile): pliega los filtros sin tocar el switch ni la capa */
 const btnPlegarParadas = document.getElementById("btn-plegar-paradas");
 btnPlegarParadas.addEventListener("click", () => {
   const plegar = !cajaParadas.classList.contains("plegada");
@@ -822,11 +795,10 @@ btnPlegarParadas.addEventListener("click", () => {
   btnPlegarParadas.setAttribute("aria-expanded", String(!plegar));
 });
 
-/* Tocar la cabecera de Paradas pliega/despliega la solapa de filtros, en cualquier viewport */
 const cajaParadasHead = cajaParadas.querySelector(".caja-head");
 cajaParadasHead.addEventListener("click", (e) => {
   if (e.target.closest(".switch") || e.target.closest(".btn-plegar-paradas")) return;
-  btnPlegarParadas.click(); // funciona igual aunque el botón esté oculto (display:none) en desktop
+  btnPlegarParadas.click(); // funciona aunque el botón esté oculto (display:none) en desktop
 });
 
 CONT.querySelectorAll(".filtro-fila").forEach((fila) => {
@@ -840,7 +812,7 @@ CONT.querySelectorAll(".filtro-fila").forEach((fila) => {
   });
 });
 
-/* ── Mapa base: botón Argenmap / Satelital ────────────────────── */
+/* Mapa base: botón Argenmap / Satelital */
 const CtrlBase = L.Control.extend({
   options: { position: "topleft" },
   onAdd() {
@@ -869,7 +841,7 @@ document.getElementById("btn-base-sat").addEventListener("click", () => {
   actualizarBase();
 });
 
-/* ── Pantalla completa ────────────────────────────────────────── */
+/* Pantalla completa */
 document.getElementById("btn-fs").addEventListener("click", () => {
   if (document.fullscreenElement) {
     document.exitFullscreen();
@@ -884,9 +856,9 @@ document.addEventListener("fullscreenchange", () => {
   setTimeout(() => mapa.invalidateSize(), 120);
 });
 
-/* ── Geolocalización ──────────────────────────────────────────── */
+/* Geolocalización */
 function geoColor() { return temaActual() === "dark" ? "#3987e5" : "#2a78d6"; }
-const COLOR_BUFFER_PARADA = "#898781"; // gris de las paradas del buffer, fuera del top de cercanas
+const COLOR_BUFFER_PARADA = "#898781";
 let geoMarcadores = [];
 function limpiarGeo() {
   geoMarcadores.forEach((m) => mapa.removeLayer(m));
@@ -920,7 +892,6 @@ function ubicarme() {
       }).bindTooltip("Estás acá", { direction: "top", className: "tt-parada", offset: [0, -6] }).addTo(mapa);
       geoMarcadores.push(precision, halo, punto);
 
-      // Paradas ordenadas por distancia: las 4 primeras son "cercanas", el resto dentro del buffer va en gris
       const todas = PARADAS_HABILITADAS
         ? PARADAS_DATA
             .map((p) => ({ p, d: aqui.distanceTo([p.lat, p.lng]) }))
@@ -940,7 +911,6 @@ function ubicarme() {
       const ol = document.getElementById("lista-cercanas");
       ol.innerHTML = "";
       for (const { p, d } of cercanas) {
-        // Línea recta punteada entre "acá" y cada parada cercana
         const trazo = L.polyline([aqui, [p.lat, p.lng]], {
           color: geoColor(), weight: 2, opacity: 0.55, dashArray: "6 6",
           interactive: false,
@@ -952,7 +922,6 @@ function ubicarme() {
         geoMarcadores.push(anillo);
         const li = document.createElement("li");
         const btn = document.createElement("button");
-        // Chips de las líneas que pasan por esta parada: sólo número/ícono, sin nombre
         const lineasChip = lineasEnParada(p)
           .map((l) => {
             const bg = colorChip(l), fg = colorChipTexto(bg);
@@ -991,11 +960,11 @@ function ubicarme() {
 }
 document.getElementById("btn-cerrar-cercanas").addEventListener("click", limpiarGeo);
 
-/* ── Buscador de línea sugerida (prototipo): origen + destino → mejor línea ── */
-const CAMINATA_MAX = 900;   // metros — más allá de esto no sugerimos caminar (antes 550: en zonas con menos cobertura de líneas no encontraba ninguna)
-const RECORRIDO_MIN = 250;  // metros — evita sugerencias donde origen y destino casi se superponen sobre la ruta
+/* Buscador de línea sugerida (prototipo): origen + destino → mejor línea */
+const CAMINATA_MAX = 900;   // metros: tope de caminata sugerida (con 550 quedaban zonas sin resultado)
+const RECORRIDO_MIN = 250;  // metros: descarta origen y destino casi superpuestos sobre la ruta
 
-/* Punto más cercano de una ruta a un punto dado, con su posición acumulada (arc-length) */
+/* Punto más cercano de una ruta, con su posición acumulada (arc-length) */
 function puntoMasCercanoEnRuta(punto, ruta) {
   let mejor = null;
   ruta.paths.forEach((path, pathIdx) => {
@@ -1027,9 +996,9 @@ function buscarLineaSugerida(origen, destino) {
       const cOrigen = puntoMasCercanoEnRuta(pOrigen, ruta);
       const cDestino = puntoMasCercanoEnRuta(pDestino, ruta);
       if (!cOrigen || !cDestino) continue;
-      if (cOrigen.pathIdx !== cDestino.pathIdx) continue; // no se puede establecer el orden con confianza
+      if (cOrigen.pathIdx !== cDestino.pathIdx) continue;
       if (cOrigen.dist > CAMINATA_MAX || cDestino.dist > CAMINATA_MAX) continue;
-      if (cDestino.pos - cOrigen.pos < RECORRIDO_MIN) continue; // no avanza en el sentido correcto (o el tramo es insignificante)
+      if (cDestino.pos - cOrigen.pos < RECORRIDO_MIN) continue;
       candidatas.push({
         linea, ruta,
         caminataOrigen: cOrigen.dist, caminataDestino: cDestino.dist,
@@ -1038,10 +1007,9 @@ function buscarLineaSugerida(origen, destino) {
     }
   }
   candidatas.sort((a, b) => a.caminataTotal - b.caminataTotal);
-  return candidatas.slice(0, 3); // hasta 3 opciones, ordenadas de menor a mayor caminata total
+  return candidatas.slice(0, 3);
 }
 
-/* Etiqueta de un punto tocado en el mapa: esquina relevada cercana o coordenadas */
 function etiquetaAproximada(lat, lng) {
   const p = L.latLng(lat, lng);
   let mejor = null;
@@ -1053,7 +1021,7 @@ function etiquetaAproximada(lat, lng) {
   return `Punto en el mapa (${lat.toFixed(5)}, ${lng.toFixed(5)})`;
 }
 
-function colorOrigenBuscador() { return geoColor(); } // mismo celeste que "Mi ubicación"
+function colorOrigenBuscador() { return geoColor(); }
 function colorDestinoBuscador() { return temaActual() === "dark" ? "#f2a640" : "#c96c06"; }
 
 const buscador = { origen: null, destino: null, eligiendoEnMapa: null };
@@ -1070,7 +1038,7 @@ function marcarPuntoBuscador(campo, lat, lng, etiqueta) {
   if (campo === "origen") marcadorOrigenBuscador = m; else marcadorDestinoBuscador = m;
 }
 
-/* ── Respaldo: nomenclador nacional (API Georef) para esquinas fuera del relevamiento local ── */
+/* Respaldo: nomenclador nacional (API Georef) para esquinas fuera del relevamiento local */
 const GEOREF_HABILITADO = true;
 const GEOREF_URL = "https://apis.datos.gob.ar/georef/api/direcciones";
 const GEOREF_TIMEOUT_MS = 5000;
@@ -1090,7 +1058,6 @@ function etiquetaDesdeGeoref(d) {
   return tituloCase(base);
 }
 
-/* Comodoro Rivadavia pertenece al departamento "Escalante" en el nomenclador */
 async function consultarGeoref(texto) {
   const clave = normalizarTxt(texto);
   if (georefCache.has(clave)) return georefCache.get(clave);
@@ -1113,7 +1080,7 @@ async function consultarGeoref(texto) {
         .map((d) => ({ etiqueta: etiquetaDesdeGeoref(d), lat: d.ubicacion.lat, lng: d.ubicacion.lon, fuente: "georef" }));
     }
   } catch (e) {
-    resultado = []; // sin red, CORS bloqueado, timeout, etc. — es un respaldo opcional, se ignora
+    resultado = [];
   } finally {
     clearTimeout(timer);
   }
@@ -1128,7 +1095,6 @@ const sugerenciasDestino = document.getElementById("sugerencias-destino");
 const btnBuscarLinea = document.getElementById("btn-buscar-linea");
 const resultadoBuscador = document.getElementById("resultado-buscador");
 const btnLimpiarBuscador = document.getElementById("btn-limpiar-buscador");
-/* resalta "Limpiar" mientras haya un resultado visible */
 function mostrarCajaResultado() {
   resultadoBuscador.hidden = false;
   btnLimpiarBuscador.classList.add("resaltado");
@@ -1147,7 +1113,7 @@ function armarAutocompletarBuscador(campo, input, lista) {
   let activo = -1;
   let georefToken = 0;
   let georefTimer = null;
-  let vigente = true; // false tras elegir/cerrar la lista: evita que una respuesta tardía de Georef la reabra sola
+  let vigente = true; // false tras elegir o cerrar: evita que una respuesta tardía de Georef reabra la lista
 
   function render() {
     lista.innerHTML = filtradas
@@ -1188,13 +1154,12 @@ function armarAutocompletarBuscador(campo, input, lista) {
     filtradas = ESQUINAS_DATA.filter((e) => normalizarTxt(e.etiqueta).includes(q)).slice(0, 8);
     activo = -1;
     render();
-    /* Respaldo Georef: sólo si el relevamiento propio no alcanza, con debounce */
     const esPosibleInterseccion = valor.trim().split(/\s+/).length >= 2;
     if (GEOREF_HABILITADO && filtradas.length < 4 && esPosibleInterseccion) {
       const miToken = georefToken;
       georefTimer = setTimeout(async () => {
         const extra = await consultarGeoref(valor);
-        if (miToken !== georefToken || !vigente) return; // el usuario ya siguió escribiendo o cerró la lista
+        if (miToken !== georefToken || !vigente) return;
         agregarDeGeoref(extra);
       }, 450);
     }
@@ -1275,7 +1240,7 @@ function mostrarResultadoBuscador(candidatas) {
   resultadoBuscador.querySelectorAll(".resultado-opcion").forEach((btn) => {
     btn.addEventListener("click", () => aplicarResultado(candidatasActuales[Number(btn.dataset.i)]));
   });
-  aplicarResultado(candidatas[0]); // por defecto se enfoca la más recomendada (menor caminata total)
+  aplicarResultado(candidatas[0]);
 }
 
 function aplicarResultado(c) {
@@ -1325,7 +1290,7 @@ document.getElementById("btn-limpiar-buscador").addEventListener("click", () => 
   actualizarBotonBuscar();
 });
 
-/* ── Caja del buscador: plegado (mismo patrón que la caja de capas) ──── */
+/* Caja del buscador: plegado (mismo patrón que la caja de capas) */
 const cajaBuscador = document.getElementById("caja-buscador");
 cajaBuscador.style.display = BUSCADOR_LINEA_HABILITADO ? "" : "none";
 const buscadorHead = document.getElementById("buscador-head");
@@ -1340,7 +1305,7 @@ buscadorHead.addEventListener("keydown", (e) => {
 L.DomEvent.disableClickPropagation(cajaBuscador);
 L.DomEvent.disableScrollPropagation(cajaBuscador);
 
-/* ── Hoja inferior en mobile: manija de arrastre ── */
+/* Hoja inferior en mobile: manija de arrastre */
 const panelSheet = document.getElementById("pila-flotante");
 function actualizarAltoSheet() {
   CONT.style.setProperty("--vt-sheet-alto", panelSheet.getBoundingClientRect().height + "px");
@@ -1365,7 +1330,6 @@ if (window.matchMedia("(max-width: 640px)").matches) {
     else { plegarCaja(false); }
   };
 
-  /* Sincroniza la flecha de la manija con el estado real de Recorridos/Buscador */
   const sincronizarManija = () => {
     panelSheet.classList.toggle("vt-sheet-abierto", haySolapaAbierta());
     manija.setAttribute("aria-expanded", String(haySolapaAbierta()));
@@ -1379,7 +1343,6 @@ if (window.matchMedia("(max-width: 640px)").matches) {
     if (e.key === "Enter" || e.key === " ") { e.preventDefault(); alternarSheet(); }
   });
 
-  /* Arrastre en vivo del panel (rubber-band), listeners en fase de captura */
   let arranqueY = null;
   const TOPE_ARRIBA = -60, TOPE_ABAJO = 160, RESISTENCIA = 0.82, UMBRAL = 30;
 
@@ -1401,15 +1364,15 @@ if (window.matchMedia("(max-width: 640px)").matches) {
     arranqueY = null;
     panelSheet.style.transition = "";
     panelSheet.style.transform = "";
-    if (dy > UMBRAL) { plegarCaja(true); plegarBuscador(true); }        // swipe hacia abajo: cerrar todo
-    else if (dy < -UMBRAL && !haySolapaAbierta()) { plegarCaja(false); } // swipe hacia arriba: abrir Recorridos
+    if (dy > UMBRAL) { plegarCaja(true); plegarBuscador(true); }
+    else if (dy < -UMBRAL && !haySolapaAbierta()) { plegarCaja(false); }
   }, { passive: true, capture: true });
 
   L.DomEvent.disableClickPropagation(manija);
   L.DomEvent.disableScrollPropagation(manija);
 }
 
-/* ── Botones de acción sobre el mapa (zoom / ubicación / encuadre) + burbuja de clima ── */
+/* Botones de acción sobre el mapa (zoom / ubicación / encuadre) + burbuja de clima */
 const CtrlAcciones = L.Control.extend({
   options: { position: "topleft" },
   onAdd() {
@@ -1430,7 +1393,7 @@ const CtrlAcciones = L.Control.extend({
       `</button>`;
     const burbuja = L.DomUtil.create("div", "burbuja-clima", fila);
     burbuja.id = "burbuja-clima";
-    burbuja.hidden = true; // se muestra recién cuando actualizarClima() trae un dato válido
+    burbuja.hidden = true;
     L.DomEvent.disableClickPropagation(fila);
     return fila;
   },
@@ -1439,7 +1402,6 @@ mapa.addControl(new CtrlAcciones());
 
 document.getElementById("btn-zoom-in").addEventListener("click", () => mapa.zoomIn());
 document.getElementById("btn-zoom-out").addEventListener("click", () => mapa.zoomOut());
-/* Atenuados en el tope/piso de zoom, se revisa en cada zoomend */
 function actualizarBotonesZoom() {
   const z = mapa.getZoom();
   document.getElementById("btn-zoom-in").classList.toggle("deshabilitado", z >= mapa.getMaxZoom());
@@ -1448,13 +1410,11 @@ function actualizarBotonesZoom() {
 mapa.on("zoomend", actualizarBotonesZoom);
 actualizarBotonesZoom();
 
-/* ── Burbuja de clima: ícono + temperatura, coordenada fija ── */
-const CLIMA_LAT = -45.8659, CLIMA_LON = -67.4823; // Centrado Comodoro Rivadavia
-const CLIMA_REFRESCO_MS = 25 * 60 * 1000; // 25 min: el clima no cambia tan seguido
+/* Burbuja de clima: ícono + temperatura, coordenada fija */
+const CLIMA_LAT = -45.8659, CLIMA_LON = -67.4823;
+const CLIMA_REFRESCO_MS = 25 * 60 * 1000; // 25 min
 
-/* Códigos de clima WMO (los que devuelve Open-Meteo) agrupados en los
-   íconos disponibles en assets/iconos/clima/. Los códigos no mapeados caen
-   en "nublado" por defecto. */
+/* Códigos WMO de Open-Meteo agrupados en los íconos de assets/iconos/clima */
 const CLIMA_ICONOS = {
   0: ["sol", "Despejado"], 1: ["sol", "Mayormente despejado"],
   2: ["parcial", "Parcialmente nublado"],
@@ -1469,8 +1429,7 @@ const CLIMA_ICONOS = {
   85: ["nieve", "Chubascos de nieve"], 86: ["nieve", "Chubascos de nieve intensos"],
   95: ["tormenta", "Tormenta"], 96: ["tormenta", "Tormenta con granizo"], 99: ["tormenta", "Tormenta con granizo intenso"],
 };
-/* De noche (is_day=0 en la respuesta), despejado/mayormente despejado
-   muestran luna en vez de sol — mismo criterio visual que Apple Maps. */
+/* De noche (is_day=0) el cielo despejado usa luna en vez de sol */
 function iconoClima(codigo, esDeNoche) {
   if ((codigo === 0 || codigo === 1) && esDeNoche) return ["luna", "Despejado"];
   return CLIMA_ICONOS[codigo] || ["nublado", "Sin datos"];
@@ -1495,13 +1454,13 @@ async function actualizarClima() {
     burbuja.title = `${etiqueta}, ${temp}°C en Comodoro Rivadavia`;
     burbuja.hidden = false;
   } catch (e) {
-    burbuja.hidden = true; // sin datos: se oculta, no se muestra roto
+    burbuja.hidden = true;
   }
 }
 actualizarClima();
 setInterval(actualizarClima, CLIMA_REFRESCO_MS);
 
-/* ── Botón de ayuda / tutorial ── */
+/* Botón de ayuda / tutorial */
 if (TOUR_HABILITADO) {
   const CtrlAyuda = L.Control.extend({
     options: { position: "topleft" },
@@ -1520,7 +1479,7 @@ if (TOUR_HABILITADO) {
   });
 }
 
-/* ── Botón de avisos/advertencias ── */
+/* Botón de avisos/advertencias */
 const AVISOS_ACTIVOS = (window.AVISOS_DATA || []).filter((t) => typeof t === "string" && t.trim());
 if (AVISOS_HABILITADO && AVISOS_ACTIVOS.length) {
   const AVISOS_DESCARTADOS_KEY = "vt_avisos_descartados";
@@ -1548,7 +1507,6 @@ if (AVISOS_HABILITADO && AVISOS_ACTIVOS.length) {
     const left = Math.max(margen, Math.min(r.left, vw - bw - margen));
     elAvisoBurbuja.style.top = `${r.bottom + margen}px`;
     elAvisoBurbuja.style.left = `${left}px`;
-    // colita alineada con el centro del botón, sin salirse de la pantalla
     const colaLeft = Math.max(12, Math.min(r.left + r.width / 2 - left - 6, bw - 24));
     elAvisoBurbuja.style.setProperty("--cola-left", `${colaLeft}px`);
   }
@@ -1577,7 +1535,7 @@ if (AVISOS_HABILITADO && AVISOS_ACTIVOS.length) {
     document.getElementById("btn-avisos").setAttribute("aria-expanded", "true");
     elAvisoBurbuja.querySelector(".vt-aviso-cerrar").addEventListener("click", () => {
       cerrarAvisoBurbuja();
-      try { sessionStorage.setItem(AVISOS_DESCARTADOS_KEY, "1"); } catch (e) { /* puede estar bloqueado */ }
+      try { sessionStorage.setItem(AVISOS_DESCARTADOS_KEY, "1"); } catch (e) { /* noop */ }
     });
   }
 
@@ -1586,9 +1544,8 @@ if (AVISOS_HABILITADO && AVISOS_ACTIVOS.length) {
     else abrirAvisoBurbuja();
   });
 
-  // Aviso: aparición automática a los 10s, salvo que ya se haya descartado en esta sesión
   let avisosYaDescartados = false;
-  try { avisosYaDescartados = sessionStorage.getItem(AVISOS_DESCARTADOS_KEY) === "1"; } catch (e) { /* puede estar bloqueado */ }
+  try { avisosYaDescartados = sessionStorage.getItem(AVISOS_DESCARTADOS_KEY) === "1"; } catch (e) { /* noop */ }
   if (!avisosYaDescartados) {
     setTimeout(() => {
       abrirAvisoBurbuja();
@@ -1613,10 +1570,9 @@ document.getElementById("btn-encuadre").addEventListener("click", () => {
   mapa.flyToBounds(boundsRed, { padding: [30, 30], duration: 0.8 });
 });
 
-/* click en el mapa vacío: quitar foco */
 mapa.on("click", () => { if (estado.enfocada) desenfocar(); });
 
-/* ── Tema: botón ──────────────────────────────────────────────── */
+/* Tema: botón */
 function reestilarChips() {
   for (const [id, li] of filasPorId) {
     const c = colorChip(lineaPorId.get(id));
@@ -1635,7 +1591,7 @@ document.getElementById("btn-tema").addEventListener("click", () => {
 });
 reestilarChips();
 
-/* ── Stats + arranque ─────────────────────────────────────────── */
+/* Stats + arranque */
 (function initStats() {
   const nRutas = LINEAS_DATA.reduce((acc, l) => acc + l.rutas.length, 0);
   document.getElementById("stats-row").textContent = PARADAS_HABILITADAS
@@ -1651,10 +1607,10 @@ if (faltantes.length) {
   toast(`Atención: no se pudieron cargar ${faltantes.length} líneas (${faltantes.join(", ")}).`, 8000);
 }
 
-/* ══ Tutorial guiado: burbujas de ayuda paso a paso, estado en localStorage ══ */
+/* Tutorial guiado: burbujas de ayuda paso a paso, estado en localStorage */
 const TOUR_COMPLETADO_KEY = "vt_tour_completado";
 const TOUR_OFRECIDAS_KEY = "vt_tour_ofrecidas";
-const TOUR_MAX_OFRECIDAS = 2; // se ofrece solo en las primeras 2 visitas; después, solo vía el botón "?"
+const TOUR_MAX_OFRECIDAS = 2; // después de estas visitas, sólo se ofrece desde el botón "?"
 
 const pasosTour = [
   {
@@ -1724,7 +1680,6 @@ function cerrarTour() {
   if (elAnillo) { elAnillo.remove(); elAnillo = null; }
   if (elBlock) { elBlock.remove(); elBlock = null; }
   if (onResizeTour) { window.removeEventListener("resize", onResizeTour); onResizeTour = null; }
-  /* al salir del tutorial los paneles quedan cerrados */
   plegarCaja(true);
   plegarBuscador(true);
   pasoActual = -1;
@@ -1739,7 +1694,7 @@ function pulsarAyuda() {
 
 function finalizarTour() {
   cerrarTour();
-  try { localStorage.setItem(TOUR_COMPLETADO_KEY, "1"); } catch (e) { /* puede estar bloqueado */ }
+  try { localStorage.setItem(TOUR_COMPLETADO_KEY, "1"); } catch (e) { /* noop */ }
   pulsarAyuda();
 }
 
@@ -1776,7 +1731,6 @@ function mostrarPaso(i) {
     });
   };
 
-  /* Si el paso despliega una solapa, esperar la animación antes de medir el target */
   const conAnimacion = !!paso.antes && !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   if (conAnimacion) setTimeout(() => requestAnimationFrame(colocar), 300);
   else requestAnimationFrame(colocar);
@@ -1818,17 +1772,122 @@ document.addEventListener("keydown", (e) => {
   if (e.key === "Escape" && elBlock) cerrarTour();
 });
 
-/* Oferta automática en las primeras visitas, si no se completó antes */
 if (TOUR_HABILITADO) {
   (function ofrecerTourSiCorresponde() {
     let completado = false, ofrecidas = 0;
     try {
       completado = localStorage.getItem(TOUR_COMPLETADO_KEY) === "1";
       ofrecidas = parseInt(localStorage.getItem(TOUR_OFRECIDAS_KEY) || "0", 10);
-    } catch (e) { /* localStorage puede estar bloqueado */ }
+    } catch (e) { /* noop */ }
     if (completado || ofrecidas >= TOUR_MAX_OFRECIDAS) return;
     try { localStorage.setItem(TOUR_OFRECIDAS_KEY, String(ofrecidas + 1)); } catch (e) { /* noop */ }
     setTimeout(mostrarModalInicial, 500);
   })();
+}
+
+function iniciarModoMantenimiento() {
+  const CONT = document.getElementById("visor-transporte");
+  if (!CONT) return;
+  CONT.classList.add("vt-mantenimiento");
+
+  const TEMA_KEY = "transporte-tema";
+  function temaActual() {
+    return CONT.getAttribute("data-theme") === "dark" ? "dark" : "light";
+  }
+  function aplicarTema(tema) {
+    if (tema === "dark") CONT.setAttribute("data-theme", "dark");
+    else CONT.removeAttribute("data-theme");
+    document.body.style.background = tema === "dark" ? "#1a1a19" : "#fcfcfb";
+    try { localStorage.setItem(TEMA_KEY, tema); } catch (e) { /* noop */ }
+  }
+  let guardado = null;
+  try { guardado = localStorage.getItem(TEMA_KEY); } catch (e) { /* noop */ }
+  aplicarTema(guardado === "dark" ? "dark" : "light");
+
+  ["pila-flotante", "tarjeta-cercanas", "toast"].forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) el.remove();
+  });
+
+  const ATTR_ARGENMAP = "Instituto Geográfico Nacional + OpenStreetMap.";
+  const VISTA_CIUDAD = [-45.8646, -67.4823];
+  const mapa = L.map("mapa", {
+    zoomControl: false,
+    attributionControl: true,
+    dragging: false,
+    touchZoom: false,
+    scrollWheelZoom: false,
+    doubleClickZoom: false,
+    boxZoom: false,
+    keyboard: false,
+    tap: false,
+    inertia: false,
+  });
+  mapa.attributionControl.setPrefix(false);
+  mapa.setView(VISTA_CIUDAD, 13);
+
+  const capaArgenmapClaro = L.tileLayer(
+    "https://wms.ign.gob.ar/geoserver/gwc/service/tms/1.0.0/capabaseargenmap@EPSG:3857@png/{z}/{x}/{-y}.png",
+    { maxZoom: 19, maxNativeZoom: 18, attribution: ATTR_ARGENMAP });
+  const capaArgenmapOscuro = L.tileLayer(
+    "https://wms.ign.gob.ar/geoserver/gwc/service/tms/1.0.0/argenmap_oscuro@EPSG:3857@png/{z}/{x}/{-y}.png",
+    { maxZoom: 19, maxNativeZoom: 18, attribution: ATTR_ARGENMAP });
+  function capaBase() { return temaActual() === "dark" ? capaArgenmapOscuro : capaArgenmapClaro; }
+  let capaBaseActual = capaBase().addTo(mapa);
+  function actualizarBase() {
+    const nueva = capaBase();
+    if (nueva !== capaBaseActual) {
+      mapa.removeLayer(capaBaseActual);
+      capaBaseActual = nueva.addTo(mapa);
+    }
+  }
+
+  const cuerpo = CONT.querySelector(".vt-cuerpo") || CONT;
+  const overlay = document.createElement("div");
+  overlay.className = "vt-mant-overlay";
+  overlay.setAttribute("role", "status");
+  overlay.setAttribute("aria-live", "polite");
+  overlay.innerHTML =
+    `<div class="vt-mant-cartel">` +
+      `<span class="vt-mant-icono" aria-hidden="true">` +
+        `<svg viewBox="-1 -1 26 26" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">` +
+          `<polyline points="23 4 23 10 17 10"/>` +
+          `<polyline points="1 20 1 14 7 14"/>` +
+          `<path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>` +
+        `</svg>` +
+      `</span>` +
+      `<h2 class="vt-mant-titulo">Visor fuera de línea</h2>` +
+      `<p class="vt-mant-mensaje">El visor de transporte está temporalmente fuera de línea por actualización de datos. Reapertura a confirmar.</p>` +
+      `<p class="vt-mant-pie">Dirección General de Modernización e Investigación Territorial</p>` +
+    `</div>`;
+  cuerpo.appendChild(overlay);
+
+  ["pointerdown", "pointerup", "click", "dblclick", "contextmenu",
+   "touchstart", "touchmove", "wheel"].forEach((tipo) => {
+    overlay.addEventListener(tipo, (ev) => {
+      ev.preventDefault();
+      ev.stopPropagation();
+    }, { passive: false });
+  });
+
+  /* Cabecera */
+  const btnTema = document.getElementById("btn-tema");
+  if (btnTema) {
+    btnTema.addEventListener("click", () => {
+      aplicarTema(temaActual() === "dark" ? "light" : "dark");
+      actualizarBase();
+    });
+  }
+  const btnFs = document.getElementById("btn-fs");
+  if (btnFs) {
+    btnFs.addEventListener("click", () => {
+      if (document.fullscreenElement) document.exitFullscreen();
+      else if (CONT.requestFullscreen) CONT.requestFullscreen().catch(() => { /* noop */ });
+    });
+  }
+  document.addEventListener("fullscreenchange", () => {
+    setTimeout(() => mapa.invalidateSize(), 120);
+  });
+  window.addEventListener("resize", () => mapa.invalidateSize());
 }
 })();
