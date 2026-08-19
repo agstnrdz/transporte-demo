@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <a href="https://transporte.comodoro.gov.ar"><strong>Ver la aplicación en vivo »</strong></a>
+  <a href="https://comodoro-mit.github.io/transporte"><strong>Ver la aplicación en vivo »</strong></a>
 </p>
 
 <p align="center">
@@ -49,7 +49,7 @@ El uso de [Argenmap](https://ign-argentina.github.io/argenmap-web/) como mapa ba
 
 ### Tecnología
 
-Sitio estático construido con HTML, CSS y JavaScript, sin dependencias de build ni backend. El mapa se implementa con [Leaflet](https://leafletjs.com/). El buscador de línea complementa el listado propio de esquinas relevadas con consultas opcionales a la [API Georef](https://datosgobar.github.io/georef-ar-api/) para intersecciones no incluidas en el relevamiento; si el servicio no responde, el buscador sigue funcionando sólo con los datos propios. La burbuja de clima consulta la API pública de [Open-Meteo](https://open-meteo.com/).
+Sitio estático construido con HTML, CSS y JavaScript, sin dependencias externas ni backend. El mapa se implementa con [Leaflet](https://leafletjs.com/). El buscador de línea complementa el listado propio de esquinas relevadas con consultas opcionales a la [API Georef](https://datosgobar.github.io/georef-ar-api/) para intersecciones no incluidas en el relevamiento; si el servicio no responde, el buscador sigue funcionando sólo con los datos propios. La burbuja de clima consulta la API pública de [Open-Meteo](https://open-meteo.com/).
 
 ### Licencia
 
