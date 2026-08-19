@@ -1,9 +1,5 @@
-# Normalización de fin de línea
-# El repositorio guarda siempre LF, independientemente del sistema operativo
-# desde el que se edite. Evita diffs de archivos completos por cambios de CRLF.
 * text=auto eol=lf
 
-# Binarios: nunca normalizar ni intentar diff de texto.
 *.png   binary
 *.jpg   binary
 *.jpeg  binary
@@ -11,8 +7,5 @@
 *.ico   binary
 *.pdf   binary
 
-# Archivos de datos generados a partir de fuentes geográficas.
-# Se excluyen de la estadística de lenguajes y se colapsan en los diffs,
-# para que el historial refleje el código y no la geometría regenerada.
 data/*.js    linguist-generated=true
 data/*.json  linguist-generated=true
