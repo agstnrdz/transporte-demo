@@ -11,7 +11,7 @@ const HORARIOS_HABILITADO = false;
 
 const AVISOS_HABILITADO = true;
 
-const MODO_MANTENIMIENTO = true;
+const MODO_MANTENIMIENTO = false;
 
 if (MODO_MANTENIMIENTO) {
   iniciarModoMantenimiento();
