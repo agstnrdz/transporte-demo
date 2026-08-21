@@ -22,7 +22,7 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
 
   --vt-glass-blur:        blur(20px) saturate(180%);
   --vt-glass-bg:          rgba(255, 255, 255, 0.62);
-  --vt-glass-bg-strong:   rgba(230, 225, 225, 0.521);
+  --vt-glass-bg-strong:   rgba(230, 225, 225, 0.40);
   --vt-glass-borde-arriba: rgba(255, 255, 255, 0.85);
   --vt-glass-brillo:      rgba(255, 255, 255, 0.55);
   --vt-glass-sombra:      0 8px 32px rgba(11, 11, 11, 0.16);
@@ -52,7 +52,7 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   --mapa-fondo:   #141414;
   --geoloc:       #3987e5;
   --vt-glass-bg:          rgba(46, 46, 44, 0.63);
-  --vt-glass-bg-strong:   rgba(24, 24, 23, 0.82);
+  --vt-glass-bg-strong:   rgba(24, 24, 23, 0.40);
   --vt-glass-borde-arriba: rgba(255, 255, 255, 0.22);
   --vt-glass-brillo:      rgba(255, 255, 255, 0.16);
   --vt-glass-sombra:      0 8px 32px rgba(0, 0, 0, 0.5);
@@ -1124,7 +1124,7 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   margin: 20px 0 0;
   padding-top: 16px;
   border-top: 1px solid var(--hair);
-  font-size: 16px;
+  font-size: 16.5px;
   font-weight: 500;
   line-height: 1.4;
   color: var(--muted);
