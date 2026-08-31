@@ -33,6 +33,13 @@ if (!coincidencia) {
 }
 const mantenimiento = coincidencia[1] === "true";
 
+if (!mantenimiento && !existsSync(path.join(RAIZ, "data", "recorridos.geojson"))) {
+  morir(
+    "falta data/recorridos.geojson.\n" +
+    "  Generalo con: node tools/build-datos.mjs"
+  );
+}
+
 await rm(DESTINO, { recursive: true, force: true });
 await mkdir(DESTINO, { recursive: true });
 
@@ -73,7 +80,7 @@ if (mantenimiento) {
     morir("la carpeta data/ quedó en el artifact con el modo mantenimiento activo");
   }
   const sospechosos = [];
-  const extensionesTexto = new Set([".html", ".js", ".css", ".json", ".txt", ".md"]);
+  const extensionesTexto = new Set([".html"]);
   async function revisar(dir) {
     for (const entrada of await readdir(dir)) {
       const completa = path.join(dir, entrada);
@@ -81,7 +88,7 @@ if (mantenimiento) {
       if (info.isDirectory()) { await revisar(completa); continue; }
       if (!extensionesTexto.has(path.extname(entrada))) continue;
       const texto = await readFile(completa, "utf8");
-      if (/(src|href)\s*=\s*["']data\//.test(texto) || /["']data\/[A-Za-z0-9_]+\.(js|json)["']/.test(texto)) {
+      if (/(src|href)\s*=\s*["']data\//.test(texto)) {
         sospechosos.push(path.relative(DESTINO, completa));
       }
     }

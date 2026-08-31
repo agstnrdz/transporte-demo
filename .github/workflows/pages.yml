@@ -27,6 +27,9 @@ jobs:
         with:
           node-version: "20"
 
+      - name: Consolidar recorridos (data/linea-*.geojson → recorridos.geojson)
+        run: node tools/build-datos.mjs
+
       - name: Armar _site según el modo mantenimiento
         run: node tools/build-pages.mjs _site
 
