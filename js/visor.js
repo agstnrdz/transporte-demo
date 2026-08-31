@@ -1,4 +1,4 @@
-(function () {
+(async function () {
 "use strict";
 
 const PARADAS_HABILITADAS = true;
@@ -7,7 +7,7 @@ const BUSCADOR_LINEA_HABILITADO = false;
 
 const TOUR_HABILITADO = true;
 
-const HORARIOS_HABILITADO = false;
+const HORARIOS_HABILITADO = true;
 
 const AVISOS_HABILITADO = true;
 
@@ -18,18 +18,18 @@ if (MODO_MANTENIMIENTO) {
   return;
 }
 
-const IDS_LINEAS = ["1","2","3","4","5","5U","6A","6B","7","8H","8AH","9",
-                    "12","13","14","15","16","17","18","19","20","21","22"];
+const RUTA_RECORRIDOS = "data/recorridos.geojson";
+const RUTA_HORARIOS = "data/horarios.json";
 
-/* Paleta */
+/* Paleta por línea (claro, oscuro) */
 const PALETA = {
   "1":  ["#d62728", "#ff6b6b"], "2":  ["#1f77b4", "#5aa9e6"],
   "3":  ["#2ca02c", "#5fd068"], "4":  ["#9467bd", "#b78fe0"],
   "5":  ["#ff7f0e", "#ffa94d"], "5U": ["#8c564b", "#c9938a"],
-  "6A": ["#e377c2", "#f2a6dd"], "6B": ["#8e44ad", "#c39bd3"],
+  "6H": ["#e377c2", "#f2a6dd"], "6AH":["#8e44ad", "#c39bd3"],
   "7":  ["#17becf", "#63dfee"],
-  "8H": ["#bcbd22", "#d9db4f"], "8AH": ["#6b8e23", "#9acd32"],
-  "9":  ["#7f2704", "#d95f02"],
+  "8H": ["#bcbd22", "#d9db4f"], "8AH":["#6b8e23", "#9acd32"],
+  "9":  ["#7f2704", "#d95f02"], "9A": ["#546e7a", "#90a4ae"],
   "12": ["#0d5b8c", "#4fa3d1"], "13": ["#a61e4d", "#e64980"],
   "14": ["#2b8a3e", "#69db7c"], "15": ["#5f3dc4", "#9775fa"],
   "16": ["#e8590c", "#ff922b"], "17": ["#0b7285", "#3bc9db"],
@@ -41,16 +41,13 @@ const PALETA = {
 const SENTIDOS = {
   ida: ["Ida", "ida"], vuelta: ["Vuelta", "vuelta"],
   horario: ["Horario", "circular"], antihorario: ["Antihorario", "circular"],
-  sur: ["Sur", "circular"], norte: ["Norte", "circular"],
+  completo: ["Recorrido completo", "unico"],
   "": ["Único", "unico"],
 };
-const ORDEN_SENT = { ida: 0, vuelta: 1, horario: 0, antihorario: 1, sur: 0, norte: 1, "": 0 };
+const ORDEN_SENT = { ida: 0, horario: 0, completo: 0, "": 0, vuelta: 1, antihorario: 1 };
 
-const CORRECCIONES_SENTIDO = {};
-const CORRECCIONES_INVERTIR = {
-  "5U": { "": true },
-};
-
+/* Une tramos sueltos de una geometría multiparte por vecino más cercano.
+   Si el salto supera GAP_MAX, deja el tramo aparte en vez de inventar un tirante. */
 const GAP_MAX = 150;
 function distM(a, b) {
   const kx = 111320 * Math.cos(-45.86 * Math.PI / 180);
@@ -93,34 +90,62 @@ function coser(parts) {
   return paths;
 }
 
+function errorDatos(mensaje) {
+  const cont = document.getElementById("mapa");
+  if (cont) cont.innerHTML = '<p style="padding:24px">' + mensaje + '</p>';
+}
+
+/* Recorridos: un único GeoJSON generado por tools/build-datos.mjs.
+   Horarios: primer y último servicio por sentido (data/horarios.json). */
+async function traerJSON(ruta) {
+  const resp = await fetch(ruta, { cache: "no-cache" });
+  if (!resp.ok) throw new Error(ruta + ": HTTP " + resp.status);
+  return resp.json();
+}
+
+let GJ_RECORRIDOS = null;
+let HORARIOS = {};
+try {
+  const [recorridos, horarios] = await Promise.all([
+    traerJSON(RUTA_RECORRIDOS),
+    HORARIOS_HABILITADO ? traerJSON(RUTA_HORARIOS).catch(() => ({})) : Promise.resolve({}),
+  ]);
+  GJ_RECORRIDOS = recorridos;
+  HORARIOS = horarios && typeof horarios === "object" ? horarios : {};
+} catch (err) {
+  errorDatos(
+    "No se pudieron cargar los recorridos (" + err.message + "). " +
+    "Si abriste el archivo con doble clic, el navegador bloquea la lectura local: " +
+    "serví la carpeta con un servidor (por ejemplo <code>npx serve</code>)."
+  );
+  return;
+}
+
 const LINEAS_DATA = [];
-const faltantes = [];
-for (const id of IDS_LINEAS) {
-  const gj = window["LINEA_" + id + "_DATA"];
-  if (!gj || !gj.features || !gj.features.length) { faltantes.push(id); continue; }
-  const rutasPorSentido = new Map();
-  let nombre = "";
-  for (const ft of gj.features) {
+const sinPaleta = [];
+{
+  const porLinea = new Map();
+  for (const ft of (GJ_RECORRIDOS.features || [])) {
     const p = ft.properties || {};
     const g = ft.geometry;
     if (!g) continue;
-    const sentOriginal = String(p.sentido || "").trim().toLowerCase();
-    const relabel = (CORRECCIONES_SENTIDO[id] || {})[sentOriginal];
-    const sent = relabel != null ? relabel : sentOriginal;
+    const id = String(p.linea || "").trim().toUpperCase();
+    if (!id) continue;
+    const sent = String(p.sentido || "").trim().toLowerCase();
     const def = SENTIDOS[sent] || [sent.charAt(0).toUpperCase() + sent.slice(1) || "Único", "ida"];
     const parts = (g.type === "MultiLineString" ? g.coordinates : [g.coordinates])
       .filter((t) => t && t.length >= 2);
     if (!parts.length) continue;
     /* GeoJSON [lng,lat] → Leaflet [lat,lng] */
-    let paths = coser(parts).map((path) => path.map((pt) => [pt[1], pt[0]]));
-    if ((CORRECCIONES_INVERTIR[id] || {})[sentOriginal]) {
-      paths = paths.map((path) => path.slice().reverse());
-    }
-    const existente = rutasPorSentido.get(sent);
+    const paths = coser(parts).map((path) => path.map((pt) => [pt[1], pt[0]]));
+
+    if (!porLinea.has(id)) porLinea.set(id, { nombre: "", rutasPorSentido: new Map() });
+    const acc = porLinea.get(id);
+    const existente = acc.rutasPorSentido.get(sent);
     if (existente) {
       existente.paths.push(...paths);
     } else {
-      rutasPorSentido.set(sent, {
+      acc.rutasPorSentido.set(sent, {
         id: id + "-" + (sent || "unico"),
         sentido: def[0], tipo: def[1],
         _orden: ORDEN_SENT[sent] != null ? ORDEN_SENT[sent] : 9,
@@ -128,14 +153,35 @@ for (const id of IDS_LINEAS) {
       });
     }
     const nom = String(p.nombre || "").trim();
-    if (nom && (!nombre || sent === "ida" || sent === "horario" || sent === "")) nombre = nom;
+    if (nom && (!acc.nombre || sent === "ida" || sent === "horario" || sent === "completo" || sent === "")) {
+      acc.nombre = nom;
+    }
   }
-  const rutas = Array.from(rutasPorSentido.values());
-  if (!rutas.length) { faltantes.push(id); continue; }
-  rutas.sort((a, b) => a._orden - b._orden);
-  const pal = PALETA[id] || ["#555555", "#aaaaaa"];
-  LINEAS_DATA.push({ id, nombre, color: pal[0], colorDark: pal[1], rutas });
+
+  /* Orden: por número y, dentro del número, horario antes que antihorario */
+  const RANGO_SUFIJO = { "": 0, "H": 1, "AH": 2, "U": 3, "A": 4, "B": 5 };
+  const clave = (id) => {
+    const m = id.match(/^(\d+)(.*)$/);
+    if (!m) return [9999, 99, id];
+    const suf = m[2];
+    return [Number(m[1]), RANGO_SUFIJO[suf] != null ? RANGO_SUFIJO[suf] : 50, suf];
+  };
+  const ids = [...porLinea.keys()].sort((a, b) => {
+    const ka = clave(a), kb = clave(b);
+    return ka[0] - kb[0] || ka[1] - kb[1] || String(ka[2]).localeCompare(String(kb[2]));
+  });
+
+  for (const id of ids) {
+    const acc = porLinea.get(id);
+    const rutas = [...acc.rutasPorSentido.values()].sort((a, b) => a._orden - b._orden);
+    if (!rutas.length) continue;
+    const pal = PALETA[id];
+    if (!pal) sinPaleta.push(id);
+    const colores = pal || ["#555555", "#aaaaaa"];
+    LINEAS_DATA.push({ id, nombre: acc.nombre, color: colores[0], colorDark: colores[1], rutas });
+  }
 }
+
 const PARADAS_DATA = Array.isArray(window.PARADAS_DATA) ? window.PARADAS_DATA : [];
 
 function normalizarTxt(s) {
@@ -169,9 +215,7 @@ const ESQUINAS_DATA = (() => {
 })();
 
 if (!LINEAS_DATA.length) {
-  document.getElementById("mapa").innerHTML =
-    '<p style="padding:24px">No se pudieron cargar los datos remotos de líneas ' +
-    '(linea_*_data.js). Verificá la conexión o las URLs del repositorio.</p>';
+  errorDatos("El archivo " + RUTA_RECORRIDOS + " no contiene recorridos válidos.");
   return;
 }
 
@@ -505,21 +549,32 @@ const FLECHAS = { ida: "→", vuelta: "←", circular: "↻", unico: "→" };
 /* Sólo cambia la etiqueta visible en el panel; linea.id sigue siendo el real */
 const CHIP_LABEL = { "8H": "8", "8AH": "8" };
 
-/* Horarios por línea (panel "Recorridos" → detalle de cada línea), armado bajo demanda */
-function filaHorario(h) {
-  return `<li><span class="horarios-hora">${esc(h.horario)}</span>` +
-         `<span class="horarios-frec">${esc(h.frecuencia || "")}</span></li>`;
+/* Horarios por línea (panel "Recorridos" → detalle de cada línea), armado bajo demanda.
+   Esquema de data/horarios.json:
+     { "<línea>": { nombre, primero: "HH:MM" | ["HH:MM", …], ultimo: "HH:MM", nota? } } */
+function horariosDeLinea(id) {
+  const d = HORARIOS[id];
+  return d && (d.primero || d.ultimo) ? d : null;
 }
-function columnaHorarios(etiqueta, filas) {
-  const cuerpo = (filas && filas.length)
-    ? `<ul class="horarios-lista">${filas.map(filaHorario).join("")}</ul>`
-    : `<p class="horarios-vacio">Sin horarios cargados.</p>`;
-  return `<div class="horarios-col"><h4 class="horarios-titulo">${esc(etiqueta)}</h4>${cuerpo}</div>`;
+function textoServicio(valor) {
+  if (Array.isArray(valor)) return valor.filter(Boolean).join(", ");
+  return valor ? String(valor) : "";
+}
+function filaServicio(etiqueta, valor) {
+  const texto = textoServicio(valor);
+  if (!texto) return "";
+  return `<li class="horarios-servicio">` +
+           `<span class="horarios-etiqueta">${esc(etiqueta)}</span>` +
+           `<span class="horarios-hora">${esc(texto)}</span>` +
+         `</li>`;
 }
 function contenidoHorarios(linea) {
-  const datos = (window.HORARIOS_DATA || {})[linea.id];
+  const datos = horariosDeLinea(linea.id);
   if (!datos) return `<p class="horarios-vacio">No hay horarios cargados para esta línea.</p>`;
-  return `<div class="horarios-cols">${columnaHorarios("Ida", datos.ida)}${columnaHorarios("Vuelta", datos.vuelta)}</div>`;
+  const filas = filaServicio("Primer servicio", datos.primero) +
+                filaServicio("Último servicio", datos.ultimo);
+  const nota = datos.nota ? `<p class="horarios-nota">${esc(datos.nota)}</p>` : "";
+  return `<ul class="horarios-lista">${filas}</ul>${nota}`;
 }
 
 for (const linea of LINEAS_DATA) {
@@ -532,7 +587,7 @@ for (const linea of LINEAS_DATA) {
     `<button class="pill sentido activo" data-ruta="${esc(r.id)}" data-tipo="${esc(r.tipo)}" aria-pressed="true" title="${esc(linea.nombre || "Línea " + linea.id)}">` +
     `${FLECHAS[r.tipo] || "→"} ${esc(r.sentido)}</button>`
   ).join("");
-  const tieneHorarios = HORARIOS_HABILITADO && !!(window.HORARIOS_DATA && window.HORARIOS_DATA[linea.id]);
+  const tieneHorarios = HORARIOS_HABILITADO && !!horariosDeLinea(linea.id);
   const btnHorarios = tieneHorarios
     ? `<button type="button" class="pill pill-accion btn-ver-horarios" aria-expanded="false">Ver horarios</button>`
     : "";
@@ -1603,8 +1658,8 @@ mapa.fitBounds(boundsRed, { padding: [24, 24] });
 reestilarTodo();
 aplicarFiltrosParadas();
 actualizarPanelFoco();
-if (faltantes.length) {
-  toast(`Atención: no se pudieron cargar ${faltantes.length} líneas (${faltantes.join(", ")}).`, 8000);
+if (sinPaleta.length) {
+  toast(`Atención: sin color asignado en PALETA: ${sinPaleta.join(", ")}. Se dibujan en gris.`, 8000);
 }
 
 /* Tutorial guiado: burbujas de ayuda paso a paso, estado en localStorage */

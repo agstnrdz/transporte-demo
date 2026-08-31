@@ -177,32 +177,11 @@
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <!-- vt:datos:inicio -->
-<!-- tools/build-pages.mjs elimina este bloque en MODO_MANTENIMIENTO -->
-<script src="data/linea_1_data.js"></script>
-<script src="data/linea_2_data.js"></script>
-<script src="data/linea_3_data.js"></script>
-<script src="data/linea_4_data.js"></script>
-<script src="data/linea_5_data.js"></script>
-<script src="data/linea_5U_data.js"></script>
-<script src="data/linea_6A_data.js"></script>
-<script src="data/linea_6B_data.js"></script>
-<script src="data/linea_7_data.js"></script>
-<script src="data/linea_8H_data.js"></script>
-<script src="data/linea_8AH_data.js"></script>
-<script src="data/linea_9_data.js"></script>
-<script src="data/linea_12_data.js"></script>
-<script src="data/linea_13_data.js"></script>
-<script src="data/linea_14_data.js"></script>
-<script src="data/linea_15_data.js"></script>
-<script src="data/linea_16_data.js"></script>
-<script src="data/linea_17_data.js"></script>
-<script src="data/linea_18_data.js"></script>
-<script src="data/linea_19_data.js"></script>
-<script src="data/linea_20_data.js"></script>
-<script src="data/linea_21_data.js"></script>
-<script src="data/linea_22_data.js"></script>
+<!-- tools/build-pages.mjs elimina este bloque en MODO_MANTENIMIENTO.
+     Los recorridos y los horarios se cargan aparte, con fetch,
+     desde data/recorridos.geojson y data/horarios.json
+     (generado por tools/build-datos.mjs a partir de data/linea-*.geojson). -->
 <script src="data/paradas_data.js"></script>
-<script src="data/horarios_data.js"></script>
 <script src="data/avisos_data.js"></script>
 <!-- vt:datos:fin -->
 <script src="js/visor.js"></script>

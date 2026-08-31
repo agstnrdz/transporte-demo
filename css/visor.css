@@ -455,22 +455,10 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
 }
 
 .linea-horarios { flex: 1 1 100%; margin-top: 8px; }
-.horarios-cols { display: flex; gap: 12px; }
-.horarios-col { flex: 1; min-width: 0; }
-.horarios-titulo {
-  margin: 0 0 4px;
-  font-size: 10px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--muted);
-}
 .horarios-lista {
   list-style: none;
   margin: 0;
   padding: 0;
-  max-height: 160px;
-  overflow-y: auto;
 }
 .horarios-lista li {
   display: flex;
@@ -482,8 +470,16 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
 }
 .horarios-lista li:last-child { border-bottom: none; }
 .horarios-hora { font-weight: 650; color: var(--ink-1); }
-.horarios-frec { color: var(--ink-2); white-space: nowrap; }
 .horarios-vacio { margin: 4px 0 0; font-size: 11px; color: var(--muted); }
+.horarios-nota { margin: 8px 0 0; font-size: 11px; line-height: 1.35; color: var(--muted); }
+.horarios-servicio {
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  padding: 4px 0;
+}
+.horarios-etiqueta { color: var(--ink-2); white-space: nowrap; }
+.horarios-servicio .horarios-hora { font-size: 12.5px; text-align: right; }
 
 /* Switch */
 .switch { position: relative; display: inline-block; }
