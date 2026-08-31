@@ -21,11 +21,11 @@
 
 ### Sobre este proyecto
 
-Este visor permite consultar de forma interactiva las 23 líneas de colectivo urbano de Comodoro Rivadavia (con sus recorridos de ida y vuelta) y la ubicación de las paradas relevadas en la ciudad. Es una herramienta de acceso público desarrollada por la Dirección General de Modernización e Investigación Territorial.
+Este visor permite consultar de forma interactiva las 24 líneas de colectivo urbano de Comodoro Rivadavia (con sus recorridos de ida y vuelta) y la ubicación de las paradas relevadas en la ciudad. Es una herramienta de acceso público desarrollada por la Dirección General de Modernización e Investigación Territorial.
 
 ### Funcionalidades
 
-- Recorridos de las 23 líneas, diferenciando ida y vuelta, con horarios desplegables por línea.
+- Recorridos de las 24 líneas, diferenciando ida y vuelta (o sentido horario / antihorario en las circulares), con horarios desplegables por línea.
 - Paradas geolocalizadas, con filtros por refugio, cartel y poste, y las líneas que pasan a menos de 5 metros al tocarlas.
 - Ubicación del usuario y listado de paradas más cercanas.
 - Buscador de línea sugerida por origen y destino (esquina relevada o punto marcado en el mapa), con hasta 3 opciones ordenadas por distancia a pie.
@@ -49,7 +49,7 @@ El uso de [Argenmap](https://ign-argentina.github.io/argenmap-web/) como mapa ba
 
 ### Tecnología
 
-Sitio estático construido con HTML, CSS y JavaScript, sin dependencias externas ni backend. El mapa se implementa con [Leaflet](https://leafletjs.com/). El buscador de línea complementa el listado propio de esquinas relevadas con consultas opcionales a la [API Georef](https://datosgobar.github.io/georef-ar-api/) para intersecciones no incluidas en el relevamiento; si el servicio no responde, el buscador sigue funcionando sólo con los datos propios. La burbuja de clima consulta la API pública de [Open-Meteo](https://open-meteo.com/).
+Sitio estático construido con HTML, CSS y JavaScript, sin dependencias externas ni backend. Los recorridos se editan en QGIS y se versionan como un GeoJSON por línea en `data/linea-*.geojson`; `tools/build-datos.mjs` los valida y consolida en `data/recorridos.geojson`, que es lo que el visor carga con `fetch`. El mapa se implementa con [Leaflet](https://leafletjs.com/). El buscador de línea complementa el listado propio de esquinas relevadas con consultas opcionales a la [API Georef](https://datosgobar.github.io/georef-ar-api/) para intersecciones no incluidas en el relevamiento; si el servicio no responde, el buscador sigue funcionando sólo con los datos propios. La burbuja de clima consulta la API pública de [Open-Meteo](https://open-meteo.com/).
 
 ### Licencia
 
