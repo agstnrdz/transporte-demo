@@ -300,7 +300,7 @@ function toast(msg, ms = 4000) {
 
 /* Mapa base */
 /* La atribución cartográfica cambia con la capa activa; ATTR_DATOS es común */
-const ATTR_DATOS = "Fuente: Dirección General de Transporte (recorridos 2026). Procesamiento: Modernización e Investigación Territorial.";
+const ATTR_DATOS = "Fuente: Dirección General de Transporte (recorridos 2026). Procesamiento: Modernización e Investigación Territorial. Los errores topológicos y de precisión están siendo corregidos.";
 const ATTR_ARGENMAP = "Instituto Geográfico Nacional + OpenStreetMap. " + ATTR_DATOS;
 const ATTR_SATELITE = 'Imagen satelital &copy; <a href="https://www.esri.com/" target="_blank" rel="noopener noreferrer">Esri</a> &mdash; Esri, Vantor, Earthstar Geographics y la comunidad de usuarios GIS. ' + ATTR_DATOS;
 const mapa = L.map("mapa", { zoomControl: false, attributionControl: true });
