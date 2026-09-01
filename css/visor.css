@@ -22,7 +22,7 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
 
   --vt-glass-blur:        blur(20px) saturate(180%);
   --vt-glass-bg:          rgba(255, 255, 255, 0.62);
-  --vt-glass-bg-strong:   rgba(230, 225, 225, 0.40);
+  --vt-glass-bg-strong:   rgba(230, 225, 225, 0.65);
   --vt-glass-borde-arriba: rgba(255, 255, 255, 0.85);
   --vt-glass-brillo:      rgba(255, 255, 255, 0.55);
   --vt-glass-sombra:      0 8px 32px rgba(11, 11, 11, 0.16);
@@ -52,7 +52,7 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   --mapa-fondo:   #141414;
   --geoloc:       #3987e5;
   --vt-glass-bg:          rgba(46, 46, 44, 0.63);
-  --vt-glass-bg-strong:   rgba(24, 24, 23, 0.40);
+  --vt-glass-bg-strong:   rgba(24, 24, 23, 0.70);
   --vt-glass-borde-arriba: rgba(255, 255, 255, 0.22);
   --vt-glass-brillo:      rgba(255, 255, 255, 0.16);
   --vt-glass-sombra:      0 8px 32px rgba(0, 0, 0, 0.5);
@@ -74,7 +74,7 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   color: #fff;
   flex-shrink: 0;
 }
-.vt-header-texto h1 { margin: 0; font-size: 17px; font-weight: 800; line-height: 1.2; }
+.vt-header-texto h1 { margin: 0; font-size: 18px; font-weight: 600; line-height: 1.2; }
 .vt-header-texto p  { margin: 2px 0 0; font-size: 15px; opacity: 0.9; }
 .vt-header .logo { height: 55px; width: auto; flex-shrink: 0; margin-left: auto; margin-right: auto }
 .vt-header .logo-link { margin-left: auto; flex-shrink: 0; display: inline-flex; }
