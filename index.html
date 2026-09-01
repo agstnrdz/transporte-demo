@@ -9,7 +9,7 @@
 <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon/favicon-32.png">
 <link rel="icon" type="image/png" sizes="48x48" href="assets/favicon/favicon-48.png">
 <link rel="apple-touch-icon" sizes="180x180" href="assets/favicon/apple-touch-icon.png">
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="stylesheet" href="vendor/leaflet/leaflet.css">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://wms.ign.gob.ar">
@@ -175,13 +175,13 @@
 
 </div>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<!-- Leaflet servido desde el propio repo (vendor/leaflet): el visor no depende de un CDN externo -->
+<script src="vendor/leaflet/leaflet.js"></script>
 <!-- vt:datos:inicio -->
 <!-- tools/build-pages.mjs elimina este bloque en MODO_MANTENIMIENTO.
-     Los recorridos y los horarios se cargan aparte, con fetch,
-     desde data/recorridos.geojson y data/horarios.json
-     (generado por tools/build-datos.mjs a partir de data/linea-*.geojson). -->
-<script src="data/paradas_data.js"></script>
+     Los recorridos, las paradas y los horarios se cargan aparte, con fetch,
+     desde data/recorridos.geojson, data/paradas.json y data/horarios.json
+     (los genera tools/build-datos.mjs a partir de los .geojson exportados de QGIS). -->
 <script src="data/avisos_data.js"></script>
 <!-- vt:datos:fin -->
 <script src="js/visor.js"></script>
