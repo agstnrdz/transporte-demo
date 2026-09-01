@@ -49,7 +49,7 @@ El uso de [Argenmap](https://ign-argentina.github.io/argenmap-web/) como mapa ba
 
 ### Tecnología
 
-Sitio estático construido con HTML, CSS y JavaScript, sin dependencias externas ni backend. Los datos se editan en QGIS y se versionan como GeoJSON: un archivo por línea en `data/linea-*.geojson` y las paradas en `data/paradas.geojson`. `tools/build-datos.mjs` los valida y genera lo que el visor carga con `fetch` - `data/recorridos.geojson` y `data/paradas.json` -, que son artefactos de build y no se versionan. El mapa se implementa con [Leaflet](https://leafletjs.com/) 1.9.4, servido desde el propio repositorio (`vendor/leaflet/`) y no desde un CDN, para que el visor no dependa de un tercero. El buscador de línea complementa el listado propio de esquinas relevadas con consultas opcionales a la [API Georef](https://datosgobar.github.io/georef-ar-api/) para intersecciones no incluidas en el relevamiento; si el servicio no responde, el buscador sigue funcionando sólo con los datos propios. La burbuja de clima consulta la API pública de [Open-Meteo](https://open-meteo.com/).
+Sitio estático construido con HTML, CSS y JavaScript, sin dependencias externas ni backend. El mapa se implementa con [Leaflet](https://leafletjs.com/) 1.9.4, servido desde el propio repositorio (`vendor/leaflet/`) y no desde un CDN, para que el visor no dependa de un tercero. El buscador de línea complementa el listado propio de esquinas relevadas con consultas opcionales a la [API Georef](https://datosgobar.github.io/georef-ar-api/) para intersecciones no incluidas en el relevamiento; si el servicio no responde, el buscador sigue funcionando sólo con los datos propios. La burbuja de clima consulta la API pública de [Open-Meteo](https://open-meteo.com/).
 
 ### Licencia
 
