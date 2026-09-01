@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <a href="https://comodoro-mit.github.io/transporte"><strong>Ver la aplicación en vivo »</strong></a>
+  <a href="https://transporte.comodoro.gov.ar"><strong>Ver la aplicación en vivo »</strong></a>
 </p>
 
 <p align="center">
@@ -39,7 +39,7 @@ Este visor permite consultar de forma interactiva las 24 líneas de colectivo ur
 - **Recorridos de líneas:** Dirección General de Transporte (2026).
 - **Paradas:** Dirección General de Transporte, sobre relevamiento propio (2023).
 - **Cartografía base:** Instituto Geográfico Nacional (Argenmap).
-- **Imagen satelital:** [Esri World Imagery](https://www.arcgis.com/home/item.html?id=10df2279f9684e4a9f6a7f08febac2a9) — Esri, Vantor, Earthstar Geographics y la comunidad de usuarios GIS.
+- **Imagen satelital:** [Esri World Imagery](https://www.arcgis.com/home/item.html?id=10df2279f9684e4a9f6a7f08febac2a9) - Esri, Vantor, Earthstar Geographics y la comunidad de usuarios GIS.
 - **Nomenclador de calles (respaldo del buscador de línea):** API Georef, Jefatura de Gabinete de Ministros de la Nación ([datos.gob.ar](https://datos.gob.ar)).
 - **Clima actual:** [Open-Meteo](https://open-meteo.com/) (API pública).
 
@@ -49,7 +49,7 @@ El uso de [Argenmap](https://ign-argentina.github.io/argenmap-web/) como mapa ba
 
 ### Tecnología
 
-Sitio estático construido con HTML, CSS y JavaScript, sin dependencias externas ni backend. Los datos se editan en QGIS y se versionan como GeoJSON: un archivo por línea en `data/linea-*.geojson` y las paradas en `data/paradas.geojson`. `tools/build-datos.mjs` los valida y genera lo que el visor carga con `fetch` — `data/recorridos.geojson` y `data/paradas.json` —, que son artefactos de build y no se versionan. El mapa se implementa con [Leaflet](https://leafletjs.com/) 1.9.4, servido desde el propio repositorio (`vendor/leaflet/`) y no desde un CDN, para que el visor no dependa de un tercero. El buscador de línea complementa el listado propio de esquinas relevadas con consultas opcionales a la [API Georef](https://datosgobar.github.io/georef-ar-api/) para intersecciones no incluidas en el relevamiento; si el servicio no responde, el buscador sigue funcionando sólo con los datos propios. La burbuja de clima consulta la API pública de [Open-Meteo](https://open-meteo.com/).
+Sitio estático construido con HTML, CSS y JavaScript, sin dependencias externas ni backend. Los datos se editan en QGIS y se versionan como GeoJSON: un archivo por línea en `data/linea-*.geojson` y las paradas en `data/paradas.geojson`. `tools/build-datos.mjs` los valida y genera lo que el visor carga con `fetch` - `data/recorridos.geojson` y `data/paradas.json` -, que son artefactos de build y no se versionan. El mapa se implementa con [Leaflet](https://leafletjs.com/) 1.9.4, servido desde el propio repositorio (`vendor/leaflet/`) y no desde un CDN, para que el visor no dependa de un tercero. El buscador de línea complementa el listado propio de esquinas relevadas con consultas opcionales a la [API Georef](https://datosgobar.github.io/georef-ar-api/) para intersecciones no incluidas en el relevamiento; si el servicio no responde, el buscador sigue funcionando sólo con los datos propios. La burbuja de clima consulta la API pública de [Open-Meteo](https://open-meteo.com/).
 
 ### Licencia
 
