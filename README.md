@@ -37,7 +37,7 @@ Este visor permite consultar de forma interactiva las 24 líneas de colectivo ur
 ### Fuentes de datos
 
 - **Recorridos de líneas:** Dirección General de Transporte (2026).
-- **Paradas:** Dirección General de Transporte, sobre relevamiento propio (2023).
+- **Paradas:** Dirección General de Transporte (2026), sobre relevamiento propio (2023).
 - **Cartografía base:** Instituto Geográfico Nacional (Argenmap).
 - **Imagen satelital:** [Esri World Imagery](https://www.arcgis.com/home/item.html?id=10df2279f9684e4a9f6a7f08febac2a9) - Esri, Vantor, Earthstar Geographics y la comunidad de usuarios GIS.
 - **Nomenclador de calles (respaldo del buscador de línea):** API Georef, Jefatura de Gabinete de Ministros de la Nación ([datos.gob.ar](https://datos.gob.ar)).
