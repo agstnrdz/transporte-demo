@@ -1,9 +1,14 @@
-# Artefacto de build local (lo genera tools/build-pages.mjs)
+# Artefactos de build (los generan tools/build-pages.mjs y tools/build-datos.mjs)
 _site/
 node_modules/
 
-# Descartes pendientes de borrar
-data/_a_quitar/
+# Productos de build-datos.mjs: se regeneran en cada deploy.
+# Las fuentes versionadas son los data/linea-*.geojson y data/paradas.geojson.
+data/recorridos.geojson
+data/paradas.json
+
+# Descartes pendientes de borrar por el usuario
+data/_a_borrar/
 
 # Trabajo de QGIS: el .gpkg es el master de edición, no se versiona.
 # Lo que se versiona son los data/linea-*.geojson exportados desde él.
