@@ -1,6 +1,7 @@
-/* build-datos.mjs — consolida data/linea-*.geojson en data/recorridos.geojson
-   Fuente editable: un .geojson por línea, exportado desde QGIS.
-   Producto: un único FeatureCollection que consume el visor.
+/* build-datos.mjs — valida las fuentes de QGIS y genera lo que consume el visor.
+     data/linea-*.geojson  → data/recorridos.geojson  (FeatureCollection consolidado)
+     data/paradas.geojson  → data/paradas.json        (array plano, más liviano)
+   Las fuentes se versionan; los dos productos son artefactos de build (gitignoreados).
    Uso: node tools/build-datos.mjs [--check]   (--check no escribe, sólo valida) */
 
 import { readdir, readFile, writeFile } from "node:fs/promises";
@@ -11,11 +12,16 @@ import { fileURLToPath } from "node:url";
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const DIR_DATOS = path.join(RAIZ, "data");
 const SALIDA = path.join(DIR_DATOS, "recorridos.geojson");
+const FUENTE_PARADAS = path.join(DIR_DATOS, "paradas.geojson");
+const SALIDA_PARADAS = path.join(DIR_DATOS, "paradas.json");
 const SOLO_CHEQUEO = process.argv.includes("--check");
 
 const SENTIDOS_VALIDOS = new Set(["ida", "vuelta", "horario", "antihorario", "completo"]);
 const PRECISION = 6;
 const GAP_AVISO = 150;   /* m: separación entre partes que amerita revisar en QGIS */
+/* Encuadre generoso de Comodoro Rivadavia y alrededores: atrapa coordenadas
+   invertidas o proyectadas por error, no pretende ser el ejido municipal. */
+const BBOX = { lngMin: -67.85, lngMax: -67.15, latMin: -46.10, latMax: -45.55 };
 
 const errores = [];
 const avisos = [];
@@ -112,6 +118,51 @@ for (const archivo of archivos) {
   }
 }
 
+/* Dos sentidos de una misma línea deberían recorrer en direcciones opuestas los
+   tramos que comparten. Se muestrea la primera y, para cada muestra, se busca el
+   punto más cercano de la segunda (si están a menos de SOLAPE_M, van por la misma
+   calle) y se comparan los rumbos locales. Coseno ≈ -1 es lo esperado; cerca de +1
+   significa que una de las dos está digitalizada al revés y el visor la anima mal.
+   Ojo: esto compara los sentidos ENTRE SÍ. Si las dos features de una línea están
+   invertidas a la vez, el chequeo no lo ve — eso sólo se detecta mirando el visor. */
+const SOLAPE_M = 60;
+const COS_SOSPECHOSO = 0.5;
+const MUESTRAS_MIN = 12;
+
+function revisarSentidoOpuesto(id, nombreA, nombreB, ra, rb) {
+  const kx = 111320 * Math.cos((-45.86 * Math.PI) / 180);
+  const aMetros = (partes) => partes.flat().map(([x, y]) => [x * kx, y * 111320]);
+  const A = aMetros(ra.partes), B = aMetros(rb.partes);
+  if (A.length < 3 || B.length < 3) return;
+
+  let suma = 0, n = 0;
+  for (let i = 1; i < A.length - 1; i += 2) {
+    const hA = [A[i + 1][0] - A[i - 1][0], A[i + 1][1] - A[i - 1][1]];
+    const nA = Math.hypot(hA[0], hA[1]);
+    if (nA < 5) continue;
+    let k = -1, mejor = Infinity;
+    for (let j = 1; j < B.length - 1; j++) {
+      const d = Math.hypot(B[j][0] - A[i][0], B[j][1] - A[i][1]);
+      if (d < mejor) { mejor = d; k = j; }
+    }
+    if (mejor > SOLAPE_M) continue;
+    const hB = [B[k + 1][0] - B[k - 1][0], B[k + 1][1] - B[k - 1][1]];
+    const nB = Math.hypot(hB[0], hB[1]);
+    if (nB < 5) continue;
+    suma += (hA[0] * hB[0] + hA[1] * hB[1]) / (nA * nB);
+    n++;
+  }
+  if (n < MUESTRAS_MIN) return;   /* poco solape: no alcanza para opinar */
+  const cos = suma / n;
+  if (cos > COS_SOSPECHOSO) {
+    avisos.push(
+      `${id}: ${nombreA} y ${nombreB} recorren en la MISMA dirección los tramos que ` +
+      `comparten (coseno medio ${cos.toFixed(2)} sobre ${n} muestras) — probablemente ` +
+      `una de las dos está digitalizada al revés y el visor la anima mal`
+    );
+  }
+}
+
 /* --- chequeos entre líneas ---
    El orden de los vértices es semántico: el visor anima el sentido de circulación
    siguiendo el array, así que una vuelta digitalizada en la misma dirección que la
@@ -135,6 +186,10 @@ for (const [id, porSentido] of lineas) {
         `en la misma dirección y el visor la anima al revés (invertir la línea en QGIS)`
       );
     }
+  }
+  for (const [a, b] of [["ida", "vuelta"], ["horario", "antihorario"]]) {
+    const ra = porSentido.get(a), rb = porSentido.get(b);
+    if (ra && rb) revisarSentidoOpuesto(id, a, b, ra, rb);
   }
 
   const sents = [...porSentido.keys()];
@@ -212,6 +267,87 @@ if (existsSync(RUTA_HORARIOS)) {
   }
 }
 
+/* --- paradas: data/paradas.geojson (QGIS) → array plano ---
+   Los atributos vienen como texto "Si"/"No" y pueden faltar; se normalizan a
+   true / false / null (null = sin relevar, que no es lo mismo que "no tiene").
+   'uid' es el fid de QGIS: la identidad de la parada, tanto la clave interna del
+   visor como el número que se muestra. El viejo campo 'ID' de relevamiento no se
+   usa (falta en 146 registros y se repite); sigue disponible en el .geojson fuente. */
+const paradas = [];
+if (existsSync(FUENTE_PARADAS)) {
+  let gjParadas = null;
+  try {
+    gjParadas = JSON.parse(await readFile(FUENTE_PARADAS, "utf8"));
+  } catch (e) {
+    errores.push(`paradas.geojson: JSON inválido (${e.message})`);
+  }
+  if (gjParadas && (gjParadas.type !== "FeatureCollection" || !Array.isArray(gjParadas.features))) {
+    errores.push("paradas.geojson: no es un FeatureCollection con features");
+    gjParadas = null;
+  }
+  if (gjParadas) {
+    const SI = new Set(["si", "sí", "s", "true", "1"]);
+    const NO = new Set(["no", "n", "false", "0"]);
+    const tri = (v) => {
+      const t = String(v ?? "").trim().toLowerCase();
+      if (SI.has(t)) return true;
+      if (NO.has(t)) return false;
+      return null;   /* null | "" | cualquier otra cosa: sin dato */
+    };
+    const vistos = new Set();
+    let sinDato = 0, sinCalle = 0;
+
+    for (const ft of gjParadas.features) {
+      const pr = ft.properties || {};
+      const g = ft.geometry;
+      const fid = pr.fid;
+      const etiqueta = `paradas.geojson [fid ${fid ?? "?"}]`;
+
+      if (fid == null || vistos.has(fid)) {
+        errores.push(`${etiqueta}: 'fid' ausente o repetido — es el identificador de la parada`);
+        continue;
+      }
+      vistos.add(fid);
+
+      if (!g || g.type !== "Point" || !Array.isArray(g.coordinates)) {
+        errores.push(`${etiqueta}: geometría ${g?.type} (se esperaba Point)`);
+        continue;
+      }
+      const lng = Number(g.coordinates[0]), lat = Number(g.coordinates[1]);
+      if (!Number.isFinite(lng) || !Number.isFinite(lat)) {
+        errores.push(`${etiqueta}: coordenadas no numéricas`);
+        continue;
+      }
+      if (lng < BBOX.lngMin || lng > BBOX.lngMax || lat < BBOX.latMin || lat > BBOX.latMax) {
+        errores.push(`${etiqueta}: coordenada fuera de Comodoro (${lat.toFixed(5)}, ${lng.toFixed(5)})`);
+        continue;
+      }
+
+      const calle = String(pr.Calle ?? pr.calle ?? "").trim();
+      const esquina = String(pr.Esquina ?? pr.esquina ?? "").trim();
+      if (!calle) sinCalle++;
+
+      const poste = tri(pr.Poste ?? pr.poste);
+      const cartel = tri(pr.Cartel ?? pr.cartel);
+      const refugio = tri(pr.Refugio ?? pr.refugio);
+      if (poste === null || cartel === null || refugio === null) sinDato++;
+
+      paradas.push({
+        uid: fid,
+        lat: red(lat), lng: red(lng),
+        calle, esquina,
+        poste, cartel, refugio,
+      });
+    }
+
+    if (!paradas.length) errores.push("paradas.geojson: no quedó ninguna parada válida");
+    if (sinCalle) avisos.push(`paradas.geojson: ${sinCalle} paradas sin calle`);
+    if (sinDato) avisos.push(`paradas.geojson: ${sinDato} paradas con refugio/cartel/poste sin relevar (se muestran como "s/d")`);
+  }
+} else {
+  avisos.push("no encuentro data/paradas.geojson — el visor va a arrancar sin capa de paradas");
+}
+
 if (avisos.length) {
   console.log("\n⚠ avisos (no bloquean el build):");
   for (const a of avisos) console.log(`   · ${a}`);
@@ -232,7 +368,7 @@ const salida = {
 };
 
 if (SOLO_CHEQUEO) {
-  console.log(`\n✓ build-datos --check: ${ids.length} líneas, ${features.length} recorridos, sin errores\n`);
+  console.log(`\n✓ build-datos --check: ${ids.length} líneas, ${features.length} recorridos, ${paradas.length} paradas, sin errores\n`);
   process.exit(0);
 }
 
@@ -244,4 +380,12 @@ const total = features.reduce((a, f) => {
 }, 0);
 console.log(`\n✓ build-datos: ${ids.length} líneas · ${features.length} recorridos · ${total.toFixed(0)} km · ${kb} KB`);
 console.log(`  → ${path.relative(RAIZ, SALIDA)}`);
-console.log(`  líneas: ${ids.join(", ")}\n`);
+console.log(`  líneas: ${ids.join(", ")}`);
+
+if (paradas.length) {
+  const json = JSON.stringify(paradas);
+  await writeFile(SALIDA_PARADAS, json, "utf8");
+  console.log(`✓ build-datos: ${paradas.length} paradas · ${(json.length / 1024).toFixed(0)} KB`);
+  console.log(`  → ${path.relative(RAIZ, SALIDA_PARADAS)}`);
+}
+console.log("");

@@ -742,6 +742,8 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   color: var(--muted);
 }
 .pop-attr.si { color: var(--ok); border-color: color-mix(in srgb, var(--ok) 45%, transparent); }
+/* Sin dato de relevamiento: ni sí ni no */
+.pop-attr.sd { opacity: 0.55; border-style: dashed; cursor: help; }
 /* Líneas cercanas dentro del popup de una parada */
 .pop-lineas { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--hair); }
 .pop-lineas-titulo {

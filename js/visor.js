@@ -20,6 +20,7 @@ if (MODO_MANTENIMIENTO) {
 
 const RUTA_RECORRIDOS = "data/recorridos.geojson";
 const RUTA_HORARIOS = "data/horarios.json";
+const RUTA_PARADAS = "data/paradas.json";
 
 /* Paleta por línea (claro, oscuro) */
 const PALETA = {
@@ -96,6 +97,7 @@ function errorDatos(mensaje) {
 }
 
 /* Recorridos: un único GeoJSON generado por tools/build-datos.mjs.
+   Paradas: array plano generado por el mismo script desde data/paradas.geojson.
    Horarios: primer y último servicio por sentido (data/horarios.json). */
 async function traerJSON(ruta) {
   const resp = await fetch(ruta, { cache: "no-cache" });
@@ -105,13 +107,17 @@ async function traerJSON(ruta) {
 
 let GJ_RECORRIDOS = null;
 let HORARIOS = {};
+let PARADAS_CRUDAS = [];
 try {
-  const [recorridos, horarios] = await Promise.all([
+  /* Sólo los recorridos son bloqueantes: sin paradas u horarios el visor sigue sirviendo. */
+  const [recorridos, horarios, paradas] = await Promise.all([
     traerJSON(RUTA_RECORRIDOS),
     HORARIOS_HABILITADO ? traerJSON(RUTA_HORARIOS).catch(() => ({})) : Promise.resolve({}),
+    PARADAS_HABILITADAS ? traerJSON(RUTA_PARADAS).catch(() => []) : Promise.resolve([]),
   ]);
   GJ_RECORRIDOS = recorridos;
   HORARIOS = horarios && typeof horarios === "object" ? horarios : {};
+  PARADAS_CRUDAS = Array.isArray(paradas) ? paradas : [];
 } catch (err) {
   errorDatos(
     "No se pudieron cargar los recorridos (" + err.message + "). " +
@@ -182,7 +188,15 @@ const sinPaleta = [];
   }
 }
 
-const PARADAS_DATA = Array.isArray(window.PARADAS_DATA) ? window.PARADAS_DATA : [];
+const PARADAS_DATA = PARADAS_CRUDAS.filter(
+  (p) => p && Number.isFinite(p.lat) && Number.isFinite(p.lng) && p.uid != null
+);
+
+/* Etiqueta visible de una parada: el fid de QGIS ('uid'), que es también su
+   clave interna. El viejo ID de relevamiento no se usa (incompleto y repetido). */
+function nombreParada(p) {
+  return "Parada " + p.uid;
+}
 
 function normalizarTxt(s) {
   return String(s || "").trim().toLowerCase()
@@ -749,7 +763,7 @@ function paradasDeLinea(id) {
         const c = puntoMasCercanoEnRuta(punto, ruta);
         if (c && c.dist < mejorDist) mejorDist = c.dist;
       }
-      if (mejorDist <= RADIO_PARADA_LINEA) ids.add(p.id);
+      if (mejorDist <= RADIO_PARADA_LINEA) ids.add(p.uid);
     }
   }
   cacheParadasDeLinea.set(id, ids);
@@ -757,8 +771,13 @@ function paradasDeLinea(id) {
 }
 
 function popupParada(p) {
-  const attr = (nombre, val) =>
-    `<span class="pop-attr ${val ? "si" : ""}">${val ? "✓" : "✗"} ${nombre}</span>`;
+  /* true / false / null: null es "sin relevar", que no es lo mismo que "no tiene" */
+  const attr = (nombre, val) => {
+    const clase = val === true ? "si" : val === false ? "" : "sd";
+    const signo = val === true ? "✓" : val === false ? "✗" : "?";
+    const titulo = val === null ? ` title="Sin dato de relevamiento"` : "";
+    return `<span class="pop-attr ${clase}"${titulo}>${signo} ${nombre}</span>`;
+  };
   const esquina = p.esquina ? ` <span style="color:var(--muted)">esq.</span> ${esc(p.esquina)}` : "";
   const cercanas = lineasEnParada(p);
   const lineasHtml = cercanas.length
@@ -773,7 +792,7 @@ function popupParada(p) {
         }).join("") +
       `</div>`
     : `<p class="pop-lineas-vacio">Ninguna línea relevada pasa a ${RADIO_PARADA_LINEA} m o menos de esta parada.</p>`;
-  return `<p class="pop-titulo">Parada ${esc(p.id)}</p>` +
+  return `<p class="pop-titulo">${esc(nombreParada(p))}</p>` +
          `<p class="pop-sub">${esc(p.calle || "Calle sin nombre")}${esquina}</p>` +
          `<div class="pop-chips">${attr("Refugio", p.refugio)}${attr("Cartel", p.cartel)}${attr("Poste", p.poste)}</div>` +
          lineasHtml;
@@ -788,16 +807,18 @@ for (const p of PARADAS_DATA) {
   });
   m.bindPopup(() => popupParada(p), { closeButton: true });
   m.bindTooltip(
-    () => `<strong>Parada ${esc(p.id)}</strong><br><span class="tt-sub">${esc(p.calle || "s/n")}${p.esquina ? " esq. " + esc(p.esquina) : ""}</span>`,
+    () => `<strong>${esc(nombreParada(p))}</strong><br><span class="tt-sub">${esc(p.calle || "s/n")}${p.esquina ? " esq. " + esc(p.esquina) : ""}</span>`,
     { className: "tt-parada", direction: "top", offset: [0, -4], opacity: 1 });
-  marcadoresParadas.set(p.id, m);
+  marcadoresParadas.set(p.uid, m);
 }
 
+/* Un atributo sin relevar (null) no cuenta ni como "Sí" ni como "No":
+   sólo aparece con el filtro en "Todas". */
 function pasaFiltros(p) {
   for (const campo of ["refugio", "cartel", "poste"]) {
     const f = estado.filtros[campo];
-    if (f === "si" && !p[campo]) return false;
-    if (f === "no" && p[campo]) return false;
+    if (f === "si" && p[campo] !== true) return false;
+    if (f === "no" && p[campo] !== false) return false;
   }
   return true;
 }
@@ -809,9 +830,9 @@ function aplicarFiltrosParadas() {
   if (estado.paradasOn) {
     const r = radioParadas();
     for (const p of PARADAS_DATA) {
-      if (deLaLinea && !deLaLinea.has(p.id)) continue;
+      if (deLaLinea && !deLaLinea.has(p.uid)) continue;
       if (!pasaFiltros(p)) continue;
-      const m = marcadoresParadas.get(p.id);
+      const m = marcadoresParadas.get(p.uid);
       m.setRadius(r);
       grupoParadas.addLayer(m);
       n++;
@@ -985,13 +1006,13 @@ function ubicarme() {
           .join("");
         btn.innerHTML =
           `<span class="cercana-fila-top">` +
-            `<span class="cercana-nombre">Parada ${esc(p.id)} · ${esc(p.calle || "s/n")}${p.esquina ? " esq. " + esc(p.esquina) : ""}</span>` +
+            `<span class="cercana-nombre">${esc(nombreParada(p))} · ${esc(p.calle || "s/n")}${p.esquina ? " esq. " + esc(p.esquina) : ""}</span>` +
             `<span class="cercana-dist">${fmtDist(d)}</span>` +
           `</span>` +
           (lineasChip ? `<span class="cercana-lineas">${lineasChip}</span>` : "");
         btn.addEventListener("click", () => {
           mapa.flyTo([p.lat, p.lng], Math.max(mapa.getZoom(), 16), { duration: 0.6 });
-          const m = marcadoresParadas.get(p.id);
+          const m = marcadoresParadas.get(p.uid);
           if (m && grupoParadas.hasLayer(m)) m.openPopup();
           else L.popup({ closeButton: true }).setLatLng([p.lat, p.lng]).setContent(popupParada(p)).openOn(mapa);
         });
