@@ -51,6 +51,44 @@ El uso de [Argenmap](https://ign-argentina.github.io/argenmap-web/) como mapa ba
 
 Sitio estático construido con HTML, CSS y JavaScript, sin dependencias externas ni backend. El mapa se implementa con [Leaflet](https://leafletjs.com/) 1.9.4, servido desde el propio repositorio (`vendor/leaflet/`) y no desde un CDN, para que el visor no dependa de un tercero. El buscador de línea complementa el listado propio de esquinas relevadas con consultas opcionales a la [API Georef](https://datosgobar.github.io/georef-ar-api/) para intersecciones no incluidas en el relevamiento; si el servicio no responde, el buscador sigue funcionando sólo con los datos propios. La burbuja de clima consulta la API pública de [Open-Meteo](https://open-meteo.com/).
 
+### Despliegue
+
+El repositorio contiene las **fuentes**, no el sitio publicado. Dos archivos que el visor pide por `fetch` son productos de build y no están versionados:
+
+| Producto (generado) | Fuente (versionada) |
+| --- | --- |
+| `data/recorridos.geojson` | `data/linea-*.geojson` |
+| `data/paradas.json` | `data/paradas.geojson` |
+
+Los genera `tools/build-datos.mjs`, que además valida las fuentes exportadas desde QGIS: sentidos declarados, geometrías multiparte con huecos, features duplicadas, coordenadas fuera del encuadre de la ciudad y recorridos de ida y vuelta digitalizados en la misma dirección. Si algo de eso falla, el build se detiene y el dato no llega al visor.
+
+Por eso **clonar el repositorio y servirlo tal cual no funciona**: falta ese paso y el visor responde `HTTP 404` al cargar `data/recorridos.geojson`.
+
+Hay dos formas de desplegarlo en otro servidor:
+
+**1. Rama `deploy` (sin Node).** La rama [`deploy`](../../tree/deploy) contiene el sitio ya construido, actualizado automáticamente en cada push a `main`. Es un espejo exacto de lo que se publica en GitHub Pages, con historial lineal:
+
+```bash
+git clone --branch deploy https://github.com/comodoro-mit/transporte.git
+# y de ahí en más, para actualizar:
+git pull
+```
+
+El contenido de la rama es la raíz del sitio: se publica tal cual, sin construir nada.
+
+**2. Construir el sitio (Node 20 o superior).**
+
+```bash
+git clone https://github.com/comodoro-mit/transporte.git
+cd transporte
+node tools/build-datos.mjs    # genera los dos productos de datos
+node tools/build-pages.mjs _site
+```
+
+El sitio publicable queda en `_site/`. Para validar las fuentes sin escribir nada: `node tools/build-datos.mjs --check`.
+
+**Modo mantenimiento.** El switch `MODO_MANTENIMIENTO` en `js/visor.js` alterna entre el sitio completo y una pantalla de mantenimiento sin datos. Afecta por igual a GitHub Pages y a la rama `deploy`, que refleja siempre lo publicado.
+
 ### Licencia
 
 Distribuido bajo licencia MIT - ver [LICENSE](LICENSE).
