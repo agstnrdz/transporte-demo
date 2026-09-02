@@ -1,0 +1,3 @@
+Leaflet 1.9.4 — https://leafletjs.com/ — licencia BSD-2-Clause.
+Copiado tal cual del paquete npm leaflet@1.9.4 (dist/). No editar a mano.
+Para actualizar: npm pack leaflet@<version> y reemplazar dist/leaflet.js, dist/leaflet.css e dist/images/.
