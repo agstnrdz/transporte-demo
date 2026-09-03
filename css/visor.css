@@ -463,9 +463,9 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
 .horarios-lista li {
   display: flex;
   justify-content: flex-start;
-  gap: 8px;
-  padding: 2.5px 0;
-  font-size: 11px;
+  gap: 4px;
+  padding: 2px 0;
+  font-size: 12px;
   border-bottom: 1px dashed var(--hair);
 }
 .horarios-lista li:last-child { border-bottom: none; }
@@ -475,11 +475,14 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
 .horarios-servicio {
   justify-content: space-between;
   align-items: baseline;
-  gap: 12px;
-  padding: 4px 0;
+  gap: 5px;
+  padding: 2px 0;
 }
 .horarios-etiqueta { color: var(--ink-2); white-space: nowrap; }
-.horarios-servicio .horarios-hora { font-size: 12.5px; text-align: right; }
+.horarios-servicio .horarios-valor { font-size: 12px; text-align: right; }
+/* El lugar de salida acompaña a la hora sin competir con ella: mismo tono
+   que la etiqueta de la izquierda y sin negrita. */
+.horarios-lugar { color: var(--ink-2); font-weight: 400; }
 
 /* Switch */
 .switch { position: relative; display: inline-block; }

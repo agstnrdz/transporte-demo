@@ -1,127 +1,122 @@
 {
   "1": {
     "nombre": "Máximo Abásolo - Centro",
-    "primero": "05:00",
-    "ultimo": "00:30"
+    "primero": "05:00 hs - en ambos sentidos",
+    "ultimo": "00:30 hs - desde Máximo Abásolo"
   },
   "2": {
     "nombre": "Máximo Abásolo - Centro",
-    "primero": "05:00",
-    "ultimo": "00:30"
+    "primero": "05:00 hs - en ambos sentidos",
+    "ultimo": "00:30 hs - desde Máximo Abásolo"
   },
   "3": {
     "nombre": "Estadio Centenario - Abel Amaya",
-    "primero": "05:00",
-    "ultimo": "01:00"
+    "primero": "05:00 hs - en ambos sentidos",
+    "ultimo": "01:00 hs - desde Estadio Centenario"
   },
   "4": {
     "nombre": "Abel Amaya - Estadio Centenario",
-    "primero": "05:00",
-    "ultimo": "01:00"
+    "primero": "05:00 hs - desde Estadio Centenario",
+    "ultimo": "01:00 hs - desde Estadio Centenario"
   },
   "5": {
     "nombre": "Estadio Centenario - Abel Amaya",
-    "primero": "05:00",
-    "ultimo": "01:00"
+    "primero": "05:00 hs - en ambos sentidos",
+    "ultimo": "01:00 hs - desde Estadio Centenario"
   },
   "5U": {
     "nombre": "Abel Amaya - Las Orquídeas",
-    "primero": "06:00",
-    "ultimo": "23:00"
+    "primero": "06:00 hs - desde 30 de Octubre",
+    "ultimo": "23:00 hs - desde 30 de Octubre"
   },
   "6H": {
     "nombre": "Estadio Centenario - Stella Maris - Máximo Abásolo - General Mosconi - Centro",
-    "primero": "06:00",
-    "ultimo": "22:30"
+    "primero": "06:00 hs - desde Estadio Centenario",
+    "ultimo": "22:30 hs - desde Estadio Centenario"
   },
   "6AH": {
     "nombre": "Estadio Centenario - Centro - General Mosconi - Máximo Abásolo - Stella Maris - Centro",
-    "primero": "06:00",
-    "ultimo": "22:30"
+    "primero": "06:00 hs - desde Estadio Centenario",
+    "ultimo": "22:30 hs - desde Estadio Centenario"
   },
   "7": {
     "nombre": "Estadio Centenario - Laprida",
-    "primero": "05:35",
-    "ultimo": "00:30"
+    "primero": "05:35 hs - desde Estadio Centenario",
+    "ultimo": "00:30 hs - desde Estadio Centenario"
   },
   "8H": {
     "nombre": "Palazzo - Standard",
-    "primero": "04:00",
-    "ultimo": "23:50"
+    "primero": "04:00 hs - desde Estadio Centenario",
+    "ultimo": "23:50 hs - desde Estadio Centenario"
   },
   "8AH": {
     "nombre": "Standard - Palazzo",
-    "primero": "05:40",
-    "ultimo": "00:20"
+    "primero": "05:40 hs - desde Estadio Centenario",
+    "ultimo": "00:20 hs - desde Estadio Centenario"
   },
   "9": {
     "nombre": "Centro - Barrio Industrial",
-    "primero": "05:15",
-    "ultimo": "21:00"
+    "primero": "05:15 hs - desde Terminal Gil Álvarez",
+    "ultimo": "21:00 hs - desde Terminal Gil Álvarez"
   },
   "9A": {
     "nombre": "Extensión Arenales",
-    "primero": [
-      "06:30",
-      "12:30",
-      "18:30"
-    ],
-    "ultimo": "19:30",
-    "nota": "El último servicio de las 19:30 sale desde Los Arenales."
+    "primero": ["06:30", "12:30", "18:30 hs - desde Terminal Gil Álvarez"],
+    "ultimo": "19:30 hs - desde Los Arenales"
   },
   "12": {
     "nombre": "Centro - Máximo Abásolo",
-    "primero": "05:15",
-    "ultimo": "23:40"
+    "primero": "05:15 hs - desde Terminal Gil Álvarez",
+    "ultimo": "23:40 hs - desde Terminal Gil Álvarez"
   },
   "13": {
     "nombre": "Estadio Centenario - Standard",
-    "primero": "05:35",
-    "ultimo": "22:40"
+    "primero": "05:35 hs - desde Estadio Centenario",
+    "ultimo": "22:40 hs - desde Estadio Centenario"
   },
   "14": {
     "nombre": "30 de Octubre - Centro (F14 - F15)",
-    "primero": "05:00",
-    "ultimo": "00:00"
+    "primero": "05:00 hs - desde 30 de Octubre",
+    "ultimo": "00:00 hs - desde 30 de Octubre"
   },
   "15": {
     "nombre": "Centro - Los Tres Pinos",
-    "primero": "06:00",
-    "ultimo": "00:00"
+    "primero": "06:00 hs - desde Terminal Gil Álvarez",
+    "ultimo": "00:00 hs - desde Pellegrini"
   },
   "16": {
     "nombre": "Estadio Centenario - Saavedra - Aeronáutico",
-    "primero": "05:30",
-    "ultimo": "22:40"
+    "primero": "05:30 hs - desde Estadio Centenario",
+    "ultimo": "22:40 hs - desde Estadio Centenario"
   },
   "17": {
     "nombre": "Estadio Centenario - Padre Corti",
-    "primero": "05:00",
-    "ultimo": "00:00"
+    "primero": "05:00 hs - desde Estadio Centenario",
+    "ultimo": "00:00 hs - desde Estadio Centenario"
   },
   "18": {
     "nombre": "Estadio Centenario - Restinga Alí",
-    "primero": "05:00",
-    "ultimo": "23:00"
+    "primero": "05:00 hs - desde Estadio Centenario",
+    "ultimo": "23:00 hs - desde Estadio Centenario"
   },
   "19": {
     "nombre": "Estadio Centenario - Caleta Córdova",
-    "primero": "04:50",
-    "ultimo": "23:00"
+    "primero": "04:50 hs - desde Estadio Centenario",
+    "ultimo": "23:00 hs - desde Estadio Centenario"
   },
   "20": {
     "nombre": "Base Sol Bus - Stella Maris - Hospital Alvear",
-    "primero": "05:00",
-    "ultimo": "23:15"
+    "primero": "05:00 hs - desde Base Sol Bus (Humberto Beghin)",
+    "ultimo": "23:15 hs - desde Base Sol Bus (Humberto Beghin)"
   },
   "21": {
     "nombre": "Padre Corti - Don Bosco - Standard",
-    "primero": "06:15",
-    "ultimo": "20:00"
+    "primero": "06:15 hs - desde Padre Corti",
+    "ultimo": "20:00 hs - desde Padre Corti"
   },
   "22": {
     "nombre": "Estadio Centenario - Standard - Km 11",
-    "primero": "06:00",
-    "ultimo": "22:00"
+    "primero": "06:00 hs - desde Estadio Centenario",
+    "ultimo": "22:00 hs - desde Estadio Centenario"
   }
 }

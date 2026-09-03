@@ -242,7 +242,9 @@ if (existsSync(RUTA_HORARIOS)) {
     errores.push(`horarios.json: JSON inválido (${e.message})`);
   }
   if (horarios) {
-    const HORA = /^([01]\d|2[0-3]):[0-5]\d$/;
+    /* "06:30" o "06:30 hs - desde la Terminal": se valida la hora; lo que sigue
+       al guión es el lugar de salida, texto libre que muestra el visor. */
+    const HORA = /^([01]\d|2[0-3]):[0-5]\d(\s*hs)?(\s*-\s*\S.*)?$/;
     const horasDe = (v) => (Array.isArray(v) ? v : v == null ? [] : [v]);
     for (const [id, d] of Object.entries(horarios)) {
       if (!lineas.has(id)) { errores.push(`horarios.json: la línea '${id}' no existe en los recorridos`); continue; }

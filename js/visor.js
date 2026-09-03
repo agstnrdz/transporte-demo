@@ -577,9 +577,17 @@ function textoServicio(valor) {
 function filaServicio(etiqueta, valor) {
   const texto = textoServicio(valor);
   if (!texto) return "";
+  /* "06:30, 12:30 hs - desde la Terminal": la hora va en negrita y el lugar de
+     salida con el mismo tono que la etiqueta. Corta en el primer " - ". */
+  const corte = texto.indexOf(" - ");
+  const hora = corte === -1 ? texto : texto.slice(0, corte);
+  const lugar = corte === -1 ? "" : texto.slice(corte + 3).trim();
   return `<li class="horarios-servicio">` +
            `<span class="horarios-etiqueta">${esc(etiqueta)}</span>` +
-           `<span class="horarios-hora">${esc(texto)}</span>` +
+           `<span class="horarios-valor">` +
+             `<span class="horarios-hora">${esc(hora)}</span>` +
+             (lugar ? ` <span class="horarios-lugar">${esc(lugar)}</span>` : "") +
+           `</span>` +
          `</li>`;
 }
 function contenidoHorarios(linea) {
