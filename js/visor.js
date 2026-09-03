@@ -498,6 +498,9 @@ function alternarFoco(id) {
 }
 
 function enfocar(id) {
+  if (typeof gtag === "function") {
+    gtag("event", "click_linea", { linea_id: id });
+  }
   if (estado.autoEncendida && estado.autoEncendida !== id) {
     estado.visibles.delete(estado.autoEncendida);
     estado.autoEncendida = null;
