@@ -119,7 +119,7 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   position: absolute;
   top: 12px;
   right: 0;
-  width: 305px;
+  width: 315px;
   max-width: calc(100% - 24px);
   max-height: calc(100% - 24px);
   display: flex;
@@ -188,6 +188,9 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
 }
 
 .caja-body { overflow-y: auto; scrollbar-width: auto; padding: 4px 8px 10px; max-height: min(50vh, 420px); }
+@media (min-width: 641px) {
+  .caja-body { max-height: min(60vh, 480px); }
+}
 #caja-capas .caja-body { padding-top: 0; }
 .caja-body-buscador { overflow: visible; max-height: none; }
 
@@ -471,18 +474,52 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
 .horarios-lista li:last-child { border-bottom: none; }
 .horarios-hora { font-weight: 650; color: var(--ink-1); }
 .horarios-vacio { margin: 4px 0 0; font-size: 11px; color: var(--muted); }
-.horarios-nota { margin: 8px 0 0; font-size: 11px; line-height: 1.35; color: var(--muted); }
+/* Textos secundarios de horarios con un paso más de contraste que --ink-2 / --muted:
+   se mezclan con --ink-1, así que oscurecen en el tema claro y aclaran en el oscuro. */
+.horarios-nota { margin: 8px 0 0; font-size: 11px; line-height: 1.35; color: color-mix(in srgb, var(--muted) 70%, var(--ink-1)); }
 .horarios-servicio {
   justify-content: space-between;
   align-items: baseline;
   gap: 5px;
   padding: 2px 0;
 }
-.horarios-etiqueta { color: var(--ink-2); white-space: nowrap; }
+.horarios-etiqueta { color: color-mix(in srgb, var(--ink-2) 75%, var(--ink-1)); white-space: nowrap; }
 .horarios-servicio .horarios-valor { font-size: 12px; text-align: right; }
 /* El lugar de salida acompaña a la hora sin competir con ella: mismo tono
    que la etiqueta de la izquierda y sin negrita. */
-.horarios-lugar { color: var(--ink-2); font-weight: 400; }
+.horarios-lugar { color: color-mix(in srgb, var(--ink-2) 75%, var(--ink-1)); font-weight: 400; }
+
+/* Horarios por tipo de día: tres bloques apilados en el mismo panel. El título
+   de cada bloque va en el tono de la hora; el del día que rige hoy lleva una
+   marca invertida, con el mismo par de colores que las pills activas. */
+.horarios-dia + .horarios-dia { margin-top: 9px; }
+.horarios-dia-titulo {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 1px;
+  font-size: 11.5px;
+  font-weight: 650;
+  color: var(--ink-1);
+}
+.horarios-hoy {
+  font-size: 9.5px;
+  font-weight: 650;
+  line-height: 1;
+  padding: 2px 6px 3px;
+  border-radius: 999px;
+  background: var(--activo-bg);
+  color: var(--activo-fg);
+}
+/* Seis filas por línea: la hora queda sola a la derecha de la etiqueta y el lugar
+   de salida baja entero al renglón de abajo, a todo el ancho, en vez de cortarse
+   a mitad de frase. */
+.horarios-dia .horarios-servicio { flex-wrap: wrap; row-gap: 0; }
+.horarios-dia .horarios-valor { display: contents; }
+.horarios-dia .horarios-hora { margin-left: auto; font-size: 12px; }
+.horarios-dia .horarios-lugar { flex: 1 1 100%; font-size: 12px; text-align: right; }
+/* Nota propia de un tipo de día (p. ej. "Sin servicio"): pegada al título. */
+.horarios-dia .horarios-nota { margin: 1px 0 0; font-size: 12px; }
 
 /* Switch */
 .switch { position: relative; display: inline-block; }

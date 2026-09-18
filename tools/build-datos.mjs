@@ -243,28 +243,62 @@ if (existsSync(RUTA_HORARIOS)) {
   }
   if (horarios) {
     /* "06:30" o "06:30 hs - desde la Terminal": se valida la hora; lo que sigue
-       al guión es el lugar de salida, texto libre que muestra el visor. */
+       al guión es el lugar de salida, texto libre que muestra el visor.
+       Cada línea puede traer primero/ultimo sueltos (formato anterior) y/o un
+       bloque por tipo de día; un casillero vacío ("") es "todavía sin cargar".
+       Un día sin servicio lleva sólo una nota: "domingo": { "nota": "Sin servicio" }. */
     const HORA = /^([01]\d|2[0-3]):[0-5]\d(\s*hs)?(\s*-\s*\S.*)?$/;
+    const DIAS = ["habiles", "sabado", "domingo"];
     const horasDe = (v) => (Array.isArray(v) ? v : v == null ? [] : [v]);
+    const lleno = (v) => horasDe(v).some((h) => String(h).trim() !== "");
+    const conServicio = (s) => !!s && typeof s === "object" && (lleno(s.primero) || lleno(s.ultimo));
+    const conNota = (s) => !!s && typeof s === "object" && typeof s.nota === "string" && s.nota.trim() !== "";
+    const diaCargado = (s) => conServicio(s) || conNota(s);
+    const sinDias = [];
+    const diasIncompletos = [];
     for (const [id, d] of Object.entries(horarios)) {
       if (!lineas.has(id)) { errores.push(`horarios.json: la línea '${id}' no existe en los recorridos`); continue; }
-      for (const campo of ["primero", "ultimo"]) {
-        for (const h of horasDe(d?.[campo])) {
-          if (!HORA.test(String(h))) {
-            errores.push(`horarios.json [${id}]: '${campo}' = "${h}" no tiene formato HH:MM`);
+      const bloques = [["", d], ...DIAS.map((k) => [k, d?.[k]])];
+      for (const [dia, s] of bloques) {
+        if (s == null) continue;
+        if (typeof s !== "object" || Array.isArray(s)) {
+          errores.push(`horarios.json [${id}]: ${dia ? `'${dia}'` : "la línea"} debe ser un objeto { primero, ultimo }`);
+          continue;
+        }
+        for (const campo of ["primero", "ultimo"]) {
+          for (const h of horasDe(s[campo])) {
+            if (String(h).trim() === "") continue;
+            if (!HORA.test(String(h))) {
+              errores.push(`horarios.json [${id}]: '${dia ? dia + "." : ""}${campo}' = "${h}" no tiene formato HH:MM` +
+                (dia ? ` (si ese día no hay servicio, dejá sólo { "nota": "…" })` : ""));
+            }
           }
+        }
+        if (dia && s.nota != null && typeof s.nota !== "string") {
+          errores.push(`horarios.json [${id}]: '${dia}.nota' debe ser texto`);
         }
       }
       if (d?.nota != null && typeof d.nota !== "string") {
         errores.push(`horarios.json [${id}]: 'nota' debe ser texto`);
       }
+      const cargados = DIAS.filter((k) => diaCargado(d?.[k]));
+      if (!cargados.length) sinDias.push(id);
+      else if (cargados.length < DIAS.length) {
+        diasIncompletos.push(`${id} (falta ${DIAS.filter((k) => !cargados.includes(k)).join(", ")})`);
+      }
     }
     const sinHorario = [...lineas.keys()].filter((id) => {
       const d = horarios[id];
-      return !d || (!d.primero && !d.ultimo);
+      return !d || (!conServicio(d) && !DIAS.some((k) => diaCargado(d[k])));
     });
     if (sinHorario.length) {
       avisos.push(`horarios.json: sin primer/último servicio en ${sinHorario.length} líneas (${sinHorario.join(", ")})`);
+    }
+    if (sinDias.length) {
+      avisos.push(`horarios.json: ${sinDias.length} líneas todavía sin horarios por tipo de día (${sinDias.join(", ")})`);
+    }
+    if (diasIncompletos.length) {
+      avisos.push(`horarios.json: tipos de día sin cargar en ${diasIncompletos.join("; ")}`);
     }
   }
 }

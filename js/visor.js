@@ -568,10 +568,45 @@ const CHIP_LABEL = { "8H": "8", "8AH": "8" };
 
 /* Horarios por línea (panel "Recorridos" → detalle de cada línea), armado bajo demanda.
    Esquema de data/horarios.json:
-     { "<línea>": { nombre, primero: "HH:MM" | ["HH:MM", …], ultimo: "HH:MM", nota? } } */
+     { "<línea>": {
+         nombre,
+         habiles?: { primero, ultimo, nota? }, sabado?: { … }, domingo?: { … },
+         primero?, ultimo?,     ← formato anterior, sin distinguir el día
+         nota?
+     } }
+   primero / ultimo: "HH:MM hs - desde <lugar>" o ["HH:MM", …, "HH:MM hs - desde <lugar>"].
+   Con al menos un tipo de día cargado se muestra por día y se ignoran primero/ultimo
+   sueltos; un día con los dos campos vacíos ("") y sin nota cuenta como todavía no
+   cargado. Un día sin servicio lleva sólo la nota: "domingo": { "nota": "Sin servicio" }. */
+const TIPOS_DIA = [
+  { clave: "habiles", etiqueta: "Días hábiles" },
+  { clave: "sabado",  etiqueta: "Días sábado" },
+  { clave: "domingo", etiqueta: "Días domingo" },
+];
+/* El día de servicio arranca a esta hora: el sábado a la 01:00 todavía corre el
+   último servicio de un día hábil, así que se resalta "Días hábiles". */
+const HORA_CORTE_DIA_SERVICIO = 3;
+function tipoDiaDeHoy() {
+  const ahora = new Date(Date.now() - HORA_CORTE_DIA_SERVICIO * 3600 * 1000);
+  const dia = ahora.getDay();
+  return dia === 0 ? "domingo" : dia === 6 ? "sabado" : "habiles";
+}
+function tieneServicio(s) {
+  return !!s && !!(textoServicio(s.primero) || textoServicio(s.ultimo));
+}
+function notaDia(s) {
+  return s && typeof s.nota === "string" ? s.nota.trim() : "";
+}
+/* Un tipo de día se muestra si tiene horarios o, al menos, una nota (p. ej. sin servicio). */
+function diaCargado(s) {
+  return tieneServicio(s) || !!notaDia(s);
+}
 function horariosDeLinea(id) {
   const d = HORARIOS[id];
-  return d && (d.primero || d.ultimo) ? d : null;
+  if (!d) return null;
+  const dias = TIPOS_DIA.filter((t) => diaCargado(d[t.clave]));
+  if (dias.length) return { datos: d, dias };
+  return tieneServicio(d) ? { datos: d, dias: null } : null;
 }
 function textoServicio(valor) {
   if (Array.isArray(valor)) return valor.filter(Boolean).join(", ");
@@ -593,13 +628,33 @@ function filaServicio(etiqueta, valor) {
            `</span>` +
          `</li>`;
 }
+function listaServicios(s) {
+  return `<ul class="horarios-lista">` +
+           filaServicio("Primer servicio", s.primero) +
+           filaServicio("Último servicio", s.ultimo) +
+         `</ul>`;
+}
 function contenidoHorarios(linea) {
-  const datos = horariosDeLinea(linea.id);
-  if (!datos) return `<p class="horarios-vacio">No hay horarios cargados para esta línea.</p>`;
-  const filas = filaServicio("Primer servicio", datos.primero) +
-                filaServicio("Último servicio", datos.ultimo);
+  const h = horariosDeLinea(linea.id);
+  if (!h) return `<p class="horarios-vacio">No hay horarios cargados para esta línea.</p>`;
+  const { datos, dias } = h;
   const nota = datos.nota ? `<p class="horarios-nota">${esc(datos.nota)}</p>` : "";
-  return `<ul class="horarios-lista">${filas}</ul>${nota}`;
+  if (!dias) return listaServicios(datos) + nota;
+  /* Los tres tipos de día siempre en el mismo orden; el que rige hoy se marca. */
+  const hoy = tipoDiaDeHoy();
+  const bloques = dias.map((t) => {
+    const esHoy = t.clave === hoy;
+    const s = datos[t.clave];
+    const notaDelDia = notaDia(s);
+    return `<section class="horarios-dia${esHoy ? " es-hoy" : ""}">` +
+             `<h4 class="horarios-dia-titulo">${esc(t.etiqueta)}` +
+               (esHoy ? ` <span class="horarios-hoy">Hoy</span>` : "") +
+             `</h4>` +
+             (tieneServicio(s) ? listaServicios(s) : "") +
+             (notaDelDia ? `<p class="horarios-nota">${esc(notaDelDia)}</p>` : "") +
+           `</section>`;
+  }).join("");
+  return bloques + nota;
 }
 
 for (const linea of LINEAS_DATA) {
@@ -639,6 +694,9 @@ for (const linea of LINEAS_DATA) {
       panelHorarios.hidden = !abrir;
       btnVerHorarios.setAttribute("aria-expanded", String(abrir));
       btnVerHorarios.textContent = abrir ? "Ocultar horarios" : "Ver horarios";
+      /* Con los tres tipos de día el bloque es más alto: que quede a la vista
+         dentro del panel en vez de abrirse por debajo del borde. */
+      if (abrir) panelHorarios.scrollIntoView({ block: "nearest" });
     });
   }
 
