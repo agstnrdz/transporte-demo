@@ -1,122 +1,377 @@
 {
   "1": {
     "nombre": "Máximo Abásolo - Centro",
-    "primero": "05:00 hs - en ambos sentidos",
-    "ultimo": "00:30 hs - desde Máximo Abásolo"
+    "habiles": {
+      "primero": "05:27 hs - desde Terminal de Ómnibus",
+      "ultimo": "01:00 hs - desde Terminal de Ómnibus"
+    },
+    "sabado": {
+      "primero": "05:27 hs - desde Terminal de Ómnibus",
+      "ultimo": "00:57 hs - desde Terminal de Ómnibus"
+    },
+    "domingo": {
+      "primero": "05:57 hs - desde Terminal de Ómnibus",
+      "ultimo": "00:27 hs - desde Terminal de Ómnibus",
+      "nota": "Horarios informados por SolBus 07-09-2026."
+    }
   },
   "2": {
     "nombre": "Máximo Abásolo - Centro",
-    "primero": "05:00 hs - en ambos sentidos",
-    "ultimo": "00:30 hs - desde Máximo Abásolo"
+    "habiles": {
+      "primero": "05:01 hs - desde Terminal de Ómnibus",
+      "ultimo": "01:29 hs - desde Terminal de Ómnibus"
+    },
+    "sabado": {
+      "primero": "05:31 hs - desde Terminal de Ómnibus",
+      "ultimo": "01:44 hs - desde Terminal de Ómnibus"
+    },
+    "domingo": {
+      "primero": "07:32 hs - desde Terminal de Ómnibus",
+      "ultimo": "23:08 hs - desde Terminal de Ómnibus",
+      "nota": "Horarios informados por SolBus 07-09-2026."
+    }
   },
   "3": {
     "nombre": "Estadio Centenario - Abel Amaya",
-    "primero": "05:00 hs - en ambos sentidos",
-    "ultimo": "01:00 hs - desde Estadio Centenario"
+    "habiles": {
+      "primero": "04:30 hs - desde Estadio Centenario",
+      "ultimo": "01:00 hs - desde Estadio Centenario"
+    },
+    "sabado": {
+      "primero": "05:00 hs - desde 30 de Octubre",
+      "ultimo": "21:19 hs - desde Estadio Centenario"
+    },
+    "domingo": {
+      "primero": "06:30 hs - desde 30 de Octubre",
+      "ultimo": "20:48 hs - desde Estadio Centenario",
+      "nota": "Horarios informados por SolBus 07-09-2026."      
+    }
   },
   "4": {
     "nombre": "Abel Amaya - Estadio Centenario",
-    "primero": "05:00 hs - desde Estadio Centenario",
-    "ultimo": "01:00 hs - desde Estadio Centenario"
+    "habiles": {
+      "primero": "04:30 hs - desde Estadio Centenario",
+      "ultimo": "01:04 hs - desde Estadio Centenario"
+    },
+    "sabado": {
+      "primero": "05:00 hs - desde Abel Amaya",
+      "ultimo": "00:19 hs - desde Estadio Centenario"
+    },
+    "domingo": {
+      "primero": "06:30 hs - desde Abel Amaya",
+      "ultimo": "22:35 hs - desde Estadio Centenario",
+      "nota": "Horarios informados por SolBus 07-09-2026."      
+    }
   },
   "5": {
     "nombre": "Estadio Centenario - Abel Amaya",
-    "primero": "05:00 hs - en ambos sentidos",
-    "ultimo": "01:00 hs - desde Estadio Centenario"
+    "habiles": {
+      "primero": "05:00 hs - desde 30 de Octubre",
+      "ultimo": "00:47 hs - desde Estadio Centenario"    
+    },
+    "sabado": {
+      "primero": "05:00 hs - desde 30 de Octubre",
+      "ultimo": "20:45 hs - desde Estadio Centenario"
+    },
+    "domingo": {
+      "primero": "06:30 hs - desde 30 de Octubre",
+      "ultimo": "21:28 hs - desde Estadio Centenario",
+      "nota": "Horarios informados por SolBus 07-09-2026."      
+    }
   },
   "5U": {
     "nombre": "Abel Amaya - Las Orquídeas",
-    "primero": "06:00 hs - desde 30 de Octubre",
-    "ultimo": "23:00 hs - desde 30 de Octubre"
+    "habiles": {
+      "primero": "06:00 hs - desde 30 de Octubre",
+      "ultimo": "20:49 hs - desde 30 de Octubre"
+    },
+    "sabado": {
+      "primero": "06:30 hs - desde 30 de Octubre",
+      "ultimo": "20:10 hs - desde 30 de Octubre"
+    },
+    "domingo": {
+      "nota": "Sin frecuencia informada. Horarios informados por SolBus 07-09-2026."
+    }
   },
   "6H": {
     "nombre": "Estadio Centenario - Stella Maris - Máximo Abásolo - General Mosconi - Centro",
-    "primero": "06:00 hs - desde Estadio Centenario",
-    "ultimo": "22:30 hs - desde Estadio Centenario"
+    "habiles": {
+      "primero": "06:00 hs - desde Estadio Centenario",
+      "ultimo": "20:58 hs - desde Estadio Centenario"
+    },
+    "sabado": {
+      "primero": "06:00 hs - desde Estadio Centenario",
+      "ultimo": "20:08 hs - desde Estadio Centenario"
+    },
+    "domingo": {
+      "primero": "07:00 hs - desde Estadio Centenario",
+      "ultimo": "21:20 hs - desde Estadio Centenario",
+      "nota": "Horarios informados por SolBus 07-09-2026."
+    }
   },
   "6AH": {
     "nombre": "Estadio Centenario - Centro - General Mosconi - Máximo Abásolo - Stella Maris - Centro",
-    "primero": "06:00 hs - desde Estadio Centenario",
-    "ultimo": "22:30 hs - desde Estadio Centenario"
+    "habiles": {
+      "primero": "06:00 hs - desde Estadio Centenario",
+      "ultimo": "20:58 hs - desde Estadio Centenario"
+    },
+    "sabado": {
+      "primero": "06:00 hs - desde Estadio Centenario",
+      "ultimo": "20:10 hs - desde Estadio Centenario"
+    },
+    "domingo": {
+      "primero": "07:00 hs - desde Estadio Centenario",
+      "ultimo": "21:00 hs - desde Estadio Centenario",
+      "nota": "Horarios informados por SolBus 07-09-2026."
+    }
   },
   "7": {
     "nombre": "Estadio Centenario - Laprida",
-    "primero": "05:35 hs - desde Estadio Centenario",
-    "ultimo": "00:30 hs - desde Estadio Centenario"
+    "habiles": {
+      "primero": "05:05 hs - desde Estadio Centenario",
+      "ultimo": "01:23 hs - desde Estadio Centenario"
+    },
+    "sabado": {
+      "primero": "05:30 hs - desde Estadio Centenario",
+      "ultimo": "01:14 hs - desde Estadio Centenario"
+    },
+    "domingo": {
+      "primero": "06:00 hs - desde Estadio Centenario",
+      "ultimo": "01:14 hs - desde Estadio Centenario",
+      "nota": "Horarios informados por SolBus 07-09-2026."
+    }
   },
   "8H": {
     "nombre": "Palazzo - Standard",
-    "primero": "04:00 hs - desde Estadio Centenario",
-    "ultimo": "23:50 hs - desde Estadio Centenario"
+    "habiles": {
+      "primero": "04:00 hs - desde Estadio Centenario",
+      "ultimo": "00:45 hs - desde Estadio Centenario"
+    },
+    "sabado": {
+      "primero": "04:00 hs - desde Estadio Centenario",
+      "ultimo": "23:17 hs - desde Estadio Centenario"
+    },
+    "domingo": {
+      "primero": "06:00 hs - desde Estadio Centenario",
+      "ultimo": "21:00 hs - desde Estadio Centenario",
+      "nota": "Horarios informados por SolBus 07-09-2026."
+    }
   },
   "8AH": {
     "nombre": "Standard - Palazzo",
-    "primero": "05:40 hs - desde Estadio Centenario",
-    "ultimo": "00:20 hs - desde Estadio Centenario"
+    "habiles": {
+      "primero": "04:15 hs - desde Estadio Centenario",
+      "ultimo": "00:48 hs - desde Estadio Centenario"
+    },
+    "sabado": {
+      "primero": "04:15 hs - desde Estadio Centenario",
+      "ultimo": "23:28 hs - desde Estadio Centenario"
+    },
+    "domingo": {
+      "primero": "06:15 hs - desde Estadio Centenario",
+      "ultimo": "21:10 hs - desde Estadio Centenario",
+      "nota":"Horarios informados por SolBus 07-09-2026."
+    }
   },
   "9": {
     "nombre": "Centro - Barrio Industrial",
-    "primero": "05:15 hs - desde Terminal Gil Álvarez",
-    "ultimo": "21:00 hs - desde Terminal Gil Álvarez"
+    "habiles": {
+      "primero": "05:15 hs - desde Terminal de Ómnibus",
+      "ultimo": "22:22 hs - desde Terminal de Ómnibus"
+    },
+    "sabado": {
+      "primero": "05:45 hs - desde Terminal de Ómnibus",
+      "ultimo": "20:47 hs - desde Terminal de Ómnibus"
+    },
+    "domingo": {
+      "nota": "Sin frecuencia informada. Horarios informados por SolBus 07-09-2026."
+    }
   },
   "9A": {
     "nombre": "Extensión Arenales",
-    "primero": ["06:30", "12:30", "18:30 hs - desde Terminal Gil Álvarez"],
-    "ultimo": "19:30 hs - desde Los Arenales"
+    "habiles": {
+      "primero": ["05:55", "06:30", "11:19", "18:16 hs - desde Terminal de Ómnibus"],
+      "ultimo": "19:15 hs - desde Los Arenales"
+    },
+    "sabado": {
+      "nota": "Sin frecuencia informada"
+    },
+    "domingo": {
+      "nota": "Sin frecuencia informada. Horarios informados por SolBus 07-09-2026."
+    }
   },
   "12": {
     "nombre": "Centro - Máximo Abásolo",
-    "primero": "05:15 hs - desde Terminal Gil Álvarez",
-    "ultimo": "23:40 hs - desde Terminal Gil Álvarez"
+    "habiles": {
+      "primero": "05:01 hs - desde Terminal de Ómnibus",
+      "ultimo": "01:12 hs - desde Terminal de Ómnibus"
+    },
+    "sabado": {
+      "primero": "05:31 hs - desde Terminal de Ómnibus",
+      "ultimo": "21:56 hs - desde Terminal de Ómnibus"
+    },
+    "domingo": {
+      "primero": "07:01 hs - desde Terminal de Ómnibus",
+      "ultimo": "21:57 hs - desde Terminal de Ómnibus",
+      "nota": "Horarios informados por SolBus 07-09-2026."
+    }
   },
   "13": {
     "nombre": "Estadio Centenario - Standard",
-    "primero": "05:35 hs - desde Estadio Centenario",
-    "ultimo": "22:40 hs - desde Estadio Centenario"
+    "habiles": {
+      "primero": "05:00 hs - desde Estadio Centenario",
+      "ultimo": "23:04 hs - desde Estadio Centenario"
+    },
+    "sabado": {
+      "primero": "05:00 hs - desde Estadio Centenario",
+      "ultimo": "21:56 hs - desde Estadio Centenario"
+    },
+    "domingo": {
+      "primero": "06:46 hs - desde Estadio Centenario",
+      "ultimo": "22:25 hs - desde Estadio Centenario",
+      "nota":"Horarios informados por SolBus 07-09-2026."
+    }
   },
   "14": {
     "nombre": "30 de Octubre - Centro (F14 - F15)",
-    "primero": "05:00 hs - desde 30 de Octubre",
-    "ultimo": "00:00 hs - desde 30 de Octubre"
+    "habiles": {
+      "primero": "04:20 hs - desde 30 de Octubre",
+      "ultimo": "00:27 hs - desde 30 de Octubre"
+    },
+    "sabado": {
+      "primero": "06:00 hs - desde 30 de Octubre",
+      "ultimo": "20:46 hs - desde 30 de Octubre"
+    },
+    "domingo": {
+      "primero": "06:00 hs - desde 30 de Octubre",
+      "ultimo": "21:04 hs - desde 30 de Octubre",
+      "nota":"Horarios informados por SolBus 07-09-2026."
+    }
   },
   "15": {
     "nombre": "Centro - Los Tres Pinos",
-    "primero": "06:00 hs - desde Terminal Gil Álvarez",
-    "ultimo": "00:00 hs - desde Pellegrini"
+    "habiles": {
+      "primero": "05:40 hs - desde Terminal de Ómnibus",
+      "ultimo": "01:11 hs - desde Terminal de Ómnibus"
+    },
+    "sabado": {
+      "primero": "06:15 hs - desde Terminal de Ómnibus",
+      "ultimo": "21:24 hs - desde Terminal de Ómnibus"
+    },
+    "domingo": {
+      "primero": "07:40 hs - desde Terminal de Ómnibus",
+      "ultimo": "21:00 hs - desde Terminal de Ómnibus",
+      "nota":"Horarios informados por SolBus 07-09-2026."
+    }
   },
   "16": {
     "nombre": "Estadio Centenario - Saavedra - Aeronáutico",
-    "primero": "05:30 hs - desde Estadio Centenario",
-    "ultimo": "22:40 hs - desde Estadio Centenario"
+    "habiles": {
+      "primero": "05:40 hs - desde Estadio Centenario",
+      "ultimo": "22:30 hs - desde Estadio Centenario"
+    },
+    "sabado": {
+      "primero": "05:30 hs - desde Estadio Centenario",
+      "ultimo": "20:54 hs - desde Estadio Centenario"
+    },
+    "domingo": {
+      "primero": "07:00 hs - desde Estadio Centenario",
+      "ultimo": "21:36 hs - desde Estadio Centenario",
+      "nota":"Horarios informados por SolBus 07-09-2026."
+    }
   },
   "17": {
     "nombre": "Estadio Centenario - Padre Corti",
-    "primero": "05:00 hs - desde Estadio Centenario",
-    "ultimo": "00:00 hs - desde Estadio Centenario"
+    "habiles": {
+      "primero": "04:45 - desde Estadio Centenario",
+      "ultimo": "01:28 hs - desde Estadio Centenario"
+    },
+    "sabado": {
+      "primero": "06:20 hs - desde Estadio Centenario",
+      "ultimo": "21:42 hs - desde Estadio Centenario"
+    },
+    "domingo": {
+      "primero": "08:06 hs - desde Estadio Centenario",
+      "ultimo": "22:02 hs - desde Estadio Centenario",
+      "nota": "Horarios informados por SolBus 07-09-2026."
+    }
   },
   "18": {
     "nombre": "Estadio Centenario - Restinga Alí",
-    "primero": "05:00 hs - desde Estadio Centenario",
-    "ultimo": "23:00 hs - desde Estadio Centenario"
+    "habiles": {
+      "primero": "05:00 hs - desde Estadio Centenario",
+      "ultimo": "23:06 hs - desde Estadio Centenario"
+    },
+    "sabado": {
+      "primero": "05:30 hs - desde Estadio Centenario",
+      "ultimo": "20:13 hs - desde Estadio Centenario"
+    },
+    "domingo": {
+      "primero": "07:00 hs - desde Estadio Centenario",
+      "ultimo": "21:06 hs - desde Estadio Centenario",
+      "nota":"Horarios informados por SolBus 07-09-2026."
+    }
   },
   "19": {
     "nombre": "Estadio Centenario - Caleta Córdova",
-    "primero": "04:50 hs - desde Estadio Centenario",
-    "ultimo": "23:00 hs - desde Estadio Centenario"
+    "habiles": {
+      "primero": "05:00 hs - desde Estadio Centenario",
+      "ultimo": "23:33 hs - desde Estadio Centenario"
+    },
+    "sabado": {
+      "primero": "05:30 hs - desde Estadio Centenario",
+      "ultimo": "20:14 hs - desde Estadio Centenario"
+    },
+    "domingo": {
+      "primero": "07:00 hs - desde Estadio Centenario",
+      "ultimo": "21:24 hs - desde Estadio Centenario",
+      "nota": "Horarios informados por SolBus 07-09-2026."
+    }
   },
   "20": {
     "nombre": "Base Sol Bus - Stella Maris - Hospital Alvear",
-    "primero": "05:00 hs - desde Base Sol Bus (Humberto Beghin)",
-    "ultimo": "23:15 hs - desde Base Sol Bus (Humberto Beghin)"
+    "habiles": {
+      "primero": "05:10 hs - desde Base Sol Bus (Barrio Industrial)",
+      "ultimo": "23:14 hs - desde Base Sol Bus (Barrio Industrial)"
+    },
+    "sabado": {
+      "primero": "05:30 hs - desde Base Sol Bus (Barrio Industrial)",
+      "ultimo": "20:18 hs - desde Base Sol Bus (Barrio Industrial)"
+    },
+    "domingo": {
+      "primero": "07:30 hs - desde Base Sol Bus (Barrio Industrial)",
+      "ultimo": "21:25 hs - desde Base Sol Bus (Barrio Industrial)",
+      "nota": "Horarios informados por SolBus 07-09-2026."
+    }
   },
   "21": {
     "nombre": "Padre Corti - Don Bosco - Standard",
-    "primero": "06:15 hs - desde Padre Corti",
-    "ultimo": "20:00 hs - desde Padre Corti"
+    "habiles": {
+      "primero": "06:15 hs - desde Padre Corti",
+      "ultimo": "20:00 hs - desde Padre Corti"
+    },
+    "sabado": {
+      "primero": "06:15 hs - desde Padre Corti",
+      "ultimo": "12:55 hs - desde Padre Corti"
+    },
+    "domingo": {
+      "nota":"Sin frecuencia informada"
+    }
   },
   "22": {
     "nombre": "Estadio Centenario - Standard - Km 11",
-    "primero": "06:00 hs - desde Estadio Centenario",
-    "ultimo": "22:00 hs - desde Estadio Centenario"
+    "habiles": {
+      "primero": "06:00 hs - desde Estadio Centenario",
+      "ultimo": "21:59 hs - desde Estadio Centenario"
+    },
+    "sabado": {
+      "primero": "06:30 hs - desde Estadio Centenario",
+      "ultimo": "20:06 hs - desde Estadio Centenario"
+    },
+    "domingo": {
+      "primero": "11:30 hs - desde Estadio Centenario",
+      "ultimo": "18:06 hs - desde Estadio Centenario",
+      "nota":"Horarios informados por SolBus 07-09-2026."
+    }
   }
 }
