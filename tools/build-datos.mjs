@@ -400,6 +400,9 @@ const salida = {
   name: "recorridos",
   crs: { type: "name", properties: { name: "urn:ogc:def:crs:OGC:1.3:CRS84" } },
   generado: new Date().toISOString().slice(0, 10),
+  /* Licencia de los datos publicados: ver data/LICENCIA.md */
+  fuente: "Municipalidad de Comodoro Rivadavia — transporte.comodoro.gov.ar",
+  licencia: { nombre: "CC BY 4.0", url: "https://creativecommons.org/licenses/by/4.0/deed.es" },
   features,
 };
 

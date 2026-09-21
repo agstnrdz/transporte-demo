@@ -28,6 +28,9 @@ const DIAS = ["habiles", "sabado", "domingo"];
 const PATRON_ARCHIVO = /^linea-([a-z0-9]+)-(habiles|sabado|domingo)\.csv$/i;
 /* Tramo entre dos paradas principales que amerita revisar la planilla (min) */
 const SALTO_SOSPECHOSO = 60;
+/* Licencia de los datos publicados (ver data/LICENCIA.md): va dentro de cada .json */
+const FUENTE = "Municipalidad de Comodoro Rivadavia — transporte.comodoro.gov.ar";
+const LICENCIA = { nombre: "CC BY 4.0", url: "https://creativecommons.org/licenses/by/4.0/deed.es" };
 /* Franja en la que se calcula el intervalo típico entre salidas (min desde las 00:00) */
 const FRANJA_INTERVALO = [7 * 60, 20 * 60];
 
@@ -427,6 +430,7 @@ let bytes = 0;
 const escritos = new Set();
 for (const { ruta, id, dia, tabla } of tablas) {
   const json = jsonPorRenglones({
+    fuente: FUENTE, licencia: LICENCIA,
     linea: id, dia,
     paradas: tabla.paradas, tramos: tabla.tramos,
     notas: tabla.notas,
@@ -437,7 +441,7 @@ for (const { ruta, id, dia, tabla } of tablas) {
   await writeFile(ruta, json, "utf8");
   escritos.add(path.basename(ruta));
 }
-const indice = jsonPorRenglones({ lineas }, "lineas");
+const indice = jsonPorRenglones({ fuente: FUENTE, licencia: LICENCIA, lineas }, "lineas");
 await writeFile(SALIDA_INDICE, indice, "utf8");
 
 /* Un .json sin su .csv (tabla dada de baja o renombrada) se borra: si no, quedaría
