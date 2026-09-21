@@ -13,7 +13,8 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/licencia-MIT-blue.svg" alt="Licencia MIT">
+  <img src="https://img.shields.io/badge/c%C3%B3digo-MIT-blue.svg" alt="Código: licencia MIT">
+  <img src="https://img.shields.io/badge/datos-CC%20BY%204.0-lightgrey.svg" alt="Datos: licencia CC BY 4.0">
   <img src="https://img.shields.io/badge/demo-online-brightgreen.svg" alt="Demo online">
 </p>
 
@@ -55,7 +56,8 @@ Sitio estático construido con HTML, CSS y JavaScript, sin dependencias externas
 
 ### Licencia
 
-Distribuido bajo licencia MIT - ver [LICENSE](LICENSE).
+- **Código** (HTML, CSS, JavaScript y scripts de `tools/`): licencia MIT, ver [LICENSE](LICENSE).
+- **Datos** (recorridos, paradas y horarios de `data/`, y lo que el visor muestra a partir de ellos): [Creative Commons Atribución 4.0 Internacional (CC BY 4.0)](https://creativecommons.org/licenses/by/4.0/deed.es). Se pueden reutilizar citando la fuente; ver [data/LICENCIA.md](data/LICENCIA.md).
 
 ---
 ![Franja — Malvinas Argentinas](https://malvinas.argentinadatos.com/strip.png)
