@@ -10,7 +10,8 @@ const EXCLUIR_SIEMPRE = new Set([
   ".git", ".github", ".gitignore", ".gitattributes",
   "tools", "node_modules", path.basename(DESTINO),
 ]);
-const EXCLUIR_EN_MANTENIMIENTO = new Set(["data"]);
+/* horarios/ sólo lee data/: sin datos no tiene nada que mostrar */
+const EXCLUIR_EN_MANTENIMIENTO = new Set(["data", "horarios"]);
 
 const MARCA_INICIO = "<!-- vt:datos:inicio -->";
 const MARCA_FIN = "<!-- vt:datos:fin -->";
@@ -106,5 +107,5 @@ const modo = mantenimiento ? "MANTENIMIENTO (sin data/)" : "normal (sitio comple
 console.log(`✓ build-pages: modo ${modo}`);
 console.log(`  destino: ${path.relative(RAIZ, DESTINO) || "."}  ·  ${copiados} entradas copiadas`);
 if (mantenimiento) {
-  console.log("  data/ excluida del artifact y bloque de <script> quitado de index.html");
+  console.log("  data/ y horarios/ excluidas del artifact y bloque de <script> quitado de index.html");
 }
