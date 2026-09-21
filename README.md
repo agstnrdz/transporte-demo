@@ -26,7 +26,7 @@ Este visor permite consultar de forma interactiva las 24 líneas de colectivo ur
 ### Funcionalidades
 
 - Recorridos de las 24 líneas, diferenciando ida y vuelta (o sentido horario / antihorario en las circulares), con horarios desplegables por línea.
-- Horarios de paso por parada ([`horarios/`](horarios/)): la tabla de cada línea por tipo de día (hábiles, sábados, domingos), con el próximo paso resaltado, los horarios de cada parada agrupados por hora, buscador por línea, parada y día, y versión para imprimir. Se abre en otra pestaña desde cada línea del mapa y desde el reloj del encabezado.
+- Horarios de paso por parada: la tabla de cada línea por tipo de día (hábiles, sábados, domingos), con el próximo paso resaltado, los horarios de cada parada agrupados por hora, buscador por línea, parada y día, y versión para imprimir. Se abre en otra pestaña desde cada línea del mapa y desde el reloj del encabezado.
 - Paradas geolocalizadas, con filtros por refugio, cartel y poste, y las líneas que pasan a menos de 5 metros al tocarlas.
 - Ubicación del usuario y listado de paradas más cercanas.
 - Buscador de línea sugerida por origen y destino (esquina relevada o punto marcado en el mapa), con hasta 3 opciones ordenadas por distancia a pie.
@@ -39,7 +39,7 @@ Este visor permite consultar de forma interactiva las 24 líneas de colectivo ur
 
 - **Recorridos de líneas:** Dirección General de Transporte (2026).
 - **Paradas:** Dirección General de Transporte (2026), sobre relevamiento propio (2023).
-- **Horarios de paso por parada:** tablas de frecuencias por línea y tipo de día, publicadas en `data/frecuencias/`. Las planillas de origen no forman parte del repositorio.
+- **Horarios de paso por parada:** Horarios informados por Sol Bus actualizados al 7 de septiembre de 2026.
 - **Cartografía base:** Instituto Geográfico Nacional (Argenmap).
 - **Imagen satelital:** [Esri World Imagery](https://www.arcgis.com/home/item.html?id=10df2279f9684e4a9f6a7f08febac2a9) - Esri, Vantor, Earthstar Geographics y la comunidad de usuarios GIS.
 - **Nomenclador de calles (respaldo del buscador de línea):** API Georef, Jefatura de Gabinete de Ministros de la Nación ([datos.gob.ar](https://datos.gob.ar)).
@@ -52,46 +52,6 @@ El uso de [Argenmap](https://ign-argentina.github.io/argenmap-web/) como mapa ba
 ### Tecnología
 
 Sitio estático construido con HTML, CSS y JavaScript, sin dependencias externas ni backend. El mapa se implementa con [Leaflet](https://leafletjs.com/) 1.9.4, servido desde el propio repositorio (`vendor/leaflet/`) y no desde un CDN, para que el visor no dependa de un tercero. El buscador de línea complementa el listado propio de esquinas relevadas con consultas opcionales a la [API Georef](https://datosgobar.github.io/georef-ar-api/) para intersecciones no incluidas en el relevamiento; si el servicio no responde, el buscador sigue funcionando sólo con los datos propios. La burbuja de clima consulta la API pública de [Open-Meteo](https://open-meteo.com/).
-
-### Despliegue
-
-El repositorio contiene las **fuentes**, no el sitio publicado. Dos archivos que el visor pide por `fetch` son productos de build y no están versionados:
-
-| Producto (generado) | Fuente (versionada) |
-| --- | --- |
-| `data/recorridos.geojson` | `data/linea-*.geojson` |
-| `data/paradas.json` | `data/paradas.geojson` |
-
-Los genera `tools/build-datos.mjs`, que además valida las fuentes exportadas desde QGIS: sentidos declarados, geometrías multiparte con huecos, features duplicadas, coordenadas fuera del encuadre de la ciudad y recorridos de ida y vuelta digitalizados en la misma dirección. Si algo de eso falla, el build se detiene y el dato no llega al visor.
-
-Por eso **clonar el repositorio y servirlo tal cual no funciona**: falta ese paso y el visor responde `HTTP 404` al cargar `data/recorridos.geojson`.
-
-Las tablas de horarios de paso son la excepción: las planillas (`data/frecuencias/*.csv`) quedan sólo en la computadora de quien las mantiene y lo que se versiona son los `.json` que publica el sitio (`data/frecuencias.json` y `data/frecuencias/*.json`). Los genera `tools/build-frecuencias.mjs`, que se corre a mano antes de commitear; en un clon sin planillas, o en el workflow, no toca nada. Acepta las planillas exportadas tal cual (coma o punto y coma, UTF-8 o ANSI, filas y columnas vacías alrededor) y valida que cada celda sea una hora, que las horas no retrocedan a lo largo de una salida (salvo al pasar la medianoche) y que no queden horas en columnas sin nombre de parada. Avisa, sin detener el build, de nombres de parada casi iguales en una misma tabla, de tramos de más de una hora entre dos paradas y de salidas fuera de orden en una parada. Si se da de baja una planilla, borra su `.json`. Cómo nombrar los archivos: ver [`data/frecuencias/LEEME.txt`](data/frecuencias/LEEME.txt).
-
-Hay dos formas de desplegarlo en otro servidor:
-
-**1. Rama `deploy` (sin Node).** La rama [`deploy`](../../tree/deploy) contiene el sitio ya construido, actualizado automáticamente en cada push a `main`. Es un espejo exacto de lo que se publica en GitHub Pages, con historial lineal:
-
-```bash
-git clone --branch deploy https://github.com/comodoro-mit/transporte.git
-# y de ahí en más, para actualizar:
-git pull
-```
-
-El contenido de la rama es la raíz del sitio: se publica tal cual, sin construir nada.
-
-**2. Construir el sitio (Node 20 o superior).**
-
-```bash
-git clone https://github.com/comodoro-mit/transporte.git
-cd transporte
-node tools/build-datos.mjs    # recorridos y paradas
-node tools/build-pages.mjs _site
-```
-
-El sitio publicable queda en `_site/`. Para validar las fuentes sin escribir nada: `node tools/build-datos.mjs --check` (y, con las planillas a mano, `node tools/build-frecuencias.mjs --check`).
-
-**Modo mantenimiento.** El switch `MODO_MANTENIMIENTO` en `js/visor.js` alterna entre el sitio completo y una pantalla de mantenimiento sin datos (sin `data/` ni `horarios/`). Afecta por igual a GitHub Pages y a la rama `deploy`, que refleja siempre lo publicado.
 
 ### Licencia
 
