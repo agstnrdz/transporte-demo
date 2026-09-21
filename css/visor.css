@@ -457,6 +457,10 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   opacity: 1;
 }
 
+/* Enlace a horarios/ (horarios de paso por parada): una pill que abre otra pestaña */
+.pill-enlace { display: inline-flex; align-items: center; gap: 4px; text-decoration: none; }
+.pill-enlace svg { flex-shrink: 0; }
+
 .linea-horarios { flex: 1 1 100%; margin-top: 8px; }
 .horarios-lista {
   list-style: none;
