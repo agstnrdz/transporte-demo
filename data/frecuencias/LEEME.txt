@@ -1,0 +1,36 @@
+Tablas de frecuencias por línea y tipo de día, para horarios/.
+
+Las planillas (.csv) quedan sólo en la computadora de quien mantiene las tablas: no se
+versionan ni se publican (.gitignore). Lo que se versiona y publica son los .json que
+genera tools/build-frecuencias.mjs a partir de ellas. Flujo:
+  1. dejar o actualizar los .csv en esta carpeta
+  2. node tools/build-frecuencias.mjs
+  3. revisar en el navegador y commitear los .json (y data/frecuencias.json)
+Sin .csv en la carpeta (un clon del repo, el workflow) el script no toca nada.
+
+Un archivo por línea y tipo de día:
+
+  linea-<id>-<dia>.csv
+
+  <id>   igual que en data/linea-<id>.geojson: 1, 5u, 6h, 6ah, 8h, 8ah, 9a, ...
+  <dia>  habiles | sabado | domingo   (las mismas claves de data/horarios.json)
+
+Ejemplos: linea-1-habiles.csv, linea-1-sabado.csv, linea-6ah-domingo.csv
+
+Formato: la planilla tal como viene, exportada a CSV (coma o punto y coma, UTF-8 o
+ANSI). No hace falta limpiarla antes:
+  - la primera fila con nombres es el encabezado: cada nombre, una parada principal
+  - cada fila con horas es una salida; cada celda, la hora de paso por esa parada
+  - horas como 5:00, 05:00 o 5:00:00; una celda vacía o con "-" es que no pasa
+  - pasada la medianoche se sigue con 0:05, 0:30...: el script lo detecta solo
+  - dos columnas seguidas con la misma parada (p. ej. TERMINAL DE OMNIBUS) marcan
+    llegada y salida en una cabecera: ahí la tabla se parte en "hacia ..." y "hacia ..."
+  - un texto fuera de las columnas de parada (p. ej. FIN SERVICIO) queda como nota
+    de esa salida
+Los nombres se muestran en formato título y con tildes ("MAXIMO ABASOLO" → "Máximo
+Abásolo"). Si una palabra sale mal, se corrige en ACENTOS_BASE, en
+tools/build-frecuencias.mjs.
+
+Los .json de esta carpeta los genera el script: no se editan a mano. Si se quita un
+.csv, al volver a correr el script se borra su .json.
+Para validar sin generar nada: node tools/build-frecuencias.mjs --check

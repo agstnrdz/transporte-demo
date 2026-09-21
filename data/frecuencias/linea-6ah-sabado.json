@@ -1,0 +1,14 @@
+{"linea":"6AH","dia":"sabado","paradas":[{"n":"Estadio Centenario","t":0,"r":"salida"},{"n":"Yrigoyen y 9 de Julio","t":0,"r":"paso"},{"n":"M. Abásolo y San Martín","t":0,"r":"paso"},{"n":"Los Búlgaros y Gobernador Moyano (Fed. Deportiva)","t":0,"r":"paso"},{"n":"Fray Luis Beltrán y Viedma","t":0,"r":"paso"},{"n":"Fray Luis Beltrán y Santa Lucía","t":0,"r":"paso"},{"n":"Fray Luis Beltrán y Los Ñires","t":0,"r":"paso"},{"n":"José Sixto y Los Tamariscos","t":0,"r":"paso"},{"n":"Camino Roque González 1","t":0,"r":"paso"},{"n":"Camino Roque González 2","t":0,"r":"paso"},{"n":"Camino Roque González 2100","t":0,"r":"paso"},{"n":"Av. Polonia y Ed. Bonovia","t":0,"r":"llegada"},{"n":"Av. Polonia y Ed. Bonovia","t":1,"r":"salida"},{"n":"Natalia Paraguala y Polonia","t":1,"r":"paso"},{"n":"Polonia y Ricardo Balbín","t":1,"r":"paso"},{"n":"Polonia y Marinero Jorge López","t":1,"r":"paso"},{"n":"J. Kennedy y Polonia","t":1,"r":"paso"},{"n":"Av. Constituyentes Gimnasio 2","t":1,"r":"paso"},{"n":"H. Yirigoyen y Guillermo Leguizamon","t":1,"r":"paso"},{"n":"Dalmacio Miranda e Ignacio Gatica","t":1,"r":"paso"},{"n":"Eustaquio Molina y Casimira Pella","t":1,"r":"paso"},{"n":"José Dalle Mura y Antonio Cañal","t":1,"r":"paso"},{"n":"H. Yirigoyen La Proveeduria","t":1,"r":"paso"},{"n":"Vta Linea 6","t":1,"r":"llegada"}],"tramos":[{"desde":"Estadio Centenario","hacia":"Av. Polonia y Ed. Bonovia"},{"desde":"Av. Polonia y Ed. Bonovia","hacia":"Vta Linea 6"}],"notas":{"11":"Fin servicio"},"filas":[
+[360,365,366,371,374,377,379,380,381,382,386,388,388,391,393,397,400,402,408,412,415,416,419,421],
+[435,440,442,449,452,455,457,459,460,461,465,467,467,470,472,476,479,481,487,491,494,495,498,500],
+[510,515,517,524,527,530,532,534,535,536,540,542,542,545,547,551,554,556,562,566,569,570,573,575],
+[585,590,592,599,602,605,607,609,610,611,615,617,617,620,622,626,629,631,637,641,644,645,648,650],
+[660,665,667,674,677,680,682,684,685,686,690,692,692,695,697,701,704,706,712,716,719,720,723,725],
+[735,740,742,749,752,755,757,759,760,761,765,767,767,770,772,776,779,781,787,791,794,795,798,800],
+[810,815,817,824,827,830,832,834,835,836,840,842,842,845,847,851,854,856,862,866,869,870,873,875],
+[890,895,897,904,907,910,912,914,915,916,920,922,922,925,927,931,934,936,942,946,949,950,953,955],
+[970,975,977,984,987,990,992,994,995,996,1000,1002,1002,1005,1007,1011,1014,1016,1022,1026,1029,1030,1033,1035],
+[1050,1055,1057,1064,1067,1070,1072,1074,1075,1076,1080,1082,1082,1085,1087,1091,1094,1096,1102,1106,1109,1110,1113,1115],
+[1130,1135,1137,1144,1147,1150,1152,1154,1155,1156,1160,1162,1162,1165,1167,1171,1174,1176,1182,1186,1189,1190,1193,1195],
+[1210,1215,1216,1221,1224,1227,1229,1230,1231,1232,1236,1238,1238,1241,1243,1246,1249,1251,1257,1261,1264,1265,1267,1269]
+]}

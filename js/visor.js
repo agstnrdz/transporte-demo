@@ -11,6 +11,9 @@ const HORARIOS_HABILITADO = true;
 
 const AVISOS_HABILITADO = true;
 
+/* Accesos a horarios/ (horarios de paso por parada), si hay tablas cargadas */
+const FRECUENCIAS_HABILITADO = true;
+
 const MODO_MANTENIMIENTO = false;
 
 if (MODO_MANTENIMIENTO) {
@@ -21,23 +24,20 @@ if (MODO_MANTENIMIENTO) {
 const RUTA_RECORRIDOS = "data/recorridos.geojson";
 const RUTA_HORARIOS = "data/horarios.json";
 const RUTA_PARADAS = "data/paradas.json";
+const RUTA_FRECUENCIAS = "data/frecuencias.json";
 
-/* Paleta por línea (claro, oscuro) */
-const PALETA = {
-  "1":  ["#d62728", "#ff6b6b"], "2":  ["#1f77b4", "#5aa9e6"],
-  "3":  ["#2ca02c", "#5fd068"], "4":  ["#9467bd", "#b78fe0"],
-  "5":  ["#ff7f0e", "#ffa94d"], "5U": ["#8c564b", "#c9938a"],
-  "6H": ["#e377c2", "#f2a6dd"], "6AH":["#8e44ad", "#c39bd3"],
-  "7":  ["#17becf", "#63dfee"],
-  "8H": ["#bcbd22", "#d9db4f"], "8AH":["#6b8e23", "#9acd32"],
-  "9":  ["#7f2704", "#d95f02"], "9A": ["#546e7a", "#90a4ae"],
-  "12": ["#0d5b8c", "#4fa3d1"], "13": ["#a61e4d", "#e64980"],
-  "14": ["#2b8a3e", "#69db7c"], "15": ["#5f3dc4", "#9775fa"],
-  "16": ["#e8590c", "#ff922b"], "17": ["#0b7285", "#3bc9db"],
-  "18": ["#862e9c", "#cc5de8"], "19": ["#c92a2a", "#ff8787"],
-  "20": ["#364fc7", "#748ffc"], "21": ["#087f5b", "#38d9a9"],
-  "22": ["#e67700", "#ffc078"],
-};
+/* Paleta por línea (claro, oscuro): vive en js/paleta.js, compartida con horarios/.
+   index.html la carga antes que este archivo; si el navegador trae un index.html viejo
+   de la caché (de antes de que existiera paleta.js), se la pide acá. */
+if (!window.VT_PALETA) {
+  await new Promise((listo) => {
+    const s = document.createElement("script");
+    s.src = "js/paleta.js";
+    s.onload = s.onerror = listo;
+    document.head.appendChild(s);
+  });
+}
+const PALETA = window.VT_PALETA || {};
 
 const SENTIDOS = {
   ida: ["Ida", "ida"], vuelta: ["Vuelta", "vuelta"],
@@ -1748,6 +1748,64 @@ mapa.fitBounds(boundsRed, { padding: [24, 24] });
 reestilarTodo();
 aplicarFiltrosParadas();
 actualizarPanelFoco();
+
+/* Enlace directo a una línea: ?linea=7 (lo usa "Ver en el mapa" en horarios/) */
+(function lineaDesdeURL() {
+  let pedida = null;
+  try { pedida = new URLSearchParams(location.search).get("linea"); } catch (e) { /* noop */ }
+  const id = String(pedida || "").trim().toUpperCase();
+  if (id && lineaPorId.has(id)) enfocar(id);
+})();
+
+/* Horarios de paso por parada (horarios/): un acceso general en el encabezado y, en
+   cada línea con tablas cargadas, un enlace directo que se abre en otra pestaña. Se
+   agregan cuando llega data/frecuencias.json (lo genera tools/build-frecuencias.mjs);
+   si no está, el visor sigue igual. */
+const ICONO_RELOJ = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>';
+const ICONO_EXTERNO = '<svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>';
+function sumarAccesosHorarios(indice) {
+  const conTablas = new Set(
+    ((indice && indice.lineas) || [])
+      .filter((l) => l && l.tablas && Object.keys(l.tablas).length)
+      .map((l) => String(l.id).toUpperCase())
+  );
+  if (!conTablas.size || document.getElementById("btn-horarios")) return;
+
+  const btn = document.createElement("a");
+  btn.id = "btn-horarios";
+  btn.className = "vt-btn-header";
+  btn.href = "horarios/";
+  btn.target = "_blank";
+  btn.rel = "noopener";
+  btn.title = "Horarios de paso por parada";
+  btn.setAttribute("aria-label", "Horarios de paso por parada (se abre en otra pestaña)");
+  btn.innerHTML = ICONO_RELOJ;
+  btn.addEventListener("click", () => {
+    if (typeof gtag === "function") gtag("event", "abrir_horarios_paso", { origen: "encabezado" });
+  });
+  document.getElementById("btn-tema").before(btn);
+
+  for (const id of conTablas) {
+    const li = filasPorId.get(id);
+    if (!li) continue;
+    const a = document.createElement("a");
+    a.className = "pill pill-accion pill-enlace";
+    a.href = "horarios/?linea=" + encodeURIComponent(id);
+    a.target = "_blank";
+    a.rel = "noopener";
+    a.title = "Horarios de paso por parada de la línea " + id + " (se abre en otra pestaña)";
+    a.innerHTML = "Horarios por parada " + ICONO_EXTERNO;
+    a.addEventListener("click", (e) => {
+      e.stopPropagation();
+      if (typeof gtag === "function") gtag("event", "abrir_horarios_paso", { origen: "linea", linea_id: id });
+    });
+    li.querySelector(".linea-detalle").insertBefore(a, li.querySelector(".linea-horarios"));
+  }
+}
+if (FRECUENCIAS_HABILITADO) {
+  traerJSON(RUTA_FRECUENCIAS).then(sumarAccesosHorarios).catch(() => { /* sin tablas: sin accesos */ });
+}
+
 if (sinPaleta.length) {
   toast(`Atención: sin color asignado en PALETA: ${sinPaleta.join(", ")}. Se dibujan en gris.`, 8000);
 }
