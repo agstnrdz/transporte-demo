@@ -376,6 +376,8 @@
 
 /* ---------- pie ---------- */
 .hp-aviso { margin: 0; font-size: 12px; line-height: 1.45; color: var(--ink-2); }
+.hp-licencia { margin: -6px 0 0; font-size: 12px; line-height: 1.45; color: var(--ink-2); }
+.hp-licencia a { color: var(--hp-acento-texto); font-weight: 600; }
 
 /* ---------- celular ---------- */
 @media (max-width: 760px) {
@@ -468,4 +470,6 @@
   .hp-tabla col.sel { background: none; }
   .hp-tabla tr { break-inside: avoid; }
   .hp-parada { break-inside: avoid; border-color: #bbb; }
+  .hp-licencia a { color: inherit; text-decoration: none; }
+  .hp-licencia a::after { content: " (creativecommons.org/licenses/by/4.0)"; font-weight: 400; }
 }

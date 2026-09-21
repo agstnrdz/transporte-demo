@@ -288,6 +288,9 @@ function renderResumen() {
 }
 
 /* ---------- tabla ---------- */
+/* El texto del aviso al pie se edita en horarios/index.html; acá sólo se le suma la nota
+   propia de cada tabla, si la trae */
+const AVISO_BASE = $("hp-aviso").textContent.trim();
 function renderTabla() {
   const { linea, dia, datos } = tablaActual;
   const { paradas, tramos, filas } = datos;
@@ -357,7 +360,7 @@ function renderTabla() {
   $("hp-consejo").hidden = sel != null;
 
   const nota = datos.nota ? " " + datos.nota : "";
-  $("hp-aviso").textContent = "Horarios planificados de paso por las paradas principales. Pueden variar según el tránsito." + nota;
+  $("hp-aviso").textContent = AVISO_BASE + nota;
 }
 
 function desplazarTabla() {
