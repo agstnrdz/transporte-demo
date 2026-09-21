@@ -1,0 +1,12 @@
+{"linea":"19","dia":"domingo","paradas":[{"n":"Estadio Bicentenario","t":0,"r":"salida"},{"n":"Yrigoyen y 9 de Julio","t":0,"r":"paso"},{"n":"M. Abásolo y San Martín","t":0,"r":"paso"},{"n":"Los Búlgaros y Gob. Moyano (Fed. Deportiva)","t":0,"r":"paso"},{"n":"Universidad","t":0,"r":"paso"},{"n":"J. Ingenieros y López de Vega","t":0,"r":"paso"},{"n":"Presidente Raúl Alfonsín y 1647","t":0,"r":"paso"},{"n":"Alejandro Maíz e Ítalo Dell'Oro","t":0,"r":"paso"},{"n":"Alejandro Maíz y Base Almte. Brow","t":0,"r":"paso"},{"n":"Mina Sol de Mayo (Faro)","t":0,"r":"paso"},{"n":"Punta Novales (Colegio Caleta)","t":0,"r":"paso"},{"n":"Calle 2731 y 2727","t":0,"r":"llegada"},{"n":"Calle 2731 y 2727","t":1,"r":"salida"},{"n":"Punta Novales (Prefectura)","t":1,"r":"paso"},{"n":"Mina Sol de Mayo (Faro)","t":1,"r":"paso"},{"n":"Alejandro Maíz y 2432","t":1,"r":"paso"},{"n":"P. Raúl Alfonsín (Planta de Cemento)","t":1,"r":"paso"},{"n":"P. Raúl Alfonsín y 1647","t":1,"r":"paso"},{"n":"Av. J. Ingenieros y Gabriela Mistral","t":1,"r":"paso"},{"n":"Universidad","t":1,"r":"paso"},{"n":"Libertador Gral. San Martín (Ceret)","t":1,"r":"paso"},{"n":"Sarmiento y Pellegrini","t":1,"r":"paso"},{"n":"25 de Mayo y Ameghino (Plaza España","t":1,"r":"paso"},{"n":"Estadio Bicentenario","t":1,"r":"llegada"}],"tramos":[{"desde":"Estadio Bicentenario","hacia":"Calle 2731 y 2727"},{"desde":"Calle 2731 y 2727","hacia":"Estadio Bicentenario"}],"notas":{"9":"Fin servicio"},"filas":[
+[420,425,429,435,440,444,447,451,453,457,460,464,464,468,472,475,478,481,484,488,493,499,502,506],
+[516,521,525,531,536,540,543,547,549,553,556,560,560,564,568,571,574,577,580,584,589,595,598,602],
+[612,617,621,627,632,636,639,643,645,649,652,656,656,660,664,667,670,673,676,680,685,691,694,698],
+[708,713,717,723,728,732,735,739,741,745,748,752,752,756,760,763,766,769,772,776,781,787,790,794],
+[804,809,813,819,824,828,831,835,837,841,844,848,848,852,856,859,862,865,868,872,877,883,886,890],
+[900,905,909,915,920,924,927,931,933,937,940,944,944,948,952,955,958,961,964,968,973,979,982,986],
+[996,1001,1005,1011,1016,1020,1023,1027,1029,1033,1036,1040,1040,1044,1048,1051,1054,1057,1060,1064,1069,1075,1078,1082],
+[1092,1097,1101,1107,1112,1116,1119,1123,1125,1129,1132,1136,1136,1140,1144,1147,1150,1153,1156,1160,1165,1171,1174,1178],
+[1188,1193,1197,1203,1208,1211,1214,1217,1219,1223,1226,1230,1230,1234,1238,1241,1243,1246,1249,1253,1257,1263,1266,1270],
+[1284,1289,1293,1299,1304,1307,1310,1313,1315,1319,1322,1326,1326,1330,1334,1337,1339,1342,1345,1349,1353,1359,1362,1366]
+]}

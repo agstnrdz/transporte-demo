@@ -1,0 +1,14 @@
+{"linea":"15","dia":"domingo","paradas":[{"n":"Terminal de Ómnibus","t":0,"r":"salida"},{"n":"H. Yrigoyen y Democracia","t":0,"r":"paso"},{"n":"H. Yrigoyen y Juan B. Justo","t":0,"r":"paso"},{"n":"H. Yrigoyen y Polonia","t":0,"r":"paso"},{"n":"Polonia y Avenida Canadá","t":0,"r":"paso"},{"n":"Polonia y Lisandro de la Torre","t":0,"r":"paso"},{"n":"Polonia y Maestro Guastavino","t":0,"r":"paso"},{"n":"Polonia y Ricardo Balbín","t":0,"r":"paso"},{"n":"Polonia y Hugo del Carril","t":0,"r":"paso"},{"n":"Polonia y Luckiewics","t":0,"r":"paso"},{"n":"Roque González y 3197","t":0,"r":"paso"},{"n":"E Musacchuio y Vicente Barbieri","t":0,"r":"llegada"},{"n":"E Musacchuio y Vicente Barbieri","t":1,"r":"salida"},{"n":"Haroldo Conti y 3114","t":1,"r":"paso"},{"n":"Alberto Rivas y Pairó","t":1,"r":"paso"},{"n":"Robert Pairó y Concejal Alcoleas","t":1,"r":"paso"},{"n":"Roberto Pairó y Juan Carlos Duval","t":1,"r":"paso"},{"n":"10 de Noviembre y Wilfredo Andrade","t":1,"r":"paso"},{"n":"Polonia y Lisandro de la Torre","t":1,"r":"paso"},{"n":"Polonia y Av. Canadá","t":1,"r":"paso"},{"n":"Polonia e H. Yrigoyen","t":1,"r":"paso"},{"n":"H. Yrigoyen (La Proveeduria)","t":1,"r":"paso"},{"n":"Democracia y Roque Saens Peña","t":1,"r":"paso"},{"n":"Terminal de Ómnibus","t":1,"r":"llegada"}],"tramos":[{"desde":"Terminal de Ómnibus","hacia":"E Musacchuio y Vicente Barbieri"},{"desde":"E Musacchuio y Vicente Barbieri","hacia":"Terminal de Ómnibus"}],"notas":{"11":"Fin servicio"},"filas":[
+[null,null,null,null,null,null,null,null,null,null,null,405,405,408,411,415,419,425,430,433,437,440,443,446],
+[460,463,466,469,471,473,476,478,479,481,482,484,484,487,490,494,498,504,509,512,516,519,522,525],
+[540,543,546,549,551,554,557,559,560,562,563,565,565,568,571,575,580,586,591,594,598,601,604,608],
+[620,623,626,629,631,634,637,639,640,642,643,645,645,648,651,655,660,666,671,674,678,681,684,688],
+[700,703,706,709,711,714,717,719,720,722,723,725,725,728,731,735,740,746,751,754,758,761,764,768],
+[780,783,786,789,791,794,797,799,800,802,803,805,805,808,811,815,820,826,831,834,838,841,844,848],
+[860,863,866,869,871,874,877,879,880,882,883,885,885,888,891,895,900,906,911,914,918,921,924,928],
+[940,943,946,949,951,954,957,959,960,962,963,965,965,968,971,975,980,986,991,994,998,1001,1004,1008],
+[1020,1023,1026,1029,1031,1034,1037,1039,1040,1042,1043,1045,1045,1048,1051,1055,1060,1066,1071,1074,1078,1081,1084,1088],
+[1100,1103,1106,1109,1111,1114,1117,1119,1120,1122,1123,1125,1125,1128,1131,1135,1140,1146,1151,1154,1158,1161,1164,1168],
+[1180,1183,1186,1189,1191,1194,1197,1199,1200,1202,1203,1205,1205,1208,1211,1215,1219,1225,1230,1233,1237,1240,1243,1246],
+[1260,1263,1266,1269,1271,1273,1276,1278,1279,1281,1282,1284,1284,1287,1290,1294,1298,1304,1309,1312,1316,1319,1322,1325]
+]}

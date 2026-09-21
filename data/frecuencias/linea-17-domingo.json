@@ -1,0 +1,14 @@
+{"linea":"17","dia":"domingo","paradas":[{"n":"Estadio Bicentenario","t":0,"r":"salida"},{"n":"Democracia y Roque Sáenz Peña 50","t":0,"r":"paso"},{"n":"M. Abásolo y San Martín","t":0,"r":"paso"},{"n":"Los Búlgaros y Gobernador Moyano (Fed. Deportiva)","t":0,"r":"paso"},{"n":"Tehuelches y Balcarce","t":0,"r":"paso"},{"n":"Rotanda Universidad","t":0,"r":"paso"},{"n":"Mariano Rodrã­Guez (Plaza Castelli)","t":0,"r":"paso"},{"n":"Puente Rodríguez Peña Este","t":0,"r":"paso"},{"n":"Independencia y Pizarro","t":0,"r":"paso"},{"n":"Los Andes y El Arriero","t":0,"r":"paso"},{"n":"Los Andes y Cerro La Plata","t":0,"r":"paso"},{"n":"Cerro Domuyo y Cerro Hermitte","t":0,"r":"llegada"},{"n":"Cerro Domuyo y Cerro Hermitte","t":1,"r":"salida"},{"n":"Cerro La Plata y Los Andes","t":1,"r":"paso"},{"n":"Los Andes y El Arriero","t":1,"r":"paso"},{"n":"1 de Mayo y Ruta 3","t":1,"r":"paso"},{"n":"Ruta 3 (Predio Ferial)","t":1,"r":"paso"},{"n":"Mariano Rodrã­Guez (Plaza Castelli)","t":1,"r":"paso"},{"n":"Tehuelches y Balcarce","t":1,"r":"paso"},{"n":"Dr. Marcelino Reyes (Administracion Ypf)","t":1,"r":"paso"},{"n":"Sarmiento y Pellegrini","t":1,"r":"paso"},{"n":"25 de Mayo y Ameghino (Plaza España","t":1,"r":"paso"},{"n":"Av. H. Yrigoyen y Democracia","t":1,"r":"paso"},{"n":"Estadio Bicentenario","t":1,"r":"llegada"}],"tramos":[{"desde":"Estadio Bicentenario","hacia":"Cerro Domuyo y Cerro Hermitte"},{"desde":"Cerro Domuyo y Cerro Hermitte","hacia":"Estadio Bicentenario"}],"notas":{"11":"Fin servicio"},"filas":[
+[null,null,null,null,null,null,null,null,null,null,null,440,440,443,447,449,451,454,457,462,467,469,474,476],
+[486,488,491,496,499,502,505,508,511,512,516,518,518,521,525,527,529,532,535,540,545,547,552,554],
+[566,569,572,578,582,585,588,591,594,596,600,602,602,605,609,611,613,616,620,625,630,632,637,639],
+[650,653,656,662,666,669,672,675,678,680,684,686,686,689,693,695,697,700,704,709,714,716,721,723],
+[734,737,740,746,750,753,756,759,762,764,768,770,770,773,777,779,781,784,788,793,798,800,805,807],
+[818,821,824,830,834,837,840,843,846,848,852,854,854,857,861,863,865,868,872,877,882,884,889,891],
+[902,905,908,914,918,921,924,927,930,932,936,938,938,941,945,947,949,952,956,961,966,968,973,975],
+[986,989,992,998,1002,1005,1008,1011,1014,1016,1020,1022,1022,1025,1029,1031,1033,1036,1040,1045,1050,1052,1057,1059],
+[1070,1073,1076,1082,1086,1089,1092,1095,1098,1100,1104,1106,1106,1109,1113,1115,1117,1120,1124,1129,1134,1136,1141,1143],
+[1154,1157,1160,1166,1170,1173,1176,1179,1182,1184,1188,1190,1190,1193,1197,1199,1201,1204,1207,1212,1217,1219,1224,1226],
+[1238,1240,1243,1248,1251,1254,1257,1260,1263,1264,1268,1270,1270,1273,1277,1279,1281,1284,1287,1292,1297,1299,1304,1306],
+[1322,1324,1327,1332,1335,1338,1341,1344,1347,1348,1352,1354,null,null,null,null,null,null,null,null,null,null,null,null]
+]}
