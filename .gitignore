@@ -7,6 +7,15 @@ node_modules/
 data/recorridos.geojson
 data/paradas.json
 
+# Tablas de frecuencias: las planillas quedan sólo en la computadora de quien las
+# mantiene. Se versionan los .json que genera tools/build-frecuencias.mjs, que son lo
+# que publica el sitio.
+data/frecuencias/*.csv
+data/frecuencias/*.xls
+data/frecuencias/*.xlsx
+data/frecuencias/*.ods
+data/frecuencias/~$*
+
 # Descartes pendientes de borrar por el usuario
 data/_a_borrar/
 
