@@ -1697,7 +1697,7 @@ if (AVISOS_HABILITADO && AVISOS_ACTIVOS.length) {
       const btn = document.getElementById("btn-avisos");
       btn.classList.add("vt-aviso-pulso");
       setTimeout(() => btn.classList.remove("vt-aviso-pulso"), 2200);
-    }, 30000);
+    }, 15000);
   }
 }
 
