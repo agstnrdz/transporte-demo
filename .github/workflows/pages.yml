@@ -33,10 +33,7 @@ jobs:
       - name: Armar _site según el modo mantenimiento
         run: node tools/build-pages.mjs _site
 
-      # La rama `deploy` es un espejo del sitio ya construido, para quien lo
-      # despliega en otro servidor (transporte.comodoro.gov.ar) sin correr Node:
-      # le alcanza con clonar esa rama y hacer git pull. Se conserva el historial
-      # —no se fuerza el push— justamente para que ese pull sea siempre limpio.
+      # No force push: keeps deploy history so pulls stay clean
       - name: Espejar _site en la rama deploy
         env:
           REMOTO: https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
@@ -46,7 +43,7 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          # Si la rama todavía no existe (primera corrida), se arranca vacía.
+          # First run: create the branch
           if ! git clone --quiet --depth 1 --branch deploy "$REMOTO" espejo; then
             echo "La rama deploy no existe: se crea en esta corrida."
             mkdir espejo
@@ -54,7 +51,6 @@ jobs:
             git -C espejo remote add origin "$REMOTO"
           fi
 
-          # El contenido de _site reemplaza al anterior; se borra lo que ya no está.
           find espejo -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
           cp -a _site/. espejo/
 
