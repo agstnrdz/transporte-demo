@@ -10,7 +10,6 @@ const EXCLUIR_SIEMPRE = new Set([
   ".git", ".github", ".gitignore", ".gitattributes",
   "tools", "node_modules", path.basename(DESTINO),
 ]);
-/* horarios/ sólo lee data/: sin datos no tiene nada que mostrar */
 const EXCLUIR_EN_MANTENIMIENTO = new Set(["data", "horarios"]);
 
 const MARCA_INICIO = "<!-- vt:datos:inicio -->";
