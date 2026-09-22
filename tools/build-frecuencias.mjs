@@ -1,17 +1,4 @@
-/* build-frecuencias.mjs — valida las tablas de frecuencias y genera lo que consume horarios/.
-     data/frecuencias/linea-<id>-<dia>.csv  →  data/frecuencias/linea-<id>-<dia>.json  (una tabla)
-                                            →  data/frecuencias.json                    (índice)
-   Los .csv quedan sólo en la computadora de quien mantiene las tablas (no se versionan);
-   lo que se versiona y se publica son los .json. Por eso el script se corre a mano antes
-   de commitear, y sin .csv a la vista no toca nada: en un clon del repo o en el
-   workflow, los .json versionados quedan como están.
-   Las planillas se exportan tal cual vienen: coma o punto y coma, UTF-8 o ANSI, con o sin
-   filas y columnas vacías alrededor. El script ubica la fila de nombres de parada, toma
-   cada fila con horas como una salida y el texto suelto fuera de las columnas de parada
-   (p. ej. "FIN SERVICIO") como nota de esa salida.
-   Las horas se guardan en minutos desde las 00:00 del día de servicio: pasada la
-   medianoche siguen de largo (00:15 → 1455), así el orden y el "próximo" no se rompen.
-   Uso: node tools/build-frecuencias.mjs [--check]   (--check no escribe, sólo valida) */
+// Validates frequency tables and builds the JSON used by horarios/. Usage: [--check]
 
 import { readdir, readFile, writeFile, unlink } from "node:fs/promises";
 import { existsSync } from "node:fs";
@@ -26,27 +13,20 @@ const SOLO_CHEQUEO = process.argv.includes("--check");
 
 const DIAS = ["habiles", "sabado", "domingo"];
 const PATRON_ARCHIVO = /^linea-([a-z0-9]+)-(habiles|sabado|domingo)\.csv$/i;
-/* Tramo entre dos paradas principales que amerita revisar la planilla (min) */
+// Gap between main stops worth reviewing (min)
 const SALTO_SOSPECHOSO = 60;
-/* Licencia de los datos publicados (ver data/LICENCIA.md): va dentro de cada .json */
 const FUENTE = "Municipalidad de Comodoro Rivadavia — transporte.comodoro.gov.ar";
 const LICENCIA = { nombre: "CC BY 4.0", url: "https://creativecommons.org/licenses/by/4.0/deed.es" };
-/* Franja en la que se calcula el intervalo típico entre salidas (min desde las 00:00) */
+// Window for the typical interval (min from 00:00)
 const FRANJA_INTERVALO = [7 * 60, 20 * 60];
 
 const errores = [];
 const avisos = [];
 
-/* ---------- texto ---------- */
-
 const sinAcentos = (s) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-/* Clave para comparar nombres: sin mayúsculas, acentos ni puntuación */
 const clave = (s) => sinAcentos(String(s).toLowerCase()).replace(/[.,;:'"()]/g, " ").replace(/\s+/g, " ").trim();
 
-/* Las planillas traen los nombres en mayúsculas y sin tildes. Se pasan a formato
-   título con las tildes de este diccionario y de las calles del relevamiento de
-   paradas (data/paradas.geojson), que sí las tiene. Para corregir un nombre puntual
-   alcanza con agregar la palabra acá. */
+// Title-case names, restoring accents from this list and the stops survey
 const ACENTOS_BASE = [
   "Ómnibus", "Máximo", "Abásolo", "Martín", "Vélez", "Güemes", "José", "Perón", "López",
   "Rodríguez", "González", "Fernández", "Martínez", "Hernández", "Sánchez", "Pérez", "Díaz",
@@ -55,7 +35,6 @@ const ACENTOS_BASE = [
   "Bolívar", "Maipú", "Tucumán", "Córdoba", "Córdova", "Neuquén", "Paraná", "Túnel", "Público",
   "Antártida", "Orquídeas", "Aeronáutico", "Alí", "Bahía", "Unión", "Nación", "Educación",
   "Jesús", "Andrés", "Tomás", "Nicolás", "Inés", "Mejía",
-  /* Sin tilde, aunque el relevamiento la traiga */
   "Sarsfield",
 ];
 const MINUSCULA_SIEMPRE = new Set(["y", "e", "o", "u", "de", "del"]);
@@ -71,7 +50,7 @@ async function diccionarioAcentos() {
   const conteo = new Map();
   const sumar = (palabra, peso, forzar = false) => {
     const k = clave(palabra);
-    if (!k || (!forzar && k === palabra.toLowerCase())) return;   /* sin tildes: no aporta */
+    if (!k || (!forzar && k === palabra.toLowerCase())) return;
     const forma = palabra.charAt(0).toUpperCase() + palabra.slice(1).toLowerCase();
     const n = (conteo.get(k + "|" + forma) || 0) + peso;
     conteo.set(k + "|" + forma, n);
@@ -89,9 +68,9 @@ async function diccionarioAcentos() {
           for (const palabra of String(campo).split(/[^\p{L}]+/u)) if (palabra.length > 2) sumar(palabra, 1);
         }
       }
-    } catch { /* sin relevamiento se usa sólo la lista base */ }
+    } catch {}
   }
-  for (const palabra of ACENTOS_BASE) sumar(palabra, 1e6, true);   /* la lista base manda */
+  for (const palabra of ACENTOS_BASE) sumar(palabra, 1e6, true);
   return dic;
 }
 
@@ -110,7 +89,6 @@ function nombreProlijo(crudo, acentos) {
     else if (/^[ivxl]{2,}$/i.test(nucleo)) out = nucleo.toUpperCase();
     else if (acentos.has(k)) out = acentos.get(k);
     else out = nucleo.toLowerCase().replace(/(^|[^\p{L}])(\p{L})/gu, (_, a, b) => a + b.toUpperCase());
-    /* Un punto que venía en el original y no era de abreviatura (p. ej. "S.A.") se respeta */
     if (!ABREVIATURAS[k] && !out.endsWith(".") && /\.$/.test(tok.replace(/[,;]+$/, "")) && nucleo.length > 1) out += ".";
     previo = k;
     return out + puntuacionFinal;
@@ -127,13 +105,11 @@ function distancia(a, b) {
   return d[m][n];
 }
 
-/* ---------- CSV ---------- */
-
 function decodificar(buf) {
   try {
     return new TextDecoder("utf-8", { fatal: true }).decode(buf).replace(/^\uFEFF/, "");
   } catch {
-    /* Excel en Windows exporta "CSV (delimitado por comas)" en ANSI */
+    // Excel on Windows exports CSV as ANSI
     return new TextDecoder("windows-1252").decode(buf);
   }
 }
@@ -166,7 +142,7 @@ function parsearCSV(texto, sep) {
   return filas.map((f) => f.map((v) => v.trim()));
 }
 
-/* "5:00", "05:00", "5:00:00", "5:00 hs" → minutos; "" o "-" → vacío; otra cosa → texto */
+// "5:00", "05:00", "5:00 hs" -> minutes; "" or "-" -> empty; anything else -> text
 const VACIO = /^(|-|–|—|\.)$/;
 function leerCelda(v) {
   if (VACIO.test(v)) return { tipo: "vacio" };
@@ -178,15 +154,12 @@ function leerCelda(v) {
   return { tipo: "texto", texto: v };
 }
 
-/* ---------- una tabla ---------- */
-
 function procesarTabla(archivo, texto, acentos) {
   const pre = `${archivo}`;
   const errAntes = errores.length;
   const sep = detectarSeparador(texto);
   const crudas = parsearCSV(texto, sep).map((f) => f.map(leerCelda));
 
-  /* Encabezado: la primera fila con al menos dos textos y ninguna hora */
   const iEnc = crudas.findIndex((f) =>
     f.filter((c) => c.tipo === "texto").length >= 2 && !f.some((c) => c.tipo === "hora"));
   if (iEnc === -1) { errores.push(`${pre}: no encuentro la fila con los nombres de las paradas`); return null; }
@@ -200,7 +173,7 @@ function procesarTabla(archivo, texto, acentos) {
   const paradasN = nombresCrudos.map((n) => nombreProlijo(n, acentos));
   const claves = nombresCrudos.map(clave);
 
-  /* Tramos: dos columnas seguidas con la misma parada son llegada y salida en una cabecera */
+  // Two adjacent columns with the same stop are arrival and departure at a terminus
   const cortes = [0];
   for (let i = 1; i < claves.length; i++) if (claves[i] === claves[i - 1]) cortes.push(i);
   const tramos = cortes.map((ini, k) => {
@@ -214,7 +187,6 @@ function procesarTabla(archivo, texto, acentos) {
     return { n, t, r: rol };
   });
 
-  /* Nombres casi iguales dentro de la misma tabla: probable error de tipeo */
   const unicas = [...new Set(claves)];
   for (let a = 0; a < unicas.length; a++)
     for (let b = a + 1; b < unicas.length; b++) {
@@ -226,7 +198,6 @@ function procesarTabla(archivo, texto, acentos) {
       }
     }
 
-  /* Filas de datos */
   const filas = [];
   const notas = {};
   const notasTabla = [];
@@ -234,7 +205,7 @@ function procesarTabla(archivo, texto, acentos) {
   const ultimoPorColumna = [];
   for (let i = iEnc + 1; i < crudas.length; i++) {
     const f = crudas[i];
-    const nroFila = i + 1;   /* como la numera la planilla */
+    const nroFila = i + 1;
     const horas = columnas.map((j) => f[j] || { tipo: "vacio" });
     const textosFuera = f.filter((c, j) => !enColumnas.has(j) && c.tipo === "texto").map((c) => c.texto);
     const horasFuera = f.some((c, j) => !enColumnas.has(j) && c.tipo === "hora");
@@ -250,7 +221,7 @@ function procesarTabla(archivo, texto, acentos) {
     const textosDentro = horas.filter((c) => c.tipo === "texto").map((c) => c.texto);
     for (const t of textosDentro) avisos.push(`${pre} fila ${nroFila}: "${t}" no es una hora; la celda queda vacía`);
 
-    /* Pasada la medianoche las horas siguen de largo: 23:59 → 00:03 es 1439 → 1443 */
+    // After midnight times keep counting: 23:59 -> 00:03 is 1439 -> 1443
     const primera = horas.find((c) => c.tipo === "hora").min;
     let base = 0;
     if (inicioPrevio !== null) while (primera + base < inicioPrevio - 720) base += 1440;
@@ -271,8 +242,6 @@ function procesarTabla(archivo, texto, acentos) {
     });
     const inicio = valores.find((v) => v !== null);
     inicioPrevio = inicio;
-    /* Orden por parada: una salida que arranca a mitad de recorrido (p. ej. desde la
-       Terminal) puede empezar antes que la fila anterior sin estar fuera de orden */
     valores.forEach((v, k) => {
       if (v === null) return;
       if (ultimoPorColumna[k] != null && v < ultimoPorColumna[k]) {
@@ -287,12 +256,10 @@ function procesarTabla(archivo, texto, acentos) {
   if (!filas.length) errores.push(`${pre}: no tiene filas con horarios`);
   if (errores.length > errAntes) return null;
 
-  /* Resumen para el índice */
   const salidas = filas.map((f) => {
     const k = f.findIndex((v) => v !== null);
     return { min: f[k], col: k };
   });
-  /* Intervalo típico: entre salidas consecutivas desde la primera parada */
   const desdeOrigen = filas.map((f) => f[0]).filter((v) => v !== null).sort((a, b) => a - b);
   const intervalos = [];
   for (let i = 1; i < desdeOrigen.length; i++) {
@@ -301,7 +268,6 @@ function procesarTabla(archivo, texto, acentos) {
   }
   intervalos.sort((a, b) => a - b);
   const mediana = intervalos.length ? intervalos[Math.floor(intervalos.length / 2)] : null;
-  /* Primera y última: la salida más temprana y la más tardía, no la primera y la última fila */
   const primeraS = salidas.reduce((a, s) => (s.min < a.min ? s : a));
   const ult = salidas.reduce((a, s) => (s.min >= a.min ? s : a));
 
@@ -328,8 +294,6 @@ function hhmm(min) {
   const m = ((min % 1440) + 1440) % 1440;
   return String(Math.floor(m / 60)).padStart(2, "0") + ":" + String(m % 60).padStart(2, "0");
 }
-
-/* ---------- principal ---------- */
 
 if (!existsSync(DIR_FRECUENCIAS)) {
   console.log("· build-frecuencias: no hay data/frecuencias/, no se genera nada");
@@ -389,7 +353,6 @@ for (const l of lineas) {
   const orden = {};
   for (const d of DIAS) if (l.tablas[d]) orden[d] = l.tablas[d];
   l.tablas = orden;
-  /* Si los tres días tienen las mismas paradas, van una sola vez a nivel de línea */
   const dias = Object.values(orden);
   const firma = (t) => JSON.stringify([t.paradas, t.tramos]);
   if (dias.length > 1 && dias.every((t) => firma(t) === firma(dias[0]))) {
@@ -416,9 +379,7 @@ if (SOLO_CHEQUEO) {
   process.exit(0);
 }
 
-/* Los .json se versionan: una salida (o una línea del índice) por renglón, para que el
-   diff de git muestre qué horario cambió. Sin fecha de generación, así volver a correr
-   el script con las mismas planillas no deja cambios. */
+// One row per line keeps git diffs readable; no timestamp keeps reruns clean
 function jsonPorRenglones(obj, claveLista) {
   const { [claveLista]: lista, ...resto } = obj;
   const cabeza = JSON.stringify(resto).slice(0, -1);
@@ -444,8 +405,7 @@ for (const { ruta, id, dia, tabla } of tablas) {
 const indice = jsonPorRenglones({ fuente: FUENTE, licencia: LICENCIA, lineas }, "lineas");
 await writeFile(SALIDA_INDICE, indice, "utf8");
 
-/* Un .json sin su .csv (tabla dada de baja o renombrada) se borra: si no, quedaría
-   versionado y publicado aunque el índice ya no lo nombre. */
+// Delete .json tables whose .csv no longer exists
 const huerfanos = (await readdir(DIR_FRECUENCIAS))
   .filter((f) => /^linea-.+-(habiles|sabado|domingo)\.json$/i.test(f) && !escritos.has(f));
 for (const f of huerfanos) {

@@ -1,8 +1,4 @@
-/* build-datos.mjs — valida las fuentes de QGIS y genera lo que consume el visor.
-     data/linea-*.geojson  → data/recorridos.geojson  (FeatureCollection consolidado)
-     data/paradas.geojson  → data/paradas.json        (array plano, más liviano)
-   Las fuentes se versionan; los dos productos son artefactos de build (gitignoreados).
-   Uso: node tools/build-datos.mjs [--check]   (--check no escribe, sólo valida) */
+// Validates QGIS sources and builds data/recorridos.geojson and data/paradas.json. Usage: [--check]
 
 import { readdir, readFile, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
@@ -18,9 +14,8 @@ const SOLO_CHEQUEO = process.argv.includes("--check");
 
 const SENTIDOS_VALIDOS = new Set(["ida", "vuelta", "horario", "antihorario", "completo"]);
 const PRECISION = 6;
-const GAP_AVISO = 150;   /* m: separación entre partes que amerita revisar en QGIS */
-/* Encuadre generoso de Comodoro Rivadavia y alrededores: atrapa coordenadas
-   invertidas o proyectadas por error, no pretende ser el ejido municipal. */
+const GAP_AVISO = 150;   // meters
+// Loose bounding box to catch swapped or projected coordinates
 const BBOX = { lngMin: -67.85, lngMax: -67.15, latMin: -46.10, latMax: -45.55 };
 
 const errores = [];
@@ -33,7 +28,6 @@ function distM(a, b) {
 const red = (v) => Number(v.toFixed(PRECISION));
 const largoKm = (p) => p.reduce((a, _, i) => (i ? a + distM(p[i - 1], p[i]) : 0), 0) / 1000;
 
-/* --- lectura --- */
 const archivos = (await readdir(DIR_DATOS))
   .filter((f) => /^linea-.+\.geojson$/i.test(f))
   .sort();
@@ -77,7 +71,6 @@ for (const archivo of archivos) {
       continue;
     }
 
-    /* [lng,lat,z] → [lng,lat], redondeado; se descartan vértices repetidos */
     const partes = (g.type === "MultiLineString" ? g.coordinates : [g.coordinates])
       .map((parte) => {
         const salida = [];
@@ -118,13 +111,7 @@ for (const archivo of archivos) {
   }
 }
 
-/* Dos sentidos de una misma línea deberían recorrer en direcciones opuestas los
-   tramos que comparten. Se muestrea la primera y, para cada muestra, se busca el
-   punto más cercano de la segunda (si están a menos de SOLAPE_M, van por la misma
-   calle) y se comparan los rumbos locales. Coseno ≈ -1 es lo esperado; cerca de +1
-   significa que una de las dos está digitalizada al revés y el visor la anima mal.
-   Ojo: esto compara los sentidos ENTRE SÍ. Si las dos features de una línea están
-   invertidas a la vez, el chequeo no lo ve — eso sólo se detecta mirando el visor. */
+// Both directions of a line should run opposite ways on shared segments
 const SOLAPE_M = 60;
 const COS_SOSPECHOSO = 0.5;
 const MUESTRAS_MIN = 12;
@@ -152,7 +139,7 @@ function revisarSentidoOpuesto(id, nombreA, nombreB, ra, rb) {
     suma += (hA[0] * hB[0] + hA[1] * hB[1]) / (nA * nB);
     n++;
   }
-  if (n < MUESTRAS_MIN) return;   /* poco solape: no alcanza para opinar */
+  if (n < MUESTRAS_MIN) return;
   const cos = suma / n;
   if (cos > COS_SOSPECHOSO) {
     avisos.push(
@@ -163,10 +150,7 @@ function revisarSentidoOpuesto(id, nombreA, nombreB, ra, rb) {
   }
 }
 
-/* --- chequeos entre líneas ---
-   El orden de los vértices es semántico: el visor anima el sentido de circulación
-   siguiendo el array, así que una vuelta digitalizada en la misma dirección que la
-   ida se ve viajando al revés. --- */
+// Vertex order matters: the map animates direction along it
 const huellas = new Map();
 for (const [id, porSentido] of lineas) {
   for (const [sentido, r] of porSentido) {
@@ -203,7 +187,6 @@ for (const [id, porSentido] of lineas) {
   }
 }
 
-/* --- salida --- */
 const ORDEN_SENTIDO = { ida: 0, horario: 0, completo: 0, vuelta: 1, antihorario: 1 };
 const RANGO_SUFIJO = { "": 0, "H": 1, "AH": 2, "U": 3, "A": 4, "B": 5 };
 const clave = (id) => {
@@ -232,7 +215,7 @@ for (const id of ids) {
   }
 }
 
-/* --- horarios: deben referirse a líneas y sentidos que existen --- */
+// Schedules must reference existing lines and directions
 const RUTA_HORARIOS = path.join(DIR_DATOS, "horarios.json");
 if (existsSync(RUTA_HORARIOS)) {
   let horarios = null;
@@ -242,11 +225,6 @@ if (existsSync(RUTA_HORARIOS)) {
     errores.push(`horarios.json: JSON inválido (${e.message})`);
   }
   if (horarios) {
-    /* "06:30" o "06:30 hs - desde la Terminal": se valida la hora; lo que sigue
-       al guión es el lugar de salida, texto libre que muestra el visor.
-       Cada línea puede traer primero/ultimo sueltos (formato anterior) y/o un
-       bloque por tipo de día; un casillero vacío ("") es "todavía sin cargar".
-       Un día sin servicio lleva sólo una nota: "domingo": { "nota": "Sin servicio" }. */
     const HORA = /^([01]\d|2[0-3]):[0-5]\d(\s*hs)?(\s*-\s*\S.*)?$/;
     const DIAS = ["habiles", "sabado", "domingo"];
     const horasDe = (v) => (Array.isArray(v) ? v : v == null ? [] : [v]);
@@ -303,12 +281,7 @@ if (existsSync(RUTA_HORARIOS)) {
   }
 }
 
-/* --- paradas: data/paradas.geojson (QGIS) → array plano ---
-   Los atributos vienen como texto "Si"/"No" y pueden faltar; se normalizan a
-   true / false / null (null = sin relevar, que no es lo mismo que "no tiene").
-   'uid' es el fid de QGIS: la identidad de la parada, tanto la clave interna del
-   visor como el número que se muestra. El viejo campo 'ID' de relevamiento no se
-   usa (falta en 146 registros y se repite); sigue disponible en el .geojson fuente. */
+// Stops: "Si"/"No" -> true/false/null (null = not surveyed)
 const paradas = [];
 if (existsSync(FUENTE_PARADAS)) {
   let gjParadas = null;
@@ -328,7 +301,7 @@ if (existsSync(FUENTE_PARADAS)) {
       const t = String(v ?? "").trim().toLowerCase();
       if (SI.has(t)) return true;
       if (NO.has(t)) return false;
-      return null;   /* null | "" | cualquier otra cosa: sin dato */
+      return null;
     };
     const vistos = new Set();
     let sinDato = 0, sinCalle = 0;
@@ -400,7 +373,7 @@ const salida = {
   name: "recorridos",
   crs: { type: "name", properties: { name: "urn:ogc:def:crs:OGC:1.3:CRS84" } },
   generado: new Date().toISOString().slice(0, 10),
-  /* Licencia de los datos publicados: ver data/LICENCIA.md */
+  // Data license: see data/LICENCIA.md
   fuente: "Municipalidad de Comodoro Rivadavia — transporte.comodoro.gov.ar",
   licencia: { nombre: "CC BY 4.0", url: "https://creativecommons.org/licenses/by/4.0/deed.es" },
   features,
