@@ -1,6 +1,4 @@
-/* Paleta por línea: [tema claro, tema oscuro].
-   Única fuente de los colores de línea: la usan el visor (js/visor.js) y la página
-   de horarios (js/horarios.js). Una línea sin entrada se dibuja en gris. */
+// Line colors [light, dark], shared by the map and horarios/
 window.VT_PALETA = {
   "1":  ["#d62728", "#ff6b6b"], "2":  ["#1f77b4", "#5aa9e6"],
   "3":  ["#2ca02c", "#5fd068"], "4":  ["#9467bd", "#b78fe0"],
