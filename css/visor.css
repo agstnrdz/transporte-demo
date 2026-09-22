@@ -415,7 +415,6 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
 }
 .linea-row:hover .btn-ojo, .btn-ojo:focus-visible { opacity: 1; }
 .btn-ojo:hover { background: var(--hover-wash); color: var(--ink-1); }
-/* Ojo "encendido": la línea está visible en el mapa (estado.visibles) */
 .linea-row:not(.oculta) .btn-ojo { opacity: 1; color: var(--activo-fg); background: var(--activo-bg); }
 .linea-row:not(.oculta) .btn-ojo:hover { background: var(--activo-bg); color: var(--activo-fg); opacity: 0.85; }
 
@@ -457,7 +456,6 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   opacity: 1;
 }
 
-/* Enlace a horarios/ (horarios de paso por parada): una pill que abre otra pestaña */
 .pill-enlace { display: inline-flex; align-items: center; gap: 4px; text-decoration: none; }
 .pill-enlace svg { flex-shrink: 0; }
 
@@ -478,8 +476,6 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
 .horarios-lista li:last-child { border-bottom: none; }
 .horarios-hora { font-weight: 650; color: var(--ink-1); }
 .horarios-vacio { margin: 4px 0 0; font-size: 11px; color: var(--muted); }
-/* Textos secundarios de horarios con un paso más de contraste que --ink-2 / --muted:
-   se mezclan con --ink-1, así que oscurecen en el tema claro y aclaran en el oscuro. */
 .horarios-nota { margin: 8px 0 0; font-size: 11px; line-height: 1.35; color: color-mix(in srgb, var(--muted) 70%, var(--ink-1)); }
 .horarios-servicio {
   justify-content: space-between;
@@ -489,13 +485,8 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
 }
 .horarios-etiqueta { color: color-mix(in srgb, var(--ink-2) 75%, var(--ink-1)); white-space: nowrap; }
 .horarios-servicio .horarios-valor { font-size: 12px; text-align: right; }
-/* El lugar de salida acompaña a la hora sin competir con ella: mismo tono
-   que la etiqueta de la izquierda y sin negrita. */
 .horarios-lugar { color: color-mix(in srgb, var(--ink-2) 75%, var(--ink-1)); font-weight: 400; }
 
-/* Horarios por tipo de día: tres bloques apilados en el mismo panel. El título
-   de cada bloque va en el tono de la hora; el del día que rige hoy lleva una
-   marca invertida, con el mismo par de colores que las pills activas. */
 .horarios-dia + .horarios-dia { margin-top: 9px; }
 .horarios-dia-titulo {
   display: flex;
@@ -515,17 +506,12 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   background: var(--activo-bg);
   color: var(--activo-fg);
 }
-/* Seis filas por línea: la hora queda sola a la derecha de la etiqueta y el lugar
-   de salida baja entero al renglón de abajo, a todo el ancho, en vez de cortarse
-   a mitad de frase. */
 .horarios-dia .horarios-servicio { flex-wrap: wrap; row-gap: 0; }
 .horarios-dia .horarios-valor { display: contents; }
 .horarios-dia .horarios-hora { margin-left: auto; font-size: 12px; }
 .horarios-dia .horarios-lugar { flex: 1 1 100%; font-size: 12px; text-align: right; }
-/* Nota propia de un tipo de día (p. ej. "Sin servicio"): pegada al título. */
 .horarios-dia .horarios-nota { margin: 1px 0 0; font-size: 12px; }
 
-/* Switch */
 .switch { position: relative; display: inline-block; }
 .switch input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
 .switch-track {
@@ -550,7 +536,7 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
 .switch input:checked + .switch-track::after { transform: translateX(15px); }
 .switch input:focus-visible + .switch-track { outline: 2px solid var(--geoloc); outline-offset: 2px; }
 
-/* Filtros de paradas */
+/* Stop filters */
 .filtro-fila {
   display: flex;
   align-items: center;
@@ -568,10 +554,9 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
 }
 #conteo-paradas strong { color: var(--ink-1); }
 
-/* Destello "liquid glass" al tocar */
 .ctrl-acciones button, .vt-btn-header, .seg, .caja-head {
   position: relative;
-  isolation: isolate; /* contiene el mix-blend-mode del brillo */
+  isolation: isolate;
   overflow: hidden;}
 .ctrl-acciones button::before,
 .vt-btn-header::before,
@@ -786,9 +771,7 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   color: var(--muted);
 }
 .pop-attr.si { color: var(--ok); border-color: color-mix(in srgb, var(--ok) 45%, transparent); }
-/* Sin dato de relevamiento: ni sí ni no */
 .pop-attr.sd { opacity: 0.55; border-style: dashed; cursor: help; }
-/* Líneas cercanas dentro del popup de una parada */
 .pop-lineas { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--hair); }
 .pop-lineas-titulo {
   margin: 0 0 6px;
@@ -810,7 +793,7 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
 }
 #visor-transporte .leaflet-container a.leaflet-popup-close-button { color: var(--muted); }
 
-/* Tarjeta de cercanas */
+/* Nearby stops card */
 #tarjeta-cercanas {
   position: absolute;
   left: 12px;
@@ -858,7 +841,6 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   font-weight: 800;
 }
 
-/* Toast */
 #toast {
   position: absolute;
   bottom: 26px;
@@ -876,7 +858,6 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   text-align: center;
 }
 
-/* Pie de créditos */
 .vt-footer {
   padding: 8px 18px 9px;
   border-top: 1px solid var(--hair);
@@ -913,7 +894,7 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   .vt-header-texto p .marquee-text { animation-duration: 20s; animation-delay: 1.2s; }
   #btn-fs { display: none; }
   .vt-btn-header { width: 32px; height: 32px; }
-  /* Hoja inferior (bottom sheet), sólo en mobile */
+  /* Mobile bottom sheet */
   #pila-flotante {
     top: auto;
     bottom: 0;
@@ -996,7 +977,7 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   #pila-flotante, .caja-body, .vt-sheet-manija svg { transition: none; }
 }
 
-/* Tutorial guiado (primera visita) */
+/* Guided tour */
 .vt-tour-block {
   position: fixed;
   inset: 0;
@@ -1063,7 +1044,7 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   .vt-tour-modal, .vt-tour-burbuja { padding: 16px; }
 }
 
-/* Burbuja de avisos/advertencias */
+/* Notices bubble */
 .vt-aviso-burbuja {
   position: fixed;
   z-index: 1400;
@@ -1099,9 +1080,7 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
 }
 .vt-aviso-cerrar:hover { background: var(--hover-wash); color: var(--ink-1); }
 
-/* Modo mantenimiento
-   Sólo se aplica con MODO_MANTENIMIENTO activo en js/visor.js, que agrega
-   .vt-mantenimiento e inyecta .vt-mant-overlay dentro de .vt-cuerpo. */
+/* Maintenance mode (MODO_MANTENIMIENTO in js/visor.js) */
 .vt-mant-overlay {
   position: absolute;
   inset: 0;
@@ -1112,14 +1091,12 @@ html, body { margin: 0; padding: 0; height: 100%; background: #fcfcfb; }
   background: var(--vt-mant-velo);
   backdrop-filter: blur(18px) saturate(140%);
   -webkit-backdrop-filter: blur(18px) saturate(140%);
-  /* Bloqueo real de la interacción con el mapa, no sólo visual. */
   pointer-events: auto;
   touch-action: none;
   overscroll-behavior: contain;
   cursor: default;
   animation: vt-mant-entrada 0.35s ease both;
 }
-/* Sin soporte de backdrop-filter, el velo se opaca en vez de dejar ver el mapa. */
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   .vt-mant-overlay { background: var(--vt-mant-velo-opaco); }
 }

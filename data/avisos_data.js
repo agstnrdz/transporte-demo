@@ -1,5 +1,4 @@
-/* Avisos y advertencias del visor de transporte.
-   (ver AVISOS_HABILITADO en index.html). Si el array queda vacío ([]), el botón "!" no se dibuja. */
+// Notices shown by the "!" button; an empty array hides it
 window.AVISOS_DATA = [
   "Próximamente serán publicados los recorridos correspondientes a Transporte Diadema.",
   "Si el mapa base (IGN Argenmap) presenta inconvenientes, usá la vista satelital.",

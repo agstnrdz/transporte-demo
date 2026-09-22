@@ -27,14 +27,14 @@
 <body>
 
 <div class="visor-geo vt-pagina" id="visor-transporte">
-  <!-- El tema se aplica antes de pintar, con la misma preferencia que el mapa -->
+  <!-- Apply the theme before first paint -->
   <script>
     try {
       if (localStorage.getItem("transporte-tema") === "dark") {
         document.getElementById("visor-transporte").setAttribute("data-theme", "dark");
         document.body.style.background = "#1a1a19";
       }
-    } catch (e) { /* noop */ }
+    } catch (e) {}
   </script>
 
   <div class="vt-header">
@@ -118,5 +118,6 @@
 
 <script src="../js/paleta.js"></script>
 <script src="../js/horarios.js"></script>
+<script src="../js/analitica.js"></script>
 </body>
 </html>

@@ -1,10 +1,4 @@
-/* horarios.js — página de horarios de paso por parada (horarios/index.html).
-   Lee data/frecuencias.json (índice que genera tools/build-frecuencias.mjs) y, bajo
-   demanda, la tabla de cada línea y tipo de día (data/frecuencias/linea-<id>-<dia>.json).
-   Las horas vienen en minutos desde las 00:00 del día de servicio: pasada la
-   medianoche siguen de largo (00:15 → 1455), igual que en el visor el día de servicio
-   arranca a las 03:00. Enlaces directos: ?linea=1&dia=sabado&parada=8 (parada: número
-   de columna, desde 1). */
+// Times are minutes from 00:00 of the service day and keep counting after midnight (00:15 = 1455)
 (async function () {
 "use strict";
 
@@ -20,7 +14,7 @@ const TIPOS_DIA = [
 ];
 const ETIQUETA_DIA = Object.fromEntries(TIPOS_DIA.map((t) => [t.clave, t.etiqueta]));
 const CORTA_DIA = Object.fromEntries(TIPOS_DIA.map((t) => [t.clave, t.corta]));
-/* Igual que en el visor: a la 01:00 del sábado todavía corre el día hábil */
+// Same as the map: the service day starts at 03:00
 const HORA_CORTE_DIA_SERVICIO = 3;
 const MAX_RESULTADOS = 40;
 const REFRESCO_MS = 30 * 1000;
@@ -28,7 +22,6 @@ const REFRESCO_MS = 30 * 1000;
 const CONT = document.getElementById("visor-transporte");
 const $ = (id) => document.getElementById(id);
 
-/* ---------- tema (misma preferencia que el mapa) ---------- */
 const TEMA_KEY = "transporte-tema";
 function temaActual() {
   return CONT.getAttribute("data-theme") === "dark" ? "dark" : "light";
@@ -37,15 +30,14 @@ function aplicarTema(tema) {
   if (tema === "dark") CONT.setAttribute("data-theme", "dark");
   else CONT.removeAttribute("data-theme");
   document.body.style.background = tema === "dark" ? "#1a1a19" : "#fcfcfb";
-  try { localStorage.setItem(TEMA_KEY, tema); } catch (e) { /* noop */ }
+  try { localStorage.setItem(TEMA_KEY, tema); } catch (e) {}
 }
 (function initTema() {
   let guardado = null;
-  try { guardado = localStorage.getItem(TEMA_KEY); } catch (e) { /* noop */ }
+  try { guardado = localStorage.getItem(TEMA_KEY); } catch (e) {}
   aplicarTema(guardado === "dark" ? "dark" : "light");
 })();
 
-/* ---------- utilidades ---------- */
 function esc(s) {
   return String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 }
@@ -69,7 +61,6 @@ function estiloChip(id) {
 function chip(id, extra = "") {
   return `<span class="chip${extra ? " " + extra : ""}" style="${estiloChip(id)}">${esc(etiquetaChip(id))}</span>`;
 }
-/* Igual que en el visor: 8H y 8AH se rotulan "8" */
 const CHIP_LABEL = { "8H": "8", "8AH": "8" };
 function etiquetaChip(id) { return CHIP_LABEL[id] || id; }
 
@@ -106,7 +97,6 @@ async function traerJSON(ruta) {
   return resp.json();
 }
 
-/* ---------- datos ---------- */
 let INDICE;
 try {
   INDICE = await traerJSON(RUTA_INDICE);
@@ -119,7 +109,6 @@ try {
   return;
 }
 const LINEAS = (INDICE.lineas || []).filter((l) => l && l.tablas && Object.keys(l.tablas).length);
-/* Cuando los tres días comparten paradas, el índice las trae una sola vez por línea */
 for (const l of LINEAS) {
   for (const t of Object.values(l.tablas)) {
     if (!t.paradas) t.paradas = l.paradas || [];
@@ -158,7 +147,6 @@ function sentidoParada(p, tramos) {
   if (esCircular(t)) return "Recorrido circular";
   return `Hacia ${t.hacia}`;
 }
-/* La misma parada en otra tabla (otro día): mismo nombre y mismo sentido */
 function columnaEquivalente(origen, destino, c) {
   if (c == null || !origen.paradas[c]) return null;
   const p = origen.paradas[c];
@@ -167,9 +155,8 @@ function columnaEquivalente(origen, destino, c) {
   return k === -1 ? null : k;
 }
 
-/* ---------- estado ---------- */
 const estado = { linea: null, dia: null, parada: null };
-let tablaActual = null;   /* { linea, dia, datos } */
+let tablaActual = null;
 
 (function estadoDesdeURL() {
   const q = new URLSearchParams(location.search);
@@ -186,10 +173,9 @@ function actualizarURL() {
   q.set("linea", estado.linea);
   q.set("dia", estado.dia);
   if (estado.parada != null) q.set("parada", String(estado.parada + 1));
-  try { history.replaceState(null, "", "?" + q.toString()); } catch (e) { /* noop */ }
+  try { history.replaceState(null, "", "?" + q.toString()); } catch (e) {}
 }
 
-/* ---------- lista de líneas ---------- */
 function renderLineas() {
   $("hp-lineas").innerHTML = LINEAS.map((l) =>
     `<li><button type="button" class="hp-linea${l.id === estado.linea ? " sel" : ""}" data-linea="${esc(l.id)}"` +
@@ -205,7 +191,6 @@ $("hp-lineas").addEventListener("click", (e) => {
   elegir({ linea: b.dataset.linea });
 });
 
-/* ---------- vista de una línea ---------- */
 async function mostrar({ desplazar = true } = {}) {
   const linea = lineaPorId.get(estado.linea);
   const dia = estado.dia;
@@ -221,7 +206,7 @@ async function mostrar({ desplazar = true } = {}) {
     $("hp-vista").hidden = true;
     return;
   }
-  /* Una respuesta vieja que llega tarde no pisa a la última elegida */
+  // Ignore stale responses
   if (estado.linea !== linea.id || estado.dia !== dia) return;
   if (estado.parada != null && !datos.paradas[estado.parada]) estado.parada = null;
   tablaActual = { linea, dia, datos };
@@ -287,9 +272,6 @@ function renderResumen() {
   $("hp-resumen").innerHTML = items.join("");
 }
 
-/* ---------- tabla ---------- */
-/* El texto del aviso al pie se edita en horarios/index.html; acá sólo se le suma la nota
-   propia de cada tabla, si la trae */
 const AVISO_BASE = $("hp-aviso").textContent.trim();
 function renderTabla() {
   const { linea, dia, datos } = tablaActual;
@@ -300,14 +282,12 @@ function renderTabla() {
   const ahora = ahoraServicio();
   const sel = estado.parada;
 
-  /* Próximo paso por cada parada: la primera hora que todavía no pasó */
   const prox = paradas.map((_, c) => {
     if (!esHoy) return -1;
     let mejor = -1;
     filas.forEach((f, r) => { if (f[c] !== null && f[c] >= ahora && (mejor === -1 || f[c] < filas[mejor][c])) mejor = r; });
     return mejor;
   });
-  /* Primera fila con algún paso por delante: ahí arranca la vista */
   const filaAhora = esHoy ? filas.findIndex((f) => f.some((v) => v !== null && v >= ahora)) : -1;
 
   const cortes = new Set(paradas.map((p, c) => (c > 0 && p.t !== paradas[c - 1].t ? c : -1)).filter((c) => c > 0));
@@ -330,7 +310,6 @@ function renderTabla() {
     h += `<th scope="col"${cls ? ` class="${cls}"` : ""}>` +
       `<button type="button" class="hp-btn-parada" data-col="${c}" aria-pressed="${c === sel}" title="Ver todos los horarios de ${esc(p.n)}">` +
       `<span>${esc(p.n)}</span>${rol ? `<small>${rol}</small>` : ""}</button>` +
-      /* Al imprimir, Chrome no repite los botones en el encabezado de cada hoja: va el texto solo */
       `<span class="hp-solo-impresion">${esc(p.n)}${rol ? `<small>${rol}</small>` : ""}</span></th>`;
   });
   h += "</tr></thead><tbody>";
@@ -397,7 +376,6 @@ $("hp-tabla").addEventListener("click", (e) => {
   elegir({ parada: estado.parada === c && btn ? null : c }, { desdeTabla: true });
 });
 
-/* ---------- parada elegida ---------- */
 function renderParada() {
   const caja = $("hp-parada");
   const c = estado.parada;
@@ -422,7 +400,6 @@ function renderParada() {
     }
   }
 
-  /* Horas agrupadas como en un cartel de parada: la hora y, al lado, sus minutos */
   const grupos = [];
   valores.forEach((v, i) => {
     const hora = Math.floor(v / 60);
@@ -451,7 +428,6 @@ function renderParada() {
   $("hp-parada-cerrar").addEventListener("click", () => elegir({ parada: null }));
 }
 
-/* ---------- cambios de estado ---------- */
 async function elegir(cambio, { desdeTabla = false } = {}) {
   const anterior = tablaActual;
   if (cambio.linea && cambio.linea !== estado.linea) {
@@ -464,7 +440,6 @@ async function elegir(cambio, { desdeTabla = false } = {}) {
     if (cambio.dia && cambio.dia !== estado.dia) {
       estado.dia = cambio.dia;
       if (!("parada" in cambio) && anterior && estado.parada != null) {
-        /* Se intenta seguir mostrando la misma parada en la tabla del otro día */
         try {
           const destino = await traerTabla(lineaPorId.get(estado.linea), estado.dia);
           estado.parada = columnaEquivalente(anterior.datos, destino, estado.parada);
@@ -486,7 +461,6 @@ async function elegir(cambio, { desdeTabla = false } = {}) {
   }
   if (estado.parada != null && cambio.parada != null) {
     evento("horarios_ver_parada", { linea_id: estado.linea, dia: estado.dia });
-    /* Si la ficha de la parada quedó fuera de la vista (celular, o tabla desplazada), se la trae */
     const r = $("hp-parada").getBoundingClientRect();
     if (r.top < 0 || r.top > window.innerHeight * 0.6) {
       $("hp-parada").scrollIntoView({ block: "start", behavior: "smooth" });
@@ -494,7 +468,6 @@ async function elegir(cambio, { desdeTabla = false } = {}) {
   }
 }
 
-/* ---------- buscador ---------- */
 const IGNORAR = new Set(["linea", "lineas", "l", "colectivo", "colectivos", "bondi", "parada", "paradas",
   "horario", "horarios", "dia", "dias", "hs", "en", "por", "para"]);
 const PALABRAS_DIA = {
@@ -516,7 +489,7 @@ function coincideId(id, t) {
   if (/^\d+$/.test(t) && idn.startsWith(t) && /^[a-z]+$/.test(idn.slice(t.length))) return 2;
   return 0;
 }
-/* 2: palabra exacta · 1: comienzo de palabra (desde dos letras) · 0: no está */
+// Score: 2 exact word, 1 word prefix (2+ letters), 0 no match
 function coincidePalabra(palabras, t) {
   let mejor = 0;
   for (const w of palabras) {
@@ -526,8 +499,6 @@ function coincidePalabra(palabras, t) {
   return mejor;
 }
 
-/* Documentos de búsqueda: una línea, o una parada de una línea en un sentido.
-   Se arman a partir del índice, sin bajar ninguna tabla. */
 const DOCS_LINEA = LINEAS.map((l, orden) => ({
   linea: l, orden, palabras: norm(l.nombre).split(" ").filter(Boolean),
 }));
@@ -539,7 +510,6 @@ LINEAS.forEach((l, orden) => {
     const cuenta = new Map();
     t.paradas.forEach((p) => cuenta.set(norm(p.n), (cuenta.get(norm(p.n)) || 0) + 1));
     t.paradas.forEach((p, c) => {
-      /* La llegada a una cabecera que también figura como salida no suma un resultado aparte */
       if (p.r === "llegada" && cuenta.get(norm(p.n)) > 1) return;
       const sentido = sentidoParada(p, t.tramos);
       const firma = norm(p.n) + "|" + norm(sentido);
@@ -561,7 +531,6 @@ function buscar(consulta) {
     .filter((t) => t && !IGNORAR.has(t));
   if (!tokens.length) return null;
 
-  /* Sólo un día ("sábado", "hoy"): todas las líneas, primero las que tienen tabla para ese día */
   const soloDias = tokens.every((t) => diaDeToken(t));
   const deLinea = [];
   if (soloDias) {
@@ -594,7 +563,6 @@ function buscar(consulta) {
       if (dd) { dia = dd; continue; }
       ok = false; break;
     }
-    /* El día pedido ordena, no filtra: si esa parada no tiene tabla para ese día, igual aparece más abajo */
     if (ok && usa) deParada.push({ tipo: "parada", doc: d, dia, puntos: puntos - (dia && d.columnas[dia] == null ? 5 : 0) });
   }
 
@@ -696,7 +664,6 @@ document.querySelectorAll(".hp-ejemplo").forEach((b) => b.addEventListener("clic
   $("hp-q").focus();
 }));
 
-/* ---------- botones ---------- */
 $("btn-tema").addEventListener("click", () => {
   aplicarTema(temaActual() === "dark" ? "light" : "dark");
   renderLineas();
@@ -705,11 +672,9 @@ $("btn-tema").addEventListener("click", () => {
 });
 $("hp-imprimir").addEventListener("click", () => window.print());
 
-/* ---------- arranque ---------- */
 renderLineas();
 await mostrar();
 
-/* Lo que ya pasó y el próximo paso se recalculan solos mientras la página queda abierta */
 setInterval(() => {
   if (!tablaActual || document.hidden) return;
   renderDias();
