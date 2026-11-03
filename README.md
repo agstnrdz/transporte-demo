@@ -40,7 +40,7 @@ Este visor permite consultar de forma interactiva las 24 líneas de colectivo ur
 
 - **Recorridos de líneas:** Dirección General de Transporte (2026).
 - **Paradas:** Dirección General de Transporte (2026), sobre relevamiento propio (2023).
-- **Horarios de paso por parada:** Horarios informados por Sol Bus actualizados al 7 de septiembre de 2026.
+- **Horarios de paso por parada:** Horarios informados por Sol Bus actualizados al 19 de octubre de 2026.
 - **Cartografía base:** Instituto Geográfico Nacional (Argenmap).
 - **Imagen satelital:** [Esri World Imagery](https://www.arcgis.com/home/item.html?id=10df2279f9684e4a9f6a7f08febac2a9) - Esri, Vantor, Earthstar Geographics y la comunidad de usuarios GIS.
 - **Nomenclador de calles (respaldo del buscador de línea):** API Georef, Jefatura de Gabinete de Ministros de la Nación ([datos.gob.ar](https://datos.gob.ar)).
