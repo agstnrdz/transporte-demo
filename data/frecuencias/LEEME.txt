@@ -1,12 +1,25 @@
 Tablas de frecuencias por línea y tipo de día, para horarios/.
 
-Las planillas (.csv) quedan sólo en la computadora de quien mantiene las tablas: no se
-versionan ni se publican (.gitignore). Lo que se versiona y publica son los .json que
-genera tools/build-frecuencias.mjs a partir de ellas. Flujo:
-  1. dejar o actualizar los .csv en esta carpeta
+Las planillas (.csv) y los PDF quedan sólo en la computadora de quien mantiene las
+tablas: no se versionan ni se publican (.gitignore). Lo que se versiona y publica son
+los .json que genera tools/build-frecuencias.mjs a partir de los .csv. Flujo:
+  1. dejar o actualizar los .csv en esta carpeta (si vienen en PDF, ver abajo)
   2. node tools/build-frecuencias.mjs
   3. revisar en el navegador y commitear los .json (y data/frecuencias.json)
 Sin .csv en la carpeta (un clon del repo, el workflow) el script no toca nada.
+
+Si las tablas llegan en PDF (exportadas desde Excel, no escaneadas):
+  0. una sola vez por computadora: npm install --prefix tools
+  1. dejar los PDF en data/frecuencias/pdf/, con el mismo nombre: linea-<id>-<dia>.pdf
+  2. node tools/pdf-a-csv.mjs
+     escribe (o reemplaza) el .csv de cada PDF en esta carpeta; después seguir con el
+     paso 2 de arriba. Para otra carpeta: node tools/pdf-a-csv.mjs <carpeta>
+El conversor ubica cada hora en su columna por la posición en la página, así que
+respeta los viajes que empiezan o terminan a mitad de recorrido. Avisa (y no escribe
+nada) si el PDF no tiene texto, si una hora no cae en ninguna columna o si hay dos
+tablas distintas. Los colores de las celdas no se pueden leer: si una tabla usa una
+referencia de colores, esa información se pierde (el texto de la referencia queda como
+nota de la fila que tiene al lado, igual que pasaba con el Excel).
 
 Un archivo por línea y tipo de día:
 
@@ -29,7 +42,9 @@ ANSI). No hace falta limpiarla antes:
     de esa salida
 Los nombres se muestran en formato título y con tildes ("MAXIMO ABASOLO" → "Máximo
 Abásolo"). Si una palabra sale mal, se corrige en ACENTOS_BASE, en
-tools/build-frecuencias.mjs.
+tools/build-frecuencias.mjs. Si una planilla trae mal el nombre de una parada (p. ej.
+ESTADIO BICENTENARIO en vez de Estadio Centenario), se corrige en CORRECCIONES, en el
+mismo script: así la corrección se mantiene en cada actualización.
 
 Los .json de esta carpeta los genera el script: no se editan a mano. Si se quita un
 .csv, al volver a correr el script se borra su .json.

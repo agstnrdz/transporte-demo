@@ -37,6 +37,11 @@ const ACENTOS_BASE = [
   "Jesús", "Andrés", "Tomás", "Nicolás", "Inés", "Mejía",
   "Sarsfield",
 ];
+// Stop names the source spreadsheets get wrong, by clave() of the raw name
+const CORRECCIONES = {
+  "estadio bicentenario": "Estadio Centenario",
+  "mariano rodraguez plaza castelli": "Mariano Rodríguez (Plaza Castelli)",
+};
 const MINUSCULA_SIEMPRE = new Set(["y", "e", "o", "u", "de", "del"]);
 const MINUSCULA_TRAS_DE = new Set(["la", "las", "los", "el"]);
 const ABREVIATURAS = {
@@ -170,7 +175,7 @@ function procesarTabla(archivo, texto, acentos) {
   const enColumnas = new Set(columnas);
 
   const nombresCrudos = columnas.map((j) => enc[j].texto);
-  const paradasN = nombresCrudos.map((n) => nombreProlijo(n, acentos));
+  const paradasN = nombresCrudos.map((n) => CORRECCIONES[clave(n)] || nombreProlijo(n, acentos));
   const claves = nombresCrudos.map(clave);
 
   // Two adjacent columns with the same stop are arrival and departure at a terminus

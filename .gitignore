@@ -11,6 +11,7 @@ data/frecuencias/*.csv
 data/frecuencias/*.xls
 data/frecuencias/*.xlsx
 data/frecuencias/*.ods
+data/frecuencias/**/*.pdf
 data/frecuencias/~$*
 
 # Local discards

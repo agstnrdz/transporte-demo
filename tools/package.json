@@ -1,0 +1,9 @@
+{
+  "name": "transporte-tools",
+  "private": true,
+  "description": "Dependencias de los scripts de tools/ (no se publican: tools/ queda fuera del sitio)",
+  "type": "module",
+  "dependencies": {
+    "pdfjs-dist": "6.4.299"
+  }
+}
