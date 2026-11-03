@@ -7,11 +7,10 @@ const BUSCADOR_LINEA_HABILITADO = false;
 
 const TOUR_HABILITADO = true;
 
-const HORARIOS_HABILITADO = true;
+const HORARIOS_HABILITADO = false;
 
 const AVISOS_HABILITADO = true;
 
-// Links to horarios/ when timetables are available
 const FRECUENCIAS_HABILITADO = true;
 
 const MODO_MANTENIMIENTO = false;
