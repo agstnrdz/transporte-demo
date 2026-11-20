@@ -13,6 +13,10 @@ const AVISOS_HABILITADO = true;
 
 const FRECUENCIAS_HABILITADO = true;
 
+// true: schedule buttons open Sol Bus's site; false: our horarios/ page
+const HORARIOS_EN_SOLBUS = true;
+const URL_HORARIOS_SOLBUS = "https://solbusurbano.com.ar/novedades/publicacion-general/horarios-comodoro";
+
 const MODO_MANTENIMIENTO = false;
 
 if (MODO_MANTENIMIENTO) {
@@ -1726,11 +1730,11 @@ function sumarAccesosHorarios(indice) {
   const btn = document.createElement("a");
   btn.id = "btn-horarios";
   btn.className = "vt-btn-header";
-  btn.href = "horarios/";
+  btn.href = HORARIOS_EN_SOLBUS ? URL_HORARIOS_SOLBUS : "horarios/";
   btn.target = "_blank";
   btn.rel = "noopener";
-  btn.title = "Horarios de paso por parada";
-  btn.setAttribute("aria-label", "Horarios de paso por parada (se abre en otra pestaña)");
+  btn.title = HORARIOS_EN_SOLBUS ? "Horarios en el sitio de Sol Bus" : "Horarios de paso por parada";
+  btn.setAttribute("aria-label", btn.title + " (se abre en otra pestaña)");
   btn.innerHTML = ICONO_RELOJ;
   btn.addEventListener("click", () => {
     if (typeof gtag === "function") gtag("event", "abrir_horarios_paso", { origen: "encabezado" });
@@ -1742,10 +1746,12 @@ function sumarAccesosHorarios(indice) {
     if (!li) continue;
     const a = document.createElement("a");
     a.className = "pill pill-accion pill-enlace";
-    a.href = "horarios/?linea=" + encodeURIComponent(id);
+    a.href = HORARIOS_EN_SOLBUS ? URL_HORARIOS_SOLBUS : "horarios/?linea=" + encodeURIComponent(id);
     a.target = "_blank";
     a.rel = "noopener";
-    a.title = "Horarios de paso por parada de la línea " + id + " (se abre en otra pestaña)";
+    a.title = HORARIOS_EN_SOLBUS
+      ? "Horarios en el sitio de Sol Bus (se abre en otra pestaña)"
+      : "Horarios de paso por parada de la línea " + id + " (se abre en otra pestaña)";
     a.innerHTML = "Horarios por parada " + ICONO_EXTERNO;
     a.addEventListener("click", (e) => {
       e.stopPropagation();
